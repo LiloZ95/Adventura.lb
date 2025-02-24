@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async'; // ✅ Import for Timer
 import 'dart:ui' as ui; // ✅ Use alias for dart:ui
 import '../login/login.dart';
@@ -15,13 +16,14 @@ class OtpVerificationScreen extends StatefulWidget {
   final bool isForSignup;
   final String? firstName, lastName, phoneNumber, password;
 
-  OtpVerificationScreen(
-      {required this.email,
-      required this.isForSignup,
-      this.firstName,
-      this.lastName,
-      this.phoneNumber,
-      this.password});
+  OtpVerificationScreen({
+    required this.email,
+    required this.isForSignup,
+    this.firstName,
+    this.lastName,
+    this.phoneNumber,
+    this.password,
+  });
 
   @override
   _OtpVerificationScreenState createState() => _OtpVerificationScreenState();
@@ -36,8 +38,10 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   // ✅ Countdown Timer Variables
   int _remainingSeconds = 300; // 5 minutes = 300 seconds
   late Timer _timer;
-  bool _showResendButton =
-      false; // ✅ Controls visibility of "Resend OTP" button
+  bool _showResendButton = false; // ✅ Controls visibility of "Resend OTP" button
+
+  // ✅ New: Border color for PinCodeTextField
+  Color _pinBorderColor = Colors.grey[600]!; // Default grey
 
   @override
   void initState() {
@@ -47,15 +51,12 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
   // ✅ Start countdown timer
   void _startCountdown() {
-    // _timer?.cancel(); // ✅ Cancel any existing timer before starting a new one
-
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (_remainingSeconds > 0) {
         setState(() => _remainingSeconds--);
       } else {
         setState(() {
-          _showResendButton =
-              true; // ✅ Show "Resend Code" button when timer ends
+          _showResendButton = true; // ✅ Show "Resend Code" button when timer ends
         });
         timer.cancel(); // Stop the timer at 00:00
       }
@@ -75,7 +76,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       _remainingSeconds = 300; // Reset to 5:00
       _showResendButton = false; // Hide reset button
     });
-
     _startCountdown(); // Restart countdown
   }
 
@@ -127,13 +127,15 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
     print("🔍 API Response: $response");
 
+    // ✅ Decide border color based on OTP success/failure
     if (response["success"] == true) {
       print("✅ OTP Verified Successfully! Navigating to Login...");
 
+      // If OTP is correct, set border color to green
+      setState(() => _pinBorderColor = Colors.green);
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text("OTP Verified Successfully! Redirecting to Login...")),
+        SnackBar(content: Text("OTP Verified Successfully! Redirecting to Login...")),
       );
 
       if (widget.isForSignup) {
@@ -144,12 +146,18 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       } else {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-              builder: (context) => SetPassword(email: widget.email)),
+          MaterialPageRoute(builder: (context) => SetPassword(email: widget.email)),
         );
       }
     } else {
       print("❌ Failed OTP Verification: ${response["error"]}");
+
+      // If OTP is incorrect, set border color to red & clear text
+      setState(() {
+        _pinBorderColor = Colors.red;
+        _otpController.clear(); // ✅ Clear the text field
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(response["error"] ?? "Invalid OTP. Try again.")),
       );
@@ -162,6 +170,42 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   void dispose() {
     _timer.cancel(); // ✅ Stop the timer when widget is disposed
     super.dispose();
+  }
+
+  // ✅ We only color the timer portion, not the entire text
+  Widget _buildTimerRichText(double screenWidth) {
+    // If remaining seconds > 0, color is green, else red
+    Color timerColor = _remainingSeconds > 0 ? Colors.green : Colors.red;
+
+    return RichText(
+      textAlign: TextAlign.center,
+      text: TextSpan(
+        text: "We have sent a verification code to your email, it will expire in ",
+        style: TextStyle(
+          fontSize: screenWidth * 0.035,
+          color: Colors.black, // rest of text in black
+          fontFamily: "Poppins",
+        ),
+        children: [
+          TextSpan(
+            text: _formatTime(_remainingSeconds),
+            style: TextStyle(
+              fontSize: screenWidth * 0.035,
+              color: timerColor, // only timer portion changes color
+              fontFamily: "Poppins",
+            ),
+          ),
+          TextSpan(
+            text: ".", // end with a period
+            style: TextStyle(
+              fontSize: screenWidth * 0.035,
+              color: Colors.black,
+              fontFamily: "Poppins",
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -215,16 +259,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           ),
                           SizedBox(height: screenHeight * 0.02),
 
-                          // ✅ Updated Text with Countdown Timer
-                          Text(
-                            "We have sent a verification code to your email, it will expire in ${_formatTime(_remainingSeconds)}.",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: screenWidth * 0.035,
-                              color: Colors.grey, // Text color based on dark mode
-                              fontFamily: "Poppins",
-                            ),
-                          ),
+                          // ✅ Timer Text with Dynamic Color (only timer portion)
+                          _buildTimerRichText(screenWidth),
 
                           SizedBox(height: screenHeight * 0.02),
 
@@ -240,7 +276,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           ),
                           SizedBox(height: screenHeight * 0.02),
 
-                          // ✅ OTP Input Field
+                          // ✅ OTP Input Field with dynamic border color
                           Form(
                             child: PinCodeTextField(
                               controller: _otpController,
@@ -253,12 +289,14 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                                 borderRadius: BorderRadius.circular(8),
                                 fieldHeight: screenHeight * 0.06,
                                 fieldWidth: screenWidth * 0.12,
-                                activeFillColor: Colors.grey[300]!, // Dynamic color based on dark mode
+                                activeFillColor: Colors.grey[300]!, // background fill
                                 selectedFillColor: Colors.grey[300]!,
                                 inactiveFillColor: Colors.grey[300]!,
-                                activeColor: Colors.black,
-                                selectedColor: Colors.black,
-                                inactiveColor: Colors.black,
+
+                                // ✅ Use our dynamic color for the border
+                                activeColor: _pinBorderColor,
+                                selectedColor: _pinBorderColor,
+                                inactiveColor: _pinBorderColor,
                               ),
                               enableActiveFill: true,
                               showCursor: false,
@@ -272,8 +310,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                               padding: EdgeInsets.symmetric(vertical: 8.0),
                               child: Text(
                                 _errorMessage,
-                                style:
-                                    TextStyle(color: Colors.red, fontSize: 14),
+                                style: TextStyle(color: Colors.red, fontSize: 14),
                               ),
                             ),
 
@@ -282,14 +319,13 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           // ✅ Resend OTP Button (Shows only when _showResendButton is true)
                           if (_showResendButton)
                             TextButton(
-                              onPressed: _isResendingOtp
-                                  ? null
-                                  : _resendOtp, // Disable while resending
+                              onPressed: _isResendingOtp ? null : _resendOtp, // Disable while resending
                               child: Text(
                                 "Resend code",
                                 style: TextStyle(
-                                    color: Colors.blue, // Color based on dark mode
-                                    fontFamily: "Poppins"),
+                                  color: Colors.blue, // Color based on dark mode
+                                  fontFamily: "Poppins",
+                                ),
                               ),
                             ),
 
@@ -299,7 +335,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           ElevatedButton(
                             onPressed: _isLoading ? null : _verifyOtp,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.black,
+                              backgroundColor: Colors.blue,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),

@@ -20,22 +20,28 @@ class EventDetailsScreen extends StatefulWidget {
 
   @override
   _EventDetailsScreenState createState() => _EventDetailsScreenState();
-}//random comment to push 
+}
 
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
   bool isFavorite = false; // State variable for the favorite button
 
   @override
   Widget build(BuildContext context) {
+    // Obtain screen dimensions and safe area padding
     double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
+    double bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
+      // Prevent auto-resizing to avoid overflow issues
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back,
+              color: Colors.black, size: screenWidth * 0.07),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -43,14 +49,14 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             icon: Icon(
               Icons.share,
               color: Colors.black,
-              size: 30,
+              size: screenWidth * 0.07,
             ),
             onPressed: () {},
           ),
           IconButton(
             icon: Icon(
               isFavorite ? Icons.favorite : Icons.favorite_border,
-              size: 30,
+              size: screenWidth * 0.07,
               color: isFavorite ? Colors.red : Colors.black,
             ),
             onPressed: () {
@@ -62,28 +68,30 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         ],
       ),
       body: SingleChildScrollView(
+        // Bottom padding so content isn't hidden behind the bottom navigation bar
+        padding: EdgeInsets.only(bottom: screenHeight * 0.12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Swipeable image container
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.03),
               child: Container(
-                height: 250,
+                height: screenHeight * 0.3, // Adaptive image height
                 width: screenWidth * 0.96,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(screenWidth * 0.03),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.3),
-                      blurRadius: 4,
-                      spreadRadius: 1,
-                      offset: Offset(0, 4), // Shadow position
+                      blurRadius: screenWidth * 0.02,
+                      spreadRadius: screenWidth * 0.005,
+                      offset: Offset(0, screenWidth * 0.02),
                     ),
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(screenWidth * 0.03),
                   child: Stack(
                     children: [
                       PageView.builder(
@@ -97,18 +105,23 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         },
                       ),
                       Positioned(
-                        bottom: 10,
-                        right: 10,
+                        bottom: screenHeight * 0.01,
+                        right: screenWidth * 0.02,
                         child: Container(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: screenWidth * 0.02,
+                              vertical: screenHeight * 0.005),
                           decoration: BoxDecoration(
                             color: Colors.black.withOpacity(0.5),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius:
+                                BorderRadius.circular(screenWidth * 0.02),
                           ),
                           child: Text(
                             '1/${widget.imagePaths.length}',
-                            style: TextStyle(color: Colors.white, fontSize: 12),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: screenWidth * 0.035,
+                            ),
                           ),
                         ),
                       ),
@@ -117,8 +130,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 ),
               ),
             ),
+            // Main content
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(screenWidth * 0.04),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -126,42 +140,52 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   Text(
                     widget.title,
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: screenWidth * 0.06,
                       fontWeight: FontWeight.bold,
                       fontFamily: 'Poppins',
                     ),
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: screenHeight * 0.01),
                   // Date & Location
                   Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 18, color: Colors.grey),
-                      SizedBox(width: 5),
-                      Text(widget.date,
-                          style: TextStyle(fontSize: 16, color: Colors.grey)),
+                      Icon(Icons.calendar_today,
+                          size: screenWidth * 0.045, color: Colors.grey),
+                      SizedBox(width: screenWidth * 0.01),
+                      Text(
+                        widget.date,
+                        style: TextStyle(
+                            fontSize: screenWidth * 0.04, color: Colors.grey),
+                      ),
                     ],
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: screenHeight * 0.005),
                   Row(
                     children: [
-                      Icon(Icons.location_on, size: 18, color: Colors.grey),
-                      SizedBox(width: 5),
-                      Text(widget.location,
-                          style: TextStyle(fontSize: 16, color: Colors.grey)),
+                      Icon(Icons.location_on,
+                          size: screenWidth * 0.045, color: Colors.grey),
+                      SizedBox(width: screenWidth * 0.01),
+                      Text(
+                        widget.location,
+                        style: TextStyle(
+                            fontSize: screenWidth * 0.04, color: Colors.grey),
+                      ),
                     ],
                   ),
-                  SizedBox(height: 10),
+                  SizedBox(height: screenHeight * 0.015),
+                  // Trip plan
                   Row(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
+                        padding: EdgeInsets.only(right: screenWidth * 0.02),
                         child: Text(
                           "Trip plan",
                           style: TextStyle(
-                              color: Colors.black,
-                              fontFamily: 'Poppins',
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold),
+                            color: Colors.black,
+                            fontFamily: 'Poppins',
+                            fontSize: screenWidth * 0.055,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       Expanded(
@@ -172,10 +196,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       ),
                     ],
                   ),
-                  // Trip plan
-                  SizedBox(height: 4),
+                  SizedBox(height: screenHeight * 0.005),
                   Container(
-                    height: 80,
+                    height: screenHeight * 0.1,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: widget.tripPlan.length,
@@ -183,14 +206,17 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         return Row(
                           children: [
                             Container(
-                              margin: EdgeInsets.symmetric(vertical: 12),
-                              padding: EdgeInsets.symmetric(horizontal: 12),
+                              margin: EdgeInsets.symmetric(
+                                  vertical: screenHeight * 0.015),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: screenWidth * 0.03),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius:
+                                    BorderRadius.circular(screenWidth * 0.03),
                                 border: Border.all(
                                   color: Color.fromARGB(255, 108, 108, 108),
-                                  width: 1, // Thin border
+                                  width: 1,
                                 ),
                               ),
                               child: Column(
@@ -200,7 +226,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                   Text(
                                     '• ' + widget.tripPlan[index]['time']!,
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: screenWidth * 0.035,
                                       color: Color.fromARGB(255, 108, 108, 108),
                                       fontFamily: 'Poppins',
                                     ),
@@ -208,7 +234,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                   Text(
                                     widget.tripPlan[index]['event']!,
                                     style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: screenWidth * 0.045,
                                       color: Colors.black,
                                       fontFamily: 'Poppins',
                                       fontWeight: FontWeight.bold,
@@ -218,31 +244,35 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                               ),
                             ),
                             if (index < widget.tripPlan.length - 1)
-                              Image.asset(
-                                'assets/Icons/arrow-right.png',
-                                width: 35,
-                                height: 35,
-                                color: Colors
-                                    .grey, // Adjust color if the image is an SVG or supports tint
+                              Padding(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: screenWidth * 0.02),
+                                child: Image.asset(
+                                  'assets/Icons/arrow-right.png',
+                                  width: screenWidth * 0.08,
+                                  height: screenWidth * 0.08,
+                                  color: Colors.grey,
+                                ),
                               ),
                           ],
                         );
                       },
                     ),
                   ),
+                  SizedBox(height: screenHeight * 0.01),
                   // Description
-                  SizedBox(height: 6),
                   Row(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
+                        padding: EdgeInsets.only(right: screenWidth * 0.02),
                         child: Text(
                           "Description",
                           style: TextStyle(
-                              color: Colors.black,
-                              fontFamily: 'Poppins',
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold),
+                            color: Colors.black,
+                            fontFamily: 'Poppins',
+                            fontSize: screenWidth * 0.055,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       Expanded(
@@ -256,16 +286,18 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   Text(
                     widget.description,
                     style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.black87,
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.normal),
+                      fontSize: screenWidth * 0.04,
+                      color: Colors.black87,
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.normal,
+                    ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    padding:
+                        EdgeInsets.symmetric(vertical: screenHeight * 0.01),
                     child: Wrap(
-                      spacing: 6.0,
-                      runSpacing: 4.0,
+                      spacing: screenWidth * 0.02,
+                      runSpacing: screenHeight * 0.005,
                       children: [
                         _buildFeatureTag("Trending"),
                         _buildFeatureTag("All ages"),
@@ -276,10 +308,119 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       ],
                     ),
                   ),
+                  SizedBox(height: screenHeight * 0.02),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          width: screenWidth,
+          height: screenHeight * 0.1 + bottomPadding,
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+            child: BottomAppBar(
+              color: Colors.transparent,
+              elevation: 10,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: screenWidth * 0.04,
+                  right: screenWidth * 0.04,
+                  bottom: bottomPadding,
+                  top: screenHeight * 0.005,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Price info
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Price",
+                          style: TextStyle(
+                            fontSize: screenWidth * 0.04,
+                            fontFamily: 'Poppins',
+                            color: const Color.fromARGB(255, 0, 0, 0),
+                          ),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "\$15",
+                              style: TextStyle(
+                                fontSize: screenWidth * 0.06,
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
+                              ),
+                            ),
+                            Text(
+                              "/Person",
+                              style: TextStyle(
+                                fontSize: screenWidth * 0.04,
+                                fontFamily: 'Poppins',
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    // Book Ticket button with icon
+                    ElevatedButton(
+                      onPressed: () {
+                        print("Book Ticket pressed!");
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: AppColors.blue,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: screenWidth * 0.08,
+                          vertical: screenHeight * 0.02,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.event,
+                            color: Colors.white,
+                            size: screenWidth * 0.045,
+                          ),
+                          SizedBox(width: screenWidth * 0.02),
+                          Text(
+                            "Book Ticket",
+                            style: TextStyle(
+                              fontSize: screenWidth * 0.04,
+                              fontFamily: 'Poppins',
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -287,7 +428,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   Widget _buildFeatureTag(String text) {
     bool isTrending = text == "Trending";
-
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
