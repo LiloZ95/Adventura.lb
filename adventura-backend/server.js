@@ -6,7 +6,7 @@ const dotenv = require("dotenv");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("./models/User.js"); // User model
-const sequelize = require("./db/db.js"); // Import Sequelize instance
+const { connectDB, sequelize } = require("./db/db.js"); // Import Sequelize instance
 const userRoutes = require("./routes/userRoutes"); // Import user routes
 const { QueryTypes } = require("sequelize");
 
@@ -44,11 +44,13 @@ app.use("/users", userRoutes);
 // ✅ Ensure userRoutes.js is correctly registered
 // app.use("/", userRoutes);
 
-// Start the server after database connection
-sequelize
-  .authenticate()
-  .then(() => {
-    console.log("✅ Connected to PostgreSQL using Sequelize!");
-    app.listen(3000, () => console.log("🚀 Server running on port 3000"));
-  })
-  .catch((err) => console.error("❌ Database connection error:", err));
+connectDB(); // ✅ Ensure the database is connected
+
+app.listen(3000, async () => {
+  try {
+    await sequelize.sync(); // ✅ Ensure all models are synced
+    console.log("🚀 Server running on http://192.168.2.193:3000");
+  } catch (err) {
+    console.error("❌ Error syncing database:", err);
+  }
+});

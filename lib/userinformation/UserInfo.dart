@@ -11,14 +11,13 @@ class UserInfo extends StatefulWidget {
 }
 
 class _UserInfoState extends State<UserInfo> {
+  late ApiService apiService;
+
   @override
-  void initState() {
-    super.initState();
-    // ✅ Call loadUserProfile() from ApiService
-    Future.microtask(() async {
-    final apiService = Provider.of<ApiService>(context, listen: false);
-    await apiService.getUserId(); // ✅ Ensure userId is loaded on startup
-  });
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    apiService = Provider.of<ApiService>(context, listen: false);
+    apiService.getUserId();
   }
 
   @override
@@ -68,58 +67,51 @@ class _UserInfoState extends State<UserInfo> {
 
             // ✅ Profile Picture Section
             Consumer<ApiService>(
-  builder: (context, apiService, child) {
-    String userId = apiService.userId ?? ""; // ✅ Get logged-in user ID
-
-    return GestureDetector(
-      onTap: () async {
-        String userId = apiService.userId ?? ""; // ✅ Get logged-in user ID
-        if (userId.isNotEmpty) {
-          await apiService.pickImage(context, userId);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("❌ User ID is missing!"), backgroundColor: Colors.red),
-          );
-        }
-      },
-      child: Stack(
-        alignment: Alignment.bottomRight,
-        children: [
-          Container(
-            width: screenHeight * 0.13,
-            height: screenHeight * 0.13,
-            decoration: BoxDecoration(shape: BoxShape.circle),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(50), // ✅ Ensure circular shape
-              child: _buildProfileImage(apiService),
+              builder: (context, apiService, child) {
+                return GestureDetector(
+                  onTap: () async {
+                    String userId =
+                        apiService.userId ?? ""; // ✅ Get logged-in user ID
+                    if (userId.isNotEmpty) {
+                      await apiService.pickImage(context, userId);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text("❌ User ID is missing!"),
+                            backgroundColor: Colors.red),
+                      );
+                    }
+                  },
+                  child: Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
+                      Container(
+                        width: screenHeight * 0.13,
+                        height: screenHeight * 0.13,
+                        decoration: BoxDecoration(shape: BoxShape.circle),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                              50), // ✅ Ensure circular shape
+                          child: _buildProfileImage(apiService),
+                        ),
+                      ),
+                      // ✅ Camera Icon with Black Border
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.black, width: 2),
+                        ),
+                        child: CircleAvatar(
+                          backgroundColor: Colors.white,
+                          radius: 18,
+                          child: Icon(Icons.camera_alt, color: Colors.black),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-          ),
-          // ✅ Camera Icon with Black Border
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.black, width: 2),
-            ),
-            child: CircleAvatar(
-              backgroundColor: Colors.white,
-              radius: 18,
-              child: Icon(Icons.camera_alt, color: Colors.black),
-            ),
-          ),
-          // ✅ Show Error Message if Image is Too Large
-          // if (apiService.errorMessage != null)
-          //   Padding(
-          //     padding: const EdgeInsets.only(top: 8.0),
-          //     child: Text(
-          //       apiService.errorMessage!,
-          //       style: TextStyle(color: Colors.red, fontSize: 14),
-          //     ),
-          //   ),
-        ],
-      ),
-    );
-  },
-),
 
             SizedBox(height: 8),
 
@@ -127,9 +119,7 @@ class _UserInfoState extends State<UserInfo> {
             Consumer<ApiService>(
               builder: (context, apiService, child) {
                 return Text(
-                  apiService.fullName.isNotEmpty
-                      ? apiService.fullName
-                      : "User Name", // ✅ Show full name
+                  "${apiService.firstName} ${apiService.lastName}", // ✅ Show full name
                   style: TextStyle(
                     fontSize: screenHeight * 0.025,
                     fontWeight: FontWeight.bold,
@@ -167,47 +157,48 @@ class _UserInfoState extends State<UserInfo> {
   }
 
   Widget _buildProfileImage(ApiService apiService) {
-  if (apiService.selectedImage != null) {
-    return Image.file(apiService.selectedImage!, fit: BoxFit.cover);
-  } 
-  else if (apiService.profileImageUrl != null &&
-      apiService.profileImageUrl!.isNotEmpty) {
-    
-    // ✅ Check if the response contains Base64 data
-    if (apiService.profileImageUrl!.startsWith("data:image")) {
-      try {
-        String base64String = apiService.profileImageUrl!.split(",")[1]; // ✅ Extract base64 part
-        Uint8List imageBytes = base64Decode(base64String); // ✅ Convert to bytes
+    if (apiService.selectedImage != null) {
+      return Image.file(apiService.selectedImage!, fit: BoxFit.cover);
+    } else if (apiService.profileImageUrl != null &&
+        apiService.profileImageUrl!.isNotEmpty) {
+      // ✅ Check if the response contains Base64 data
+      if (apiService.profileImageUrl!.startsWith("data:image")) {
+        try {
+          String base64String = apiService.profileImageUrl!
+              .split(",")[1]; // ✅ Extract base64 part
+          Uint8List imageBytes =
+              base64Decode(base64String); // ✅ Convert to bytes
 
-        return Image.memory(
-          imageBytes,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            print("❌ Image Load Error: $error");
-            return Image.asset("assets/images/default_user.png", fit: BoxFit.cover);
-          },
-        );
-      } catch (e) {
-        print("❌ Error decoding Base64 image: $e");
-        return Image.asset("assets/images/default_user.png", fit: BoxFit.cover);
+          return Image.memory(
+            imageBytes,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              print("❌ Image Load Error: $error");
+              return Image.asset("assets/images/default_user.png",
+                  fit: BoxFit.cover);
+            },
+          );
+        } catch (e) {
+          print("❌ Error decoding Base64 image: $e");
+          return Image.asset("assets/images/default_user.png",
+              fit: BoxFit.cover);
+        }
       }
-    } 
-    
-    // ✅ Otherwise, it's a normal URL
-    return Image.network(
-      apiService.profileImageUrl!,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        print("❌ Image Load Error: $error");
-        return Image.asset("assets/images/default_user.png", fit: BoxFit.cover);
-      },
-    );
-  } 
-  else {
-    return Image.asset("assets/images/default_user.png", fit: BoxFit.cover);
-  }
-}
 
+      // ✅ Otherwise, it's a normal URL
+      return Image.network(
+        apiService.profileImageUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          print("❌ Image Load Error: $error");
+          return Image.asset("assets/images/default_user.png",
+              fit: BoxFit.cover);
+        },
+      );
+    } else {
+      return Image.asset("assets/images/default_user.png", fit: BoxFit.cover);
+    }
+  }
 
   // ✅ Profile Option Tile
   Widget _profileOption(IconData icon, String title, BuildContext context) {
@@ -233,11 +224,7 @@ class _UserInfoState extends State<UserInfo> {
             TextStyle(fontSize: 16, color: Colors.red, fontFamily: "Poppins"),
       ),
       onTap: () async {
-        await Provider.of<ApiService>(context, listen: false).logout();
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Logged out.")));
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => LoginPage()));
+        await ApiService.logout(context);
       },
     );
   }
@@ -273,8 +260,8 @@ class _UserInfoState extends State<UserInfo> {
               onPressed: () async {
                 final apiService =
                     Provider.of<ApiService>(context, listen: false);
-                bool success =
-                    await apiService.deleteUser(); // ✅ No argument needed now
+                bool success = await apiService
+                    .deleteUser(context); // ✅ No argument needed now
 
                 if (success) {
                   Navigator.pushReplacement(context,

@@ -1,4 +1,5 @@
 // lib/services/api_service.dart
+import 'package:adventura/login/login.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
@@ -13,7 +14,7 @@ import 'package:path/path.dart'; // Required for filename extraction
 class ApiService extends ChangeNotifier {
   static const String baseUrl =
       // 'http://localhost:3000'; // Replace with your backend URL
-      'http://192.168.1.28:3000'; // Adjust for platform
+      'http://192.168.2.193:3000'; // Adjust for platform
   static final FlutterSecureStorage storage = FlutterSecureStorage();
 
   String? _userId;
@@ -22,10 +23,13 @@ class ApiService extends ChangeNotifier {
   String? _profileImageUrl;
   File? _selectedImage;
   String? _errorMessage; // Store error message for UI
+  String? fullName; // ✅ Store full name
 
   // Getters
-  String? get userId => _userId;
-  String get fullName => "${_firstName ?? ""} ${_lastName ?? ""}".trim();
+  String? get userId => _userId ?? "";
+  // String get fullName => "${_firstName ?? ""} ${_lastName ?? ""}".trim();
+  String get firstName => _firstName ?? "";
+  String get lastName => _lastName ?? "";
   String? get profileImageUrl => _profileImageUrl;
   File? get selectedImage => _selectedImage;
   String? get errorMessage => _errorMessage;
@@ -96,7 +100,6 @@ class ApiService extends ChangeNotifier {
     }
   }
 
-  // Login User
   Future<Map<String, dynamic>> loginUser(String email, String password) async {
     try {
       final response = await http.post(
@@ -109,7 +112,6 @@ class ApiService extends ChangeNotifier {
       );
 
       print("🔍 Raw API Response: ${response.body}");
-
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data is Map) {
@@ -130,22 +132,29 @@ class ApiService extends ChangeNotifier {
 
         // ✅ Store login state
         await prefs.setBool("isLoggedIn", true);
-        await prefs.setString("userId", user["user_id"].toString());
+        await prefs.setString("userId", user["user_id"].toString()); // 🛠 FIXED
+        await prefs.setString(
+            "firstName", user["name"].split(" ")[0]); // 🛠 FIXED
+        await prefs.setString(
+            "lastName", user["name"].split(" ")[1]); // 🛠 FIXED
         await prefs.setString("accessToken", accessToken);
         await prefs.setString("refreshToken", refreshToken);
 
         // ✅ Store profile picture if available
         if (user["profilePicture"] != null &&
             user["profilePicture"].isNotEmpty) {
-          profileImageUrl = user["profilePicture"];
-          prefs.setString("profilePicture", _profileImageUrl!);
-          print("✅ Profile picture saved: $_profileImageUrl");
+          await prefs.setString(
+              "profilePicture", user["profilePicture"]); // 🛠 FIXED
+          print("✅ Profile picture saved: ${user["profilePicture"]}");
+        } else {
+          print("⚠️ No profile picture found.");
         }
 
-        print("✅ Login successful. Token & User ID saved.");
+        print("✅ Login successful. User details saved.");
 
-        // ✅ Fetch the profile picture if not available
-        fetchProfilePicture();
+        // ✅ Load profile data after storing it
+        await loadUserProfile();
+
         return {
           "success": true,
           "user": user,
@@ -167,27 +176,47 @@ class ApiService extends ChangeNotifier {
   }
 
   // Delete user
-  Future<bool> deleteUser() async {
-    if (_userId == null) return false; // Ensure userId exists
-
+  Future<bool> deleteUser(BuildContext context) async {
     try {
+      // ✅ Get User ID from Storage
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? userId = prefs.getString("userId");
+
+      if (userId == null) {
+        print("❌ Error: User ID not found.");
+        showSnackbar(context, "❌ Error: User ID not found.", Colors.red);
+        return false;
+      }
+
+      print("🗑 Attempting to delete user with ID: $userId");
+
+      // ✅ Send DELETE request
       final response = await http.delete(
-        Uri.parse('$baseUrl/delete-user/$_userId'),
+        Uri.parse("$baseUrl/users/$userId"),
+        headers: {"Content-Type": "application/json"},
       );
 
+      print("🔍 Delete User API Response: ${response.body}");
+
       if (response.statusCode == 200) {
-        await storage.deleteAll();
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.remove("userId");
-        _userId = null; // Clear the stored userId
-        notifyListeners(); // Update UI
+        print("✅ User Deleted Successfully!");
+
+        // ✅ Clear Stored User Data
+        await prefs.clear();
+
+        showSnackbar(context, "✅ Account deleted successfully!", Colors.green);
+
         return true;
+      } else {
+        print("❌ Failed to delete user: ${response.body}");
+        showSnackbar(context, "❌ Failed to delete account.", Colors.red);
+        return false;
       }
     } catch (e) {
       print("❌ Error deleting user: $e");
+      showSnackbar(context, "❌ Server error. Try again.", Colors.red);
+      return false;
     }
-
-    return false;
   }
 
   // Fetch API with JWT Authentication
@@ -221,56 +250,63 @@ class ApiService extends ChangeNotifier {
   }
 
   // Refresh JWT Token
-  Future<bool> refreshToken() async {
+  static Future<bool> refreshToken() async {
+    final storage = FlutterSecureStorage();
     String? refreshToken = await storage.read(key: "refreshToken");
-    if (refreshToken == null) return false;
 
-    final response = await http.post(
-      Uri.parse('$baseUrl/users/refresh'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'refreshToken': refreshToken}),
-    );
+    if (refreshToken == null) {
+      print("❌ No refresh token found. User must log in again.");
+      return false;
+    }
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      await storage.write(key: "accessToken", value: data["accessToken"]);
-      print("✅ Token refreshed successfully.");
-      return true;
-    } else {
-      print("❌ Failed to refresh token.");
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/refresh-token'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"refreshToken": refreshToken}),
+      );
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        await storage.write(
+            key: "accessToken", value: responseData["accessToken"]);
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      print("❌ Token refresh failed: $e");
       return false;
     }
   }
 
-  Future<void> getDashboard() async {
-    // Retrieve the access token from secure storage
-    String? accessToken = await storage.read(key: 'accessToken');
-
-    if (accessToken == null) {
-      // Handle the case when the user is not logged in or token is expired
-      print('No token found!');
-      return;
-    }
+  Future<Map<String, dynamic>> makeAuthenticatedRequest(String endpoint) async {
+    final storage = FlutterSecureStorage();
+    String? accessToken = await storage.read(key: "accessToken");
 
     final response = await http.get(
-      Uri.parse('$baseUrl/users/dashboard'),
+      Uri.parse('$baseUrl/$endpoint'),
       headers: {
-        'Authorization':
-            'Bearer $accessToken', // Add token to the Authorization header
+        "Authorization": "Bearer $accessToken",
+        "Content-Type": "application/json",
       },
     );
 
-    if (response.statusCode == 200) {
-      // Successfully received the dashboard data
-      print('Dashboard: ${response.body}');
-    } else if (response.statusCode == 401) {
-      // Token expired or invalid; handle refreshing the token
-      print('Token expired. Refreshing...');
-      await refreshToken();
-    } else {
-      // Handle other errors
-      print('Failed to load dashboard');
+    if (response.statusCode == 401) {
+      // Token expired, refresh it
+      bool refreshed = await refreshToken();
+      if (refreshed) {
+        return makeAuthenticatedRequest(endpoint); // Retry the request
+      } else {
+        return {
+          "success": false,
+          "error": "Unauthorized. Please log in again."
+        };
+      }
     }
+
+    return jsonDecode(response.body);
   }
 
 // 🔹 Function to send OTP for password reset
@@ -330,23 +366,29 @@ class ApiService extends ChangeNotifier {
   }
 
   // Logout (Clear Tokens)
-  Future<void> logout() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+  static Future<void> logout(BuildContext context) async {
+    final storage = FlutterSecureStorage();
 
     print("🚨 Logging out user...");
 
     // ✅ Debug print before logout
-    bool beforeLogout = prefs.getBool("hasSeenOnboarding") ?? false;
-    print("Onboarding status before logout: $beforeLogout");
+    // bool beforeLogout = prefs.getBool("hasSeenOnboarding") ?? false;
+    // print("Onboarding status before logout: $beforeLogout");
 
     // ✅ Clear stored credentials, but keep onboarding status
-    await prefs.setBool("isLoggedIn", false);
-    await prefs.remove("userId");
-    await prefs.remove("accessToken");
+    // Remove tokens
+    await storage.delete(key: "accessToken");
+    await storage.delete(key: "refreshToken");
 
-    // ✅ Debug print after logout
-    bool afterLogout = prefs.getBool("hasSeenOnboarding") ?? false;
-    print("Onboarding status after logout: $afterLogout");
+    print("✅ User logged out. Tokens removed.");
+
+    // Redirect to login screen
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+          builder: (context) => LoginPage()), // Replace with your login screen
+      (route) => false,
+    );
   }
 
   /// **Verify OTP for Signup or Forgot Password**
@@ -359,6 +401,8 @@ class ApiService extends ChangeNotifier {
     String? phoneNumber,
     String? password,
   }) async {
+    final storage = FlutterSecureStorage(); // Secure storage for tokens
+
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/users/verify-otp'),
@@ -373,31 +417,31 @@ class ApiService extends ChangeNotifier {
           "password": password ?? "",
         }),
       );
+      
+      final data = jsonDecode(response.body);
 
-      print("🔍 Sent Data to Backend: ${jsonEncode({
-            "email": email,
-            "otp": otp,
-            "isForSignup": isForSignup,
-            "firstName": firstName,
-            "lastName": lastName,
-            "phoneNumber": phoneNumber,
-            "password": password,
-          })}");
+      if (response.statusCode == 200 && data is Map<String, dynamic>) {
+        print("✅ Parsed API Response: $data");
 
-      final responseData = jsonDecode(response.body);
-      print("🔍 Received API Response: $responseData");
+        if (!data.containsKey("user") || data["user"] == null) {
+          print("❌ Missing user data in API response.");
+          return {
+            "success": false,
+            "error": "User data is missing in response"
+          };
+        }
 
-      if (response.statusCode == 200) {
-        return {"success": true, "message": responseData["message"]};
+        return data; // ✅ Return parsed data including the "user" field
       } else {
+        print("❌ API Error: ${data["error"] ?? "Unknown error"}");
         return {
           "success": false,
-          "error": responseData["error"] ?? "Invalid OTP"
+          "error": data["error"] ?? "Invalid OTP or server error",
         };
       }
     } catch (e) {
-      print("❌ Error in verifyOtp: $e");
-      return {"success": false, "error": "Failed to verify OTP"};
+      print("❌ Exception in verifyOtp: $e");
+      return {"success": false, "error": "Failed to connect to server"};
     }
   }
 
@@ -435,13 +479,14 @@ class ApiService extends ChangeNotifier {
 
   Future<void> loadUserProfile() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+
     _userId = prefs.getString("userId");
     _firstName = prefs.getString("firstName");
     _lastName = prefs.getString("lastName");
     _profileImageUrl = prefs.getString("profilePicture");
 
     print("📡 Loaded User ID: $_userId");
-    print("📡 Loaded Name: $fullName");
+    print("📡 Loaded Name: ${_firstName ?? ''} ${_lastName ?? ''}");
     print("📡 Loaded Profile Picture: $_profileImageUrl");
 
     notifyListeners();
@@ -472,39 +517,39 @@ class ApiService extends ChangeNotifier {
 
   // ✅ Fetch Profile Picture from Backend
   Future<void> fetchProfilePicture() async {
-    if (_userId == null) {
-      print("❌ No user ID found in storage.");
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userId = prefs.getString("userId");
+
+    if (userId == null || userId.isEmpty) {
+      print("❌ User ID is missing.");
       return;
     }
 
+    String apiUrl = "$baseUrl/users/get-profile-picture/$userId";
+    print("📡 Fetching profile picture from: $apiUrl");
+
     try {
-      String apiUrl = "$baseUrl/users/get-profile-picture/$_userId";
-      print("📡 Fetching profile picture for User ID: $_userId from $apiUrl");
-
       final response = await http.get(Uri.parse(apiUrl));
-
-      print("🔍 Server Response Code: ${response.statusCode}");
-      print("🔍 Raw Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        // ✅ Ensure response contains the expected keys
-        if (data["success"] == true && data.containsKey("image")) {
-          _profileImageUrl = data["image"];
-          notifyListeners(); // ✅ Only update UI if response is valid
-          print("✅ Profile picture loaded successfully!");
+        if (data["image"] != null && data["image"].isNotEmpty) {
+          _profileImageUrl = data["image"]; // ✅ Use "image"
+
+          // ✅ Store in SharedPreferences for persistence
+          await prefs.setString("profilePicture", _profileImageUrl!);
+          print("✅ Profile picture updated!");
         } else {
-          print("❌ No profile picture found.");
+          print("❌ Response did not contain image.");
         }
       } else {
-        print("❌ Error fetching profile picture: ${response.body}");
+        print(
+            "❌ Failed to fetch profile picture. Server responded with: ${response.statusCode}");
       }
     } catch (e) {
       print("❌ Error fetching profile picture: $e");
     }
-
-    notifyListeners();
   }
 
   // ✅ Pick Image & Upload
@@ -554,23 +599,28 @@ class ApiService extends ChangeNotifier {
       await uploadProfilePicture(context, userId, imageFile);
 
       // ✅ Show success message after upload
-      Future.delayed(Duration.zero, () {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text("✅ Profile picture updated successfully!"),
-                backgroundColor: Colors.green),
-          );
-        }
-      });
+      // Future.delayed(Duration.zero, () {
+      //   if (context.mounted) {
+      //     ScaffoldMessenger.of(context).showSnackBar(
+      //       SnackBar(
+      //           content: Text("✅ Profile picture updated successfully!"),
+      //           backgroundColor: Colors.green),
+      //     );
+      //   }
+      // });
     }
   }
 
   // ✅ Upload Profile Picture with Size Validation
   Future<void> uploadProfilePicture(
       BuildContext context, String userId, File imageFile) async {
-    if (imageFile == null || userId.isEmpty) {
-      print("❌ No image selected or user ID is missing.");
+    if (userId == null || userId.isEmpty) {
+      print("❌ No user ID found. Cannot upload profile picture.");
+      return;
+    }
+
+    if (imageFile == null) {
+      print("❌ No image selected.");
       return;
     }
 
@@ -623,35 +673,44 @@ class ApiService extends ChangeNotifier {
       print("🔍 Server Response Code: ${response.statusCode}");
       print("🔍 Response Body: ${response.body}");
 
-      final responseData = jsonDecode(response.body);
-      if (response.statusCode == 200) {
-        // ✅ Extract new profile image URL from response
-        final data = jsonDecode(response.body);
-        if (data.containsKey("image_url")) {
-          _profileImageUrl = data["image_url"];
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // ✅ Ensure response is valid JSON before decoding
+        Map<String, dynamic>? responseData;
+        try {
+          responseData = jsonDecode(response.body);
+        } catch (e) {
+          print("❌ Failed to parse response JSON: $e");
+        }
 
-          // ✅ Show Snackbar inside a Future.delayed to ensure context is valid
-          Future.delayed(Duration.zero, () {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text(responseData["message"]),
-                    backgroundColor: Colors.green),
-              );
-            }
-          });
+        if (responseData != null && responseData["success"] == true) {
+          // ✅ Update profile image URL if available
+          if (responseData.containsKey("image") &&
+              responseData["image"].isNotEmpty) {
+            _profileImageUrl = responseData["image"];
+            print("✅ New profile picture URL: $_profileImageUrl");
+
+            // ✅ Store updated profile picture in SharedPreferences
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            await prefs.setString("profilePicture", _profileImageUrl!);
+          }
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(responseData["message"] ??
+                      "✅ Profile updated successfully!"),
+                  backgroundColor: Colors.green),
+            );
+          }
 
           print("✅ Profile picture uploaded successfully!");
-          // ✅ Show Snackbar based on Response Message
 
-          // ✅ Refresh profile image
+          // ✅ Refresh profile image after upload
           await fetchProfilePicture();
-        }
-      } else {
-        print("❌ Failed to upload profile picture: ${response.reasonPhrase}");
+        } else {
+          print(
+              "❌ Failed to upload profile picture: ${responseData?["error"] ?? "Unknown error"}");
 
-        // ✅ Ensure Snackbar only runs if context is still valid
-        Future.delayed(Duration.zero, () {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -659,21 +718,39 @@ class ApiService extends ChangeNotifier {
                   backgroundColor: Colors.red),
             );
           }
-        });
+        }
+      } else {
+        print("❌ Upload failed. Response: ${response.body}");
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text("❌ Failed to upload profile picture."),
+                backgroundColor: Colors.red),
+          );
+        }
       }
     } catch (e) {
       print("❌ Error uploading profile picture: $e");
 
-      // ✅ Ensure Snackbar only runs if context is still valid
-      Future.delayed(Duration.zero, () {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text("❌ An error occurred while uploading."),
-                backgroundColor: Colors.red),
-          );
-        }
-      });
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text("❌ An error occurred while uploading."),
+              backgroundColor: Colors.red),
+        );
+      }
     }
+  }
+
+  /// ✅ Show Snackbar Messages
+  void showSnackbar(BuildContext context, String message, Color color) {
+    Future.delayed(Duration.zero, () {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: color),
+        );
+      }
+    });
   }
 }

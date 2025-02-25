@@ -80,24 +80,33 @@ class _SignUpPageState extends State<SignUpPage> {
     }
 
     final email = _emailController.text.trim();
+    final firstName = _firstNameController.text.trim();
+    final lastName = _lastNameController.text.trim();
+    final phoneNumber = _phoneController.text.trim();
+    final password = _passwordController.text;
 
     try {
       print("🔍 Sending OTP request for email: $email");
+
       final response = await ApiService.sendOtp(email, isForSignup: true);
-      print("🔍 API Response: $response");
+
       if (response["success"] == true) {
         print(
             "✅ OTP Sent Successfully! Navigating to OTP Verification screen.");
+
+        // ✅ Pass user data to the OTP verification screen
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => OtpVerificationScreen(
               email: email,
-              firstName: _firstNameController.text.trim(),
-              lastName: _lastNameController.text.trim(),
-              phoneNumber: _phoneController.text.trim(),
-              password: _passwordController.text,
               isForSignup: true,
+              signupData: {
+                "firstName": firstName,
+                "lastName": lastName,
+                "phoneNumber": phoneNumber,
+                "password": password,
+              },
             ),
           ),
         );

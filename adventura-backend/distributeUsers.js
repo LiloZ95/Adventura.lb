@@ -1,4 +1,4 @@
-const sequelize = require("./db/db.js"); // Import Sequelize instance
+const { sequelize } = require("./db/db.js"); // Import Sequelize instance
 const User = require("./models/User.js"); // Import User model
 const { QueryTypes } = require("sequelize");
 
@@ -13,7 +13,7 @@ const distributeUsers = async () => {
 
     for (const user of users) {
       const { user_id, first_name, last_name, user_type } = user;
-      const normalizedUserType = user_type.trim().toLowerCase();
+      const normalizedUserType = user_type ? user_type.trim().toLowerCase() : "client";
 
       // **Check if user is already in the correct table**
       const existingRecord = await sequelize.query(
@@ -76,10 +76,8 @@ const distributeUsers = async () => {
     console.log("✅ User distribution completed successfully!");
   } catch (error) {
     console.error("❌ Error distributing users:", error);
-  } finally {
-    await sequelize.close();
   }
 };
 
 // Run the function
-distributeUsers();
+module.exports = { distributeUsers };

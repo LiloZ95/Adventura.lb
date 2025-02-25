@@ -3,25 +3,26 @@ import 'package:adventura/Services/api_service.dart';
 import 'package:adventura/favorite/userPreferences.dart';
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async'; // ✅ Import for Timer
 import 'dart:ui' as ui; // ✅ Use alias for dart:ui
 import '../login/login.dart';
 import 'package:adventura/signUp page/Signup.dart';
+import 'package:adventura/Main screen components/MainScreen.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String email;
   final bool isForSignup;
-  final String? firstName, lastName, phoneNumber, password;
+  final Map<String, String>? signupData; // ✅ Store signup data
 
-  OtpVerificationScreen(
-      {required this.email,
-      required this.isForSignup,
-      this.firstName,
-      this.lastName,
-      this.phoneNumber,
-      this.password});
+  OtpVerificationScreen({
+    required this.email,
+    required this.isForSignup,
+    this.signupData, // ✅ Accept signup data
+  });
 
   @override
   _OtpVerificationScreenState createState() => _OtpVerificationScreenState();
@@ -29,6 +30,7 @@ class OtpVerificationScreen extends StatefulWidget {
 
 class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   final TextEditingController _otpController = TextEditingController();
+  final storage = FlutterSecureStorage();
   bool _isResendingOtp = false; // Track resend status
   bool _isLoading = false;
   String _errorMessage = "";
@@ -119,39 +121,57 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       widget.email,
       _otpController.text,
       isForSignup: widget.isForSignup,
-      firstName: widget.firstName,
-      lastName: widget.lastName,
-      phoneNumber: widget.phoneNumber,
-      password: widget.password,
+      firstName: widget.signupData?["firstName"],
+      lastName: widget.signupData?["lastName"],
+      phoneNumber: widget.signupData?["phoneNumber"],
+      password: widget.signupData?["password"],
     );
 
-    print("🔍 API Response: $response");
+    print("🔍 FULL API Response: $response");
 
-    if (response["success"] == true) {
-      print("✅ OTP Verified Successfully! Navigating to Login...");
+    // ✅ Ensure response contains "user"
+    if (!response.containsKey("user") || response["user"] == null) {
+      print("❌ User data is missing in response! Full Response: $response");
+      return;
+    }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text("OTP Verified Successfully! Redirecting to Login...")),
+    Map<String, dynamic> user = response["user"];
+
+    // ✅ Debugging: Ensure all fields are present
+    print("🔍 Extracted User Data: $user");
+
+    if (!user.containsKey("user_id") || user["user_id"] == null) {
+      print("❌ User ID is missing in response!");
+      return;
+    }
+
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    String userId = user["user_id"].toString();
+    String firstName = user["first_name"] ?? "";
+    String lastName = user["last_name"] ?? "";
+    String profilePicture = user["profilePicture"] ?? "";
+
+    // ✅ Store user data
+    await prefs.setString("userId", userId);
+    await prefs.setString("firstName", firstName);
+    await prefs.setString("lastName", lastName);
+    await prefs.setString("profilePicture", profilePicture);
+    await prefs.setBool("isLoggedIn", true);
+
+    print(
+        "✅ Stored User Data: ID=$userId, Name=$firstName $lastName, ProfilePicture=$profilePicture");
+
+    if (widget.isForSignup) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => Favorite()),
       );
-
-      if (widget.isForSignup) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => Favorite()),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (context) => SetPassword(email: widget.email)),
-        );
-      }
     } else {
-      print("❌ Failed OTP Verification: ${response["error"]}");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response["error"] ?? "Invalid OTP. Try again.")),
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+            builder: (context) => SetPassword(email: widget.email)),
       );
     }
 
@@ -210,7 +230,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                               fontSize: screenWidth * 0.05,
                               fontWeight: FontWeight.bold,
                               fontFamily: "Poppins",
-                              color: Colors.black, // Text color based on dark mode
+                              color:
+                                  Colors.black, // Text color based on dark mode
                             ),
                           ),
                           SizedBox(height: screenHeight * 0.02),
@@ -221,7 +242,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: screenWidth * 0.035,
-                              color: Colors.grey, // Text color based on dark mode
+                              color:
+                                  Colors.grey, // Text color based on dark mode
                               fontFamily: "Poppins",
                             ),
                           ),
@@ -235,7 +257,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                               fontSize: screenWidth * 0.04,
                               fontWeight: FontWeight.bold,
                               fontFamily: "Poppins",
-                              color: Colors.black, // Text color based on dark mode
+                              color:
+                                  Colors.black, // Text color based on dark mode
                             ),
                           ),
                           SizedBox(height: screenHeight * 0.02),
@@ -253,7 +276,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                                 borderRadius: BorderRadius.circular(8),
                                 fieldHeight: screenHeight * 0.06,
                                 fieldWidth: screenWidth * 0.12,
-                                activeFillColor: Colors.grey[300]!, // Dynamic color based on dark mode
+                                activeFillColor: Colors.grey[
+                                    300]!, // Dynamic color based on dark mode
                                 selectedFillColor: Colors.grey[300]!,
                                 inactiveFillColor: Colors.grey[300]!,
                                 activeColor: Colors.black,
@@ -288,7 +312,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                               child: Text(
                                 "Resend code",
                                 style: TextStyle(
-                                    color: Colors.blue, // Color based on dark mode
+                                    color:
+                                        Colors.blue, // Color based on dark mode
                                     fontFamily: "Poppins"),
                               ),
                             ),
