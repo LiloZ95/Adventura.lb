@@ -155,7 +155,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const EventDetailsScreen(
+                          builder: (context) => EventDetailsScreen(
                             title: 'Saint Moritz',
                             date: 'May 22, 2024 - May 26, 2024',
                             location: 'Switzerland',
@@ -196,7 +196,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const EventDetailsScreen(
+                          builder: (context) =>  EventDetailsScreen(
                             title: 'Addu Atoll',
                             date: 'May 22, 2024 - May 26, 2024',
                             location: 'Maldives',
