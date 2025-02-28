@@ -1,8 +1,8 @@
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
+import 'package:adventura/Services/auth_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:adventura/OTP/OTPVerification.dart';
 import 'package:adventura/OTP/ForgotPasswordScreen.dart';
-import 'package:adventura/Services/api_service.dart';
 import 'package:adventura/signUp%20page/Signup.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +17,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final ApiService authService = ApiService(); // Instance of auth service
+  final AuthService authService = AuthService(); // Instance of auth service
   final FlutterSecureStorage storage = FlutterSecureStorage();
   bool _obscureText = true;
   bool _isLoading = false;
@@ -62,8 +62,8 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    final ApiService apiService =
-        ApiService(); // ✅ Create an instance of ApiService
+    final AuthService apiService =
+        AuthService(); // ✅ Create an instance of ApiService
 
     try {
       final response = await apiService.loginUser(

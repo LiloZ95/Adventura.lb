@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../Main screen components/MainScreen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(Favorite());
@@ -21,33 +24,102 @@ class EventSelectionScreen extends StatefulWidget {
 }
 
 class _EventSelectionScreenState extends State<EventSelectionScreen> {
-  List<String?> selectedCategories = [];
-  final int maxSelections = 5; // Limit for number of selections
+  List<Map<String, dynamic>> categories = [];
+  List<int> selectedCategoryIds = [];
+  final int minSelections = 1; // ✅ Minimum required selections
+  final int maxSelections = 5; // ✅ Maximum allowed selections
+  String? errorMessage; // ✅ Store error message
 
-  final List<Map<String, String>> categories = [
-    {'name': 'Business', 'emoji': '🏢'},
-    {'name': 'Community', 'emoji': '🤝'},
-    {'name': 'Music & Entertainment', 'emoji': '🎵'},
-    {'name': 'Health', 'emoji': '⚕️'},
-    {'name': 'Food & drink', 'emoji': '🍔'},
-    {'name': 'Family & Education', 'emoji': '👨‍👩‍👧‍👦'},
-    {'name': 'Sport', 'emoji': '⚽'},
-    {'name': 'Fashion', 'emoji': '👗'},
-    {'name': 'Film & Media', 'emoji': '🎬'},
-    {'name': 'Home & Lifestyle', 'emoji': '🏡'},
-    {'name': 'Design', 'emoji': '🎨'},
-    {'name': 'Gaming', 'emoji': '🎮'},
-    {'name': 'Science & Tech', 'emoji': '🔬'},
-    {'name': 'School & Education', 'emoji': '📚'},
-    {'name': 'Holiday', 'emoji': '🎁'},
-    {'name': 'Travel', 'emoji': '✈️'},
-    {'name': 'Art & Culture', 'emoji': '🎨'},
-    {'name': 'Social Media & Blogging', 'emoji': '📱'},
-    {'name': 'Photography ', 'emoji': '📸'},
-    {'name': 'Travel & Adventure', 'emoji': '🏕️'},
-    {'name': 'Winter Sports ', 'emoji': '🏂'},
-    {'name': 'Health & Nutrition', 'emoji': '🥗'}
-  ];
+  // final List<Map<String, String>> categories = [
+  //   {'name': 'Business', 'emoji': '🏢'},
+  //   {'name': 'Community', 'emoji': '🤝'},
+  //   {'name': 'Music & Entertainment', 'emoji': '🎵'},
+  //   {'name': 'Health', 'emoji': '⚕️'},
+  //   {'name': 'Food & drink', 'emoji': '🍔'},
+  //   {'name': 'Family & Education', 'emoji': '👨‍👩‍👧‍👦'},
+  //   {'name': 'Sport', 'emoji': '⚽'},
+  //   {'name': 'Fashion', 'emoji': '👗'},
+  //   {'name': 'Film & Media', 'emoji': '🎬'},
+  //   {'name': 'Home & Lifestyle', 'emoji': '🏡'},
+  //   {'name': 'Design', 'emoji': '🎨'},
+  //   {'name': 'Gaming', 'emoji': '🎮'},
+  //   {'name': 'Science & Tech', 'emoji': '🔬'},
+  //   {'name': 'School & Education', 'emoji': '📚'},
+  //   {'name': 'Holiday', 'emoji': '🎁'},
+  //   {'name': 'Travel', 'emoji': '✈️'},
+  //   {'name': 'Art & Culture', 'emoji': '🎨'},
+  //   {'name': 'Social Media & Blogging', 'emoji': '📱'},
+  //   {'name': 'Photography ', 'emoji': '📸'},
+  //   {'name': 'Travel & Adventure', 'emoji': '🏕️'},
+  //   {'name': 'Winter Sports ', 'emoji': '🏂'},
+  //   {'name': 'Health & Nutrition', 'emoji': '🥗'}
+  // ];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCategories();
+  }
+
+  Future<void> fetchCategories() async {
+    try {
+      final response = await http
+          .get(Uri.parse("http://localhost:3000/users/categories"));
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body);
+        setState(() {
+          categories = data
+              .map((item) => {
+                    "id": item["category_id"],
+                    "name": item["name"],
+                    "emoji": item["emoji"]
+                  })
+              .toList();
+        });
+      } else {
+        print("❌ Failed to fetch categories: ${response.body}");
+      }
+    } catch (e) {
+      print("❌ Error fetching categories: $e");
+    }
+  }
+
+  Future<void> _savePreferences() async {
+    if (selectedCategoryIds.length < minSelections) {
+      setState(() {
+        errorMessage = "❌ Please select at least $minSelections preference.";
+      });
+      return;
+    }
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userId = prefs.getString("userId");
+
+    if (userId == null) {
+      print("❌ No user ID found!");
+      return;
+    }
+
+    final response = await http.post(
+      Uri.parse("http://localhost:3000/users/preferences"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"userId": userId, "preferences": selectedCategoryIds}),
+    );
+
+    if (response.statusCode == 200) {
+      print("✅ Preferences saved successfully!");
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MainScreen()),
+      );
+    } else {
+      print("❌ Failed to save preferences. Server response: ${response.body}");
+      setState(() {
+        errorMessage = "❌ Failed to save preferences. Try again.";
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,50 +162,46 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
                 runSpacing: 10,
                 children: categories.map((category) {
                   bool isSelected =
-                      selectedCategories.contains(category['name']);
-                  bool isDisabled = selectedCategories.length >= maxSelections &&
-                      !isSelected;
+                      selectedCategoryIds.contains(category['id']);
+                  bool isDisabled =
+                      selectedCategoryIds.length >= maxSelections &&
+                          !isSelected;
                   return GestureDetector(
                     onTap: isDisabled
                         ? null
                         : () {
                             setState(() {
                               if (isSelected) {
-                                selectedCategories.remove(category['name']);
-                              } else if (selectedCategories.length <
+                                selectedCategoryIds.remove(category['id']);
+                              } else if (selectedCategoryIds.length <
                                   maxSelections) {
-                                selectedCategories.add(category['name']);
+                                selectedCategoryIds.add(category['id']);
                               }
                             });
                           },
                     child: Container(
                       decoration: BoxDecoration(
                         color: isDisabled
-                            ? Colors.grey[200] // Disabled buttons have grey[200] background
+                            ? Colors.grey[
+                                200] // Disabled buttons have grey[200] background
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           // If no button is selected, give all buttons a 1px grey[200] border.
                           // Otherwise, apply the specific logic based on state.
-                          color: selectedCategories.isEmpty
-                              ? Colors.grey[200]!
-                              : isSelected
-                                  ? Colors.blue
-                                  : isDisabled
-                                      ? Colors.grey[200]!
-                                      : Colors.transparent,
-                          width: selectedCategories.isEmpty ? 1 : 2,
+                          color: isSelected ? Colors.blue : Colors.grey[300]!,
+                          width: 2,
                         ),
                       ),
-                      padding: EdgeInsets.symmetric(
-                          vertical: 10, horizontal: 15),
+                      padding:
+                          EdgeInsets.symmetric(vertical: 10, horizontal: 15),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (!isDisabled)
                             Text(category['emoji']!,
                                 style: TextStyle(fontSize: 18)),
-                          SizedBox(width: 8),
+                          SizedBox(width: 6),
                           Text(
                             category['name']!,
                             style: TextStyle(
@@ -142,9 +210,8 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
                               fontStyle: isDisabled
                                   ? FontStyle.italic
                                   : FontStyle.normal,
-                              color: isDisabled
-                                  ? Colors.grey[500]
-                                  : Colors.black,
+                              color:
+                                  isDisabled ? Colors.grey[500] : Colors.black,
                             ),
                           ),
                         ],
@@ -154,6 +221,13 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
                 }).toList(),
               ),
               SizedBox(height: 20),
+              if (errorMessage != null)
+                Text(
+                  errorMessage!,
+                  style:
+                      TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                ),
+              SizedBox(height: 10),
               // Finish Button
               Container(
                 width: double.infinity,
@@ -167,18 +241,14 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
                 ),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent, // Transparent background
+                    backgroundColor:
+                        Colors.transparent, // Transparent background
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                     padding: EdgeInsets.symmetric(vertical: 18),
                   ),
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => MainScreen()),
-                    );
-                  },
+                  onPressed: _savePreferences,
                   child: Text(
                     'Finish',
                     style: TextStyle(fontSize: 18, color: Colors.white),

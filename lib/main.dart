@@ -10,7 +10,6 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider<MainApi>(create: (_) => MainApi()), // ✅ Provide MainApi
-        ChangeNotifierProvider<ApiService>(create: (_) => ApiService()), // ✅ Provide ApiService
       ],
       child: MyApp(),
     ),
@@ -24,7 +23,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: Consumer<MainApi>(
         builder: (context, mainApi, child) {
-          return mainApi.initialScreen ?? Scaffold(body: Center(child: CircularProgressIndicator())); // ✅ Prevents null error
+          return mainApi.initialScreen ??
+              Scaffold(body: Center(child: CircularProgressIndicator())); // ✅ Prevents null error
         },
       ),
     );

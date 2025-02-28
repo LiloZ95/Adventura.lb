@@ -7,7 +7,6 @@ const { QueryTypes } = require("sequelize");
 
 const refreshTokens = new Set(); // Store refresh tokens (replace with DB for production)
 
-
 const getAllUsers = async (req, res) => {
 	try {
 		const [users] = await sequelize.query('SELECT * FROM "USER"'); // Raw query
@@ -20,117 +19,170 @@ const getAllUsers = async (req, res) => {
 };
 
 const getUserById = async (req, res) => {
-	const { id } = req.params;
-	try {
-		// Fetch users directly as an array (not an object with `rows`)
-		const users = await sequelize.query(
-			'SELECT * FROM "USER" WHERE user_id = :id',
-			{
-				replacements: { id },
-				type: sequelize.QueryTypes.SELECT,
-			}
-		);
+	console.log("🔍 Incoming request to getUserById...");
+	console.log("🔹 Checking `req.user`: ", req.user);
 
-		if (users.length === 0) {
-			return res.status(404).json({ error: "User not found" });
+	if (!req.user || !req.user.userId) {
+		console.error("❌ Missing userId in request.");
+		return res.status(400).json({ error: "User ID is required." });
+	}
+
+	const userId = req.user.userId;
+
+	try {
+		console.log(`🔍 Fetching user with ID: ${userId}`);
+		const user = await User.findByPk(userId); // ✅ Query the correct user_id
+
+		if (!user) {
+			console.log("❌ User not found.");
+			return res.status(404).json({ error: "User not found." });
 		}
 
-		res.status(200).json(users[0]); // Return the first user
-	} catch (err) {
-		console.error("Database error:", err);
+		console.log("✅ User found:", user);
+		res.status(200).json(user);
+	} catch (error) {
+		console.error("❌ Database error:", error);
 		res.status(500).json({ error: "Server error" });
 	}
 };
 
 const createUser = async (req, res) => {
-  const { first_name, last_name, password, email, phone_number, location, user_type, otp } = req.body;
+	const {
+		first_name,
+		last_name,
+		password,
+		email,
+		phone_number,
+		location,
+		user_type,
+		otp,
+	} = req.body;
 
-  // Validate required fields
-  if (!first_name || !last_name || !password || !email || !phone_number || !otp) {
-    return res.status(400).json({ error: "All fields are required, including OTP" });
-  }
+	// Validate required fields
+	if (
+		!first_name ||
+		!last_name ||
+		!password ||
+		!email ||
+		!phone_number ||
+		!otp
+	) {
+		return res
+			.status(400)
+			.json({ error: "All fields are required, including OTP" });
+	}
 
-  // Validate email format
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ error: "Invalid email format" });
-  }
+	// Validate email format
+	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+	if (!emailRegex.test(email)) {
+		return res.status(400).json({ error: "Invalid email format" });
+	}
 
-  try {
-    // Check if user already exists
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      return res.status(400).json({ error: "User with this email already exists" });
-    }
+	try {
+		// Check if user already exists
+		const existingUser = await User.findOne({ where: { email } });
+		if (existingUser) {
+			return res
+				.status(400)
+				.json({ error: "User with this email already exists" });
+		}
 
-    // **Validate OTP before proceeding**
-    if (!otpStore[email] || otpStore[email].otp !== otp) {
-      return res.status(400).json({ error: "Invalid or expired OTP" });
-    }
+		// **Validate OTP before proceeding**
+		if (!otpStore[email] || otpStore[email].otp !== otp) {
+			return res.status(400).json({ error: "Invalid or expired OTP" });
+		}
 
-    // **OTP is valid, delete it from storage**
-    delete otpStore[email];
+		// **OTP is valid, delete it from storage**
+		delete otpStore[email];
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
+		// Hash the password
+		const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
-    const newUser = await User.create({
-      first_name,
-      last_name,
-      password_hash: hashedPassword,
-      email,
-      phone_number,
-      location,
-      user_type: user_type || "client", // Default to client if not specified
-    });
+		// Create new user
+		const newUser = await User.create({
+			first_name,
+			last_name,
+			password_hash: hashedPassword,
+			email,
+			phone_number,
+			location,
+			user_type: user_type || "client", // Default to client if not specified
+		});
 
-    console.log(`✅ New user "${newUser.first_name} ${newUser.last_name}" registered.`);
+		console.log(
+			`✅ New user "${newUser.first_name} ${newUser.last_name}" registered.`
+		);
 
-    // **Distribute the user to the correct category (client, provider, admin)**
-    await distributeUser(newUser);
+		// **Distribute the user to the correct category (client, provider, admin)**
+		await distributeUser(newUser);
 
-    // **Generate JWT tokens**
-    const accessToken = jwt.sign(
-      { userId: newUser.user_id, email: newUser.email, userType: newUser.user_type },
-      process.env.JWT_SECRET,
-      { expiresIn: "15m" } // Access token expires in 15 minutes
-    );
+		// **Generate JWT tokens**
+		const accessToken = jwt.sign(
+			{
+				userId: newUser.user_id,
+				email: newUser.email,
+				userType: newUser.user_type,
+			},
+			process.env.JWT_SECRET,
+			{ expiresIn: "15m" } // Access token expires in 15 minutes
+		);
 
-    const refreshToken = jwt.sign(
-      { userId: newUser.user_id },
-      process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "7d" } // Refresh token expires in 7 days
-    );
+		const refreshToken = jwt.sign(
+			{ userId: newUser.user_id },
+			process.env.JWT_REFRESH_SECRET,
+			{ expiresIn: "7d" } // Refresh token expires in 7 days
+		);
 
-    // Store refresh token in memory (replace with database storage in production)
-    refreshTokens.add(refreshToken);
+		// Store refresh token in memory (replace with database storage in production)
+		refreshTokens.add(refreshToken);
 
-    // **Send refresh token as HTTP-only cookie**
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: true, // Use `true` in production (requires HTTPS)
-      sameSite: "Strict",
-    });
+		// **Send refresh token as HTTP-only cookie**
+		res.cookie("refreshToken", refreshToken, {
+			httpOnly: true,
+			secure: true, // Use `true` in production (requires HTTPS)
+			sameSite: "Strict",
+		});
 
-    // **Return tokens to frontend**
-    res.status(201).json({
-      message: "User registered successfully!",
-      accessToken,
-      refreshToken,
-      user: {
-        id: newUser.user_id,
-        name: `${newUser.first_name} ${newUser.last_name}`,
-        email: newUser.email,
-      },
-    });
-
-  } catch (err) {
-    console.error("❌ Error creating user:", err);
-    res.status(500).json({ error: "Server error" });
-  }
+		// **Return tokens to frontend**
+		res.status(201).json({
+			message: "User registered successfully!",
+			accessToken,
+			refreshToken,
+			user: {
+				id: newUser.user_id,
+				name: `${newUser.first_name} ${newUser.last_name}`,
+				email: newUser.email,
+			},
+		});
+	} catch (err) {
+		console.error("❌ Error creating user:", err);
+		res.status(500).json({ error: "Server error" });
+	}
 };
 
+const updateUserPreferences = async (req, res) => {
+	try {
+	  const { userId, preferences } = req.body;
+  
+	  if (!userId || !preferences || preferences.length < 1 || preferences.length > 5) {
+		return res.status(400).json({ error: "User ID and 1-5 preferences are required." });
+	  }
+  
+	  await sequelize.query(
+		`UPDATE client SET preferences = :preferences WHERE user_id = :userId`,
+		{
+		  replacements: { userId, preferences: JSON.stringify(preferences) },
+		  type: QueryTypes.UPDATE,
+		}
+	  );
+  
+	  res.status(200).json({ message: "Preferences updated successfully." });
+	} catch (error) {
+	  console.error("❌ Error updating preferences:", error);
+	  res.status(500).json({ error: "Server error." });
+	}
+  };
+  
 
 // Function to distribute user into correct table
 const distributeUser = async (user) => {
@@ -219,61 +271,67 @@ const updateUser = async (req, res) => {
 
 // Delete user from every table.
 const deleteUser = async (req, res) => {
-  const { id } = req.params;
+	const { id } = req.params;
 
-  if (!id) {
-    console.log("❌ Error: No user ID provided");
-    return res.status(400).json({ success: false, error: "User ID is required." });
-  }
+	if (!id) {
+		console.log("❌ Error: No user ID provided");
+		return res
+			.status(400)
+			.json({ success: false, error: "User ID is required." });
+	}
 
-  console.log(`🗑 Attempting to delete user with ID: ${id}`);
+	console.log(`🗑 Attempting to delete user with ID: ${id}`);
 
-  const transaction = await sequelize.transaction(); // ✅ Start transaction
+	const transaction = await sequelize.transaction(); // ✅ Start transaction
 
-  try {
-    // ✅ Check if the user exists
-    const user = await User.findOne({ where: { user_id: id } });
-    if (!user) {
-      console.log(`❌ Error: User ID ${id} not found`);
-      return res.status(404).json({ success: false, error: "User not found." });
-    }
+	try {
+		// ✅ Check if the user exists
+		const user = await User.findOne({ where: { user_id: id } });
+		if (!user) {
+			console.log(`❌ Error: User ID ${id} not found`);
+			return res.status(404).json({ success: false, error: "User not found." });
+		}
 
-    // ✅ Delete user from all related tables first
-    await sequelize.query(`DELETE FROM provider WHERE user_id = :id`, {
-      replacements: { id },
-      type: QueryTypes.DELETE,
-      transaction,
-    });
+		// ✅ Delete user from all related tables first
+		await sequelize.query(`DELETE FROM provider WHERE user_id = :id`, {
+			replacements: { id },
+			type: QueryTypes.DELETE,
+			transaction,
+		});
 
-    await sequelize.query(`DELETE FROM administrator WHERE user_id = :id`, {
-      replacements: { id },
-      type: QueryTypes.DELETE,
-      transaction,
-    });
+		await sequelize.query(`DELETE FROM administrator WHERE user_id = :id`, {
+			replacements: { id },
+			type: QueryTypes.DELETE,
+			transaction,
+		});
 
-    await sequelize.query(`DELETE FROM client WHERE user_id = :id`, {
-      replacements: { id },
-      type: QueryTypes.DELETE,
-      transaction,
-    });
+		await sequelize.query(`DELETE FROM client WHERE user_id = :id`, {
+			replacements: { id },
+			type: QueryTypes.DELETE,
+			transaction,
+		});
 
-    console.log(`✅ Deleted related records for user ${id} from client, provider, administrator.`);
+		console.log(
+			`✅ Deleted related records for user ${id} from client, provider, administrator.`
+		);
 
-    // ✅ Finally, delete user from "USER" table
-    await User.destroy({ where: { user_id: id }, transaction });
+		// ✅ Finally, delete user from "USER" table
+		await User.destroy({ where: { user_id: id }, transaction });
 
-    console.log(`✅ User ${id} deleted successfully.`);
-    
-    await transaction.commit(); // ✅ Commit transaction
-    return res.status(200).json({
-      success: true,
-      message: `User ${id} deleted successfully from all tables.`,
-    });
-  } catch (err) {
-    console.error("❌ Error deleting user:", err);
-    await transaction.rollback(); // ❌ Rollback transaction on error
-    return res.status(500).json({ success: false, error: "Failed to delete user." });
-  }
+		console.log(`✅ User ${id} deleted successfully.`);
+
+		await transaction.commit(); // ✅ Commit transaction
+		return res.status(200).json({
+			success: true,
+			message: `User ${id} deleted successfully from all tables.`,
+		});
+	} catch (err) {
+		console.error("❌ Error deleting user:", err);
+		await transaction.rollback(); // ❌ Rollback transaction on error
+		return res
+			.status(500)
+			.json({ success: false, error: "Failed to delete user." });
+	}
 };
 
 const loginUser = async (req, res) => {
@@ -293,15 +351,10 @@ const loginUser = async (req, res) => {
 			return res.status(401).json({ error: "Invalid password" });
 		}
 
-		// Compare passwords as plain text
-		// if (password !== user.password_hash) {
-		//   return res.status(401).json({ message: "Invalid password" });
-		// }
-		// Create JWT token
 		const accessToken = jwt.sign(
-			{ userId: user.user_id, email: user.email, userType: user.user_type },
+			{ userId: user.user_id }, // ✅ userId should be included!
 			process.env.JWT_SECRET,
-			{ expiresIn: "15m" } // Token expires in 1 hour
+			{ expiresIn: "15m" } // Access Token Expires in 15 minutes
 		);
 
 		const refreshToken = jwt.sign(
@@ -364,6 +417,7 @@ module.exports = {
 	getAllUsers,
 	getUserById,
 	createUser,
+	updateUserPreferences,
 	updateUser,
 	deleteUser,
 	loginUser,

@@ -1,10 +1,11 @@
+import 'package:adventura/Services/otp_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:ui';
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/colors.dart';
 import '../login/login.dart';
-import 'package:adventura/Services/api_service.dart';
+import 'package:adventura/Services/auth_service.dart';
 import 'package:adventura/OTP/OTPVerification.dart';
 
 class SignUpPage extends StatefulWidget {
@@ -88,7 +89,7 @@ class _SignUpPageState extends State<SignUpPage> {
     try {
       print("🔍 Sending OTP request for email: $email");
 
-      final response = await ApiService.sendOtp(email, isForSignup: true);
+      final response = await OtpService.sendOtp(email, isForSignup: true);
 
       if (response["success"] == true) {
         print(

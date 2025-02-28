@@ -1,9 +1,13 @@
-import 'package:adventura/login/login.dart';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:adventura/Services/api_service.dart';
 import 'package:provider/provider.dart';
-import 'dart:convert';
+import 'package:adventura/login/login.dart';
+import 'package:adventura/Services/profile_service.dart';
+import 'package:adventura/Services/user_service.dart';
+import 'package:adventura/Services/storage_service.dart';
 import 'dart:typed_data';
+import 'dart:convert';
 
 class UserInfo extends StatefulWidget {
   @override
@@ -11,13 +15,26 @@ class UserInfo extends StatefulWidget {
 }
 
 class _UserInfoState extends State<UserInfo> {
-  late ApiService apiService;
+  late String userId;
+  late String firstName;
+  late String lastName;
+  late String profilePicture;
+  bool isLoading = true;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    apiService = Provider.of<ApiService>(context, listen: false);
-    apiService.getUserId();
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  // ✅ Load user data from storage and fetch profile picture
+  Future<void> _loadUserData() async {
+    userId = await StorageService.getUserId();
+    firstName = await StorageService.getFirstName();
+    lastName = await StorageService.getLastName();
+    profilePicture = await ProfileService.fetchProfilePicture(userId);
+
+    setState(() => isLoading = false);
   }
 
   @override
@@ -38,7 +55,6 @@ class _UserInfoState extends State<UserInfo> {
           color: Colors.white,
           child: Row(
             children: [
-              // ✅ Back Arrow
               IconButton(
                 icon: Icon(Icons.arrow_back, color: Colors.black),
                 onPressed: () => Navigator.pop(context),
@@ -60,148 +76,128 @@ class _UserInfoState extends State<UserInfo> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            SizedBox(height: screenHeight * 0.02),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  SizedBox(height: screenHeight * 0.02),
 
-            // ✅ Profile Picture Section
-            Consumer<ApiService>(
-              builder: (context, apiService, child) {
-                return GestureDetector(
-                  onTap: () async {
-                    String userId =
-                        apiService.userId ?? ""; // ✅ Get logged-in user ID
-                    if (userId.isNotEmpty) {
-                      await apiService.pickImage(context, userId);
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text("❌ User ID is missing!"),
-                            backgroundColor: Colors.red),
-                      );
-                    }
-                  },
-                  child: Stack(
-                    alignment: Alignment.bottomRight,
-                    children: [
-                      Container(
-                        width: screenHeight * 0.13,
-                        height: screenHeight * 0.13,
-                        decoration: BoxDecoration(shape: BoxShape.circle),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(
-                              50), // ✅ Ensure circular shape
-                          child: _buildProfileImage(apiService),
+                  // ✅ Profile Picture Section
+                  GestureDetector(
+                    onTap: () async {
+                      // Pick and upload new profile picture
+                      File? selectedImage = await ProfileService.pickImage();
+                      if (selectedImage != null) {
+                        await ProfileService.uploadProfilePicture(
+                            context, userId, selectedImage);
+                        _loadUserData(); // Reload after updating
+                      }
+                    },
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        Container(
+                          width: screenHeight * 0.13,
+                          height: screenHeight * 0.13,
+                          decoration: BoxDecoration(shape: BoxShape.circle),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(50),
+                            child: _buildProfileImage(),
+                          ),
                         ),
-                      ),
-                      // ✅ Camera Icon with Black Border
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.black, width: 2),
+                        // ✅ Camera Icon with Border
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.black, width: 2),
+                          ),
+                          child: CircleAvatar(
+                            backgroundColor: Colors.white,
+                            radius: 18,
+                            child: Icon(Icons.camera_alt, color: Colors.black),
+                          ),
                         ),
-                        child: CircleAvatar(
-                          backgroundColor: Colors.white,
-                          radius: 18,
-                          child: Icon(Icons.camera_alt, color: Colors.black),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                );
-              },
-            ),
 
-            SizedBox(height: 8),
+                  SizedBox(height: 8),
 
-            // ✅ Display User Name
-            Consumer<ApiService>(
-              builder: (context, apiService, child) {
-                return Text(
-                  "${apiService.firstName} ${apiService.lastName}", // ✅ Show full name
-                  style: TextStyle(
-                    fontSize: screenHeight * 0.025,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                    fontFamily: "Poppins",
+                  // ✅ Display User Name
+                  Text(
+                    "$firstName $lastName",
+                    style: TextStyle(
+                      fontSize: screenHeight * 0.025,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                      fontFamily: "Poppins",
+                    ),
                   ),
-                );
-              },
+
+                  SizedBox(height: screenHeight * 0.02),
+
+                  // ✅ Grey Divider
+                  Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+                    child: Divider(thickness: 1, color: Colors.grey[300]),
+                  ),
+
+                  // ✅ Profile Options
+                  _profileOption(Icons.bookmark_border, "My Bookings"),
+                  _profileOption(Icons.credit_card, "My Cards"),
+                  _profileOption(Icons.settings, "Settings"),
+                  _profileOption(Icons.lock, "Privacy Policy"),
+                  _profileOption(Icons.description, "Terms & Conditions"),
+
+                  SizedBox(height: screenHeight * 0.02),
+
+                  // ✅ Logout & Delete Account Buttons
+                  _logoutOption(context),
+                  _deleteAccountOption(context),
+                ],
+              ),
             ),
-
-            SizedBox(height: screenHeight * 0.02),
-
-            // ✅ Grey Divider
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
-              child: Divider(thickness: 1, color: Colors.grey[300]),
-            ),
-
-            // ✅ Profile Options
-            _profileOption(Icons.bookmark_border, "My Bookings", context),
-            _profileOption(Icons.credit_card, "My Cards", context),
-            _profileOption(Icons.settings, "Settings", context),
-            _profileOption(Icons.lock, "Privacy Policy", context),
-            _profileOption(Icons.description, "Terms & Conditions", context),
-
-            SizedBox(height: screenHeight * 0.02),
-
-            // ✅ Logout & Delete Account Buttons
-            _logoutOption(context, screenHeight),
-            _deleteAccountOption(context, screenHeight),
-          ],
-        ),
-      ),
     );
   }
 
-  Widget _buildProfileImage(ApiService apiService) {
-    if (apiService.selectedImage != null) {
-      return Image.file(apiService.selectedImage!, fit: BoxFit.cover);
-    } else if (apiService.profileImageUrl != null &&
-        apiService.profileImageUrl!.isNotEmpty) {
-      // ✅ Check if the response contains Base64 data
-      if (apiService.profileImageUrl!.startsWith("data:image")) {
+  // ✅ Profile Picture Handling
+  Widget _buildProfileImage() {
+    if (profilePicture.isNotEmpty) {
+      if (profilePicture.startsWith("data:image")) {
         try {
-          String base64String = apiService.profileImageUrl!
-              .split(",")[1]; // ✅ Extract base64 part
-          Uint8List imageBytes =
-              base64Decode(base64String); // ✅ Convert to bytes
+          String base64String = profilePicture.split(",")[1];
+          Uint8List imageBytes = base64Decode(base64String);
 
           return Image.memory(
             imageBytes,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
-              print("❌ Image Load Error: $error");
-              return Image.asset("assets/images/default_user.png",
-                  fit: BoxFit.cover);
+              return _defaultProfileImage();
             },
           );
         } catch (e) {
-          print("❌ Error decoding Base64 image: $e");
-          return Image.asset("assets/images/default_user.png",
-              fit: BoxFit.cover);
+          return _defaultProfileImage();
         }
       }
-
-      // ✅ Otherwise, it's a normal URL
       return Image.network(
-        apiService.profileImageUrl!,
+        profilePicture,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
-          print("❌ Image Load Error: $error");
-          return Image.asset("assets/images/default_user.png",
-              fit: BoxFit.cover);
+          return _defaultProfileImage();
         },
       );
-    } else {
-      return Image.asset("assets/images/default_user.png", fit: BoxFit.cover);
     }
+    return _defaultProfileImage();
+  }
+
+  Widget _defaultProfileImage() {
+    return Image.asset("assets/images/default_user.png", fit: BoxFit.cover);
   }
 
   // ✅ Profile Option Tile
-  Widget _profileOption(IconData icon, String title, BuildContext context) {
+  Widget _profileOption(IconData icon, String title) {
     return ListTile(
       leading: Icon(icon, color: Colors.black87),
       title: Text(
@@ -215,7 +211,7 @@ class _UserInfoState extends State<UserInfo> {
   }
 
   // ✅ Logout Button
-  Widget _logoutOption(BuildContext context, double screenHeight) {
+  Widget _logoutOption(BuildContext context) {
     return ListTile(
       leading: Icon(Icons.logout, color: Colors.red),
       title: Text(
@@ -224,13 +220,13 @@ class _UserInfoState extends State<UserInfo> {
             TextStyle(fontSize: 16, color: Colors.red, fontFamily: "Poppins"),
       ),
       onTap: () async {
-        await ApiService.logout(context);
+        await StorageService.logout(context);
       },
     );
   }
 
   // ✅ Delete Account Button
-  Widget _deleteAccountOption(BuildContext context, double screenHeight) {
+  Widget _deleteAccountOption(BuildContext context) {
     return ListTile(
       leading: Icon(Icons.delete_forever, color: Colors.red),
       title: Text(
@@ -258,11 +254,7 @@ class _UserInfoState extends State<UserInfo> {
             ),
             TextButton(
               onPressed: () async {
-                final apiService =
-                    Provider.of<ApiService>(context, listen: false);
-                bool success = await apiService
-                    .deleteUser(context); // ✅ No argument needed now
-
+                bool success = await UserService.deleteUser();
                 if (success) {
                   Navigator.pushReplacement(context,
                       MaterialPageRoute(builder: (context) => LoginPage()));

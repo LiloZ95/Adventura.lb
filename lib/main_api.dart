@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/login/login.dart';
 import 'package:flutter/material.dart';
@@ -7,10 +6,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:adventura/intro/intro.dart';
-import 'package:adventura/Services/api_service.dart';
 
 class MainApi extends ChangeNotifier {
-  static const String baseUrl = 'http://192.168.2.193:3000';
+  static const String baseUrl = 'http://localhost:3000';
   final FlutterSecureStorage storage = FlutterSecureStorage();
   Widget _initialScreen =
       Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -29,25 +27,34 @@ class MainApi extends ChangeNotifier {
   Future<void> checkFirstTimeUser() async {
     final prefs = await SharedPreferences.getInstance();
     bool isFirstTime = prefs.getBool("isFirstTime") ?? true;
+    bool isLoggedIn = prefs.getBool("isLoggedIn") ?? false;
 
-    if (isFirstTime) {
+    if (isLoggedIn) {
+      print("🔍 User is already logged in! Checking token...");
+      await checkLoginStatus();
+    } else if (isFirstTime) {
       print("🎉 First time launching the app! Showing onboarding.");
       await prefs.setBool("isFirstTime", false);
       _initialScreen = DynamicOnboarding();
     } else {
-      print("🔍 Checking login status...");
-      await checkLoginStatus(); // ✅ Call checkLoginStatus()
+      print("🔍 User is NOT logged in. Redirecting to Login.");
+      _initialScreen = LoginPage();
     }
 
-    notifyListeners(); // ✅ Notify UI to update
+    notifyListeners();
   }
 
-  static Future<bool> validateAccessToken(String token) async {
+  Future<bool> validateAccessToken(String token) async {
+    print("🔍 Sending token validation request...");
+
     try {
+      final accessToken = await storage.read(key: "accessToken");
       final response = await http.get(
-        Uri.parse("$baseUrl/users/validate-token"),
-        headers: {"Authorization": "Bearer $token"},
+        Uri.parse('$baseUrl/users/validate-token'),
+        headers: {"Authorization": "Bearer $accessToken"},
       );
+
+      print("🔍 Server response: ${response.statusCode} - ${response.body}");
 
       if (response.statusCode == 200) {
         print("✅ Token is still valid.");
@@ -63,31 +70,34 @@ class MainApi extends ChangeNotifier {
   }
 
   Future<void> checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
     String? accessToken = await storage.read(key: "accessToken");
-    String? userId = await storage.read(key: "userId");
+    String? refreshToken = await storage.read(key: "refreshToken");
+    bool isLoggedIn = prefs.getBool("isLoggedIn") ?? false;
 
-    if (accessToken != null && accessToken.isNotEmpty) {
+    print("🔍 Stored Access Token: $accessToken");
+    print("🔍 Stored Refresh Token: $refreshToken");
+
+    if (accessToken != null && accessToken.isNotEmpty && isLoggedIn) {
       bool isValid = await validateAccessToken(accessToken);
 
       if (isValid) {
-        if (userId == null || userId.isEmpty) {
-          print("❌ User ID is missing. Fetching from server...");
-          await fetchUserData(); // ✅ Fetch user data if missing
-        }
         print("✅ Token is valid! Redirecting to MainScreen.");
         _initialScreen = MainScreen();
       } else {
         print("❌ Token is invalid. Redirecting to Login.");
         await storage.delete(key: "accessToken");
         await storage.delete(key: "refreshToken");
+        await prefs.setBool("isLoggedIn", false);
         _initialScreen = LoginPage();
       }
     } else {
-      print("❌ No token found. Redirecting to Login.");
+      print("❌ No valid token found. Redirecting to Login.");
+      await prefs.setBool("isLoggedIn", false);
       _initialScreen = LoginPage();
     }
 
-    notifyListeners();
+    notifyListeners(); // ✅ Ensure UI updates after deciding the screen
   }
 
   Future<void> fetchUserData() async {

@@ -1,8 +1,10 @@
 // routes/userRoutes.js
 const express = require("express");
 const jwt = require("jsonwebtoken"); // ✅ Add this line
-const authenticateToken = require("../middleware/auth"); // Import JWT middleware
+const { authenticateToken } = require("../middleware/auth"); // Import JWT middleware
 require("dotenv").config();
+const { getUserById } = require("../controllers/userController");
+const { updateUserPreferences } = require("../controllers/userController");
 const userController = require("../controllers/userController"); // Direct import
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
@@ -62,32 +64,37 @@ router.post("/login", async (req, res) => {
 		const accessToken = jwt.sign(
 			{ userId: user.user_id },
 			process.env.JWT_SECRET,
-			{ expiresIn: "1h" }
+			{ expiresIn: "15m" }
 		);
 		const refreshToken = jwt.sign(
 			{ userId: user.user_id },
-			process.env.JWT_SECRET,
+			process.env.JWT_REFRESH_SECRET,
 			{ expiresIn: "30d" }
 		);
 
+		console.log("🔑 Generated Access Token:", accessToken);
+		console.log("🔑 Generated Refresh Token:", refreshToken);
+
 		console.log(`✅ Login Successful: ${user.email}`);
 
-		res.status(200).json({
+		return res.status(200).json({
 			success: true,
-			user: {
-				user_id: user.user_id,
-				name: user.first_name + " " + user.last_name,
-				email: user.email,
-				profilePicture: user.profile_picture || "", // ✅ Include profile picture URL
-			},
+			message: "Login successful",
 			accessToken,
 			refreshToken,
+			user: {
+				user_id: user.user_id,
+				first_name: user.first_name,
+				last_name: user.last_name,
+				email: user.email,
+				profilePicture: user.profilePicture || "",
+			},
 		});
 	} catch (error) {
-		console.error("❌ Login Error:", error);
-		res
+		console.error("❌ Error in login:", error);
+		return res
 			.status(500)
-			.json({ success: false, error: "Server error. Try again later." });
+			.json({ success: false, error: "Internal server error" });
 	}
 });
 
@@ -118,6 +125,42 @@ const transporter = nodemailer.createTransport({
 		user: process.env.EMAIL, // ✅ Your Zoho Email
 		pass: process.env.EMAIL_PASSWORD, // ✅ Your Zoho Application-Specific Password
 	},
+});
+
+router.post("/reset-password", async (req, res) => {
+	const { email, newPassword } = req.body;
+
+	console.log(`🔍 Reset Password Request for Email: ${email}`);
+
+	if (!newPassword) {
+		return res
+			.status(400)
+			.json({ success: false, error: "Missing new password." });
+	}
+
+	try {
+		// **Find user in the database**
+		const user = await User.findOne({ where: { email } });
+
+		if (!user) {
+			return res.status(404).json({ success: false, error: "User not found." });
+		}
+
+		// **Hash new password**
+		const hashedPassword = await bcrypt.hash(newPassword, 10);
+		await user.update({ password_hash: hashedPassword });
+
+		console.log(`✅ Password updated successfully for ${email}`);
+
+		return res
+			.status(200)
+			.json({ success: true, message: "Password reset successful!" });
+	} catch (error) {
+		console.error("❌ Error resetting password:", error);
+		return res
+			.status(500)
+			.json({ success: false, error: "Server error resetting password." });
+	}
 });
 
 router.post("/send-otp", async (req, res) => {
@@ -212,150 +255,168 @@ router.post("/resend-otp", async (req, res) => {
 });
 
 router.post("/verify-otp", async (req, res) => {
-  const {
-      email,
-      otp,
-      isForSignup,
-      firstName,
-      lastName,
-      phoneNumber,
-      password,
-  } = req.body;
+	const {
+		email,
+		otp,
+		isForSignup,
+		firstName,
+		lastName,
+		phoneNumber,
+		password,
+	} = req.body;
 
-  console.log(`🔍 OTP Verification Request - Email: ${email}, Entered OTP: ${otp}`);
+	console.log(
+		`🔍 OTP Verification Request - Email: ${email}, Entered OTP: ${otp}`
+	);
 
-  if (!otpStore[email]) {
-      console.log("❌ No OTP found for this email.");
-      return res.status(400).json({ error: "No OTP found for this email" });
-  }
+	if (!otpStore[email]) {
+		console.log("❌ No OTP found for this email.");
+		return res.status(400).json({ error: "No OTP found for this email" });
+	}
 
-  const { otp: storedOtp, expiresAt } = otpStore[email];
+	const { otp: storedOtp, expiresAt } = otpStore[email];
 
-  if (Date.now() > expiresAt) {
-      console.log("❌ OTP Expired.");
-      delete otpStore[email];
-      return res.status(400).json({ error: "OTP has expired. Please request a new one." });
-  }
+	if (Date.now() > expiresAt) {
+		console.log("❌ OTP Expired.");
+		delete otpStore[email];
+		return res
+			.status(400)
+			.json({ error: "OTP has expired. Please request a new one." });
+	}
 
-  if (storedOtp !== otp) {
-      console.log(`❌ Invalid OTP entered. Expected: ${storedOtp}, Received: ${otp}`);
-      return res.status(400).json({ error: "Invalid OTP" });
-  }
+	if (storedOtp !== otp) {
+		console.log(
+			`❌ Invalid OTP entered. Expected: ${storedOtp}, Received: ${otp}`
+		);
+		return res.status(400).json({ error: "Invalid OTP" });
+	}
 
-  console.log("✅ OTP Verified Successfully!");
-  delete otpStore[email]; 
+	console.log("✅ OTP Verified Successfully!");
+	delete otpStore[email];
 
-  let user;
+	let user;
 
-  if (isForSignup) {
-      if (!firstName || !lastName || !phoneNumber || !password) {
-          console.log("❌ Missing required signup fields.");
-          return res.status(400).json({ error: "All fields are required for signup." });
-      }
+	if (isForSignup) {
+		if (!firstName || !lastName || !phoneNumber || !password) {
+			console.log("❌ Missing required signup fields.");
+			return res
+				.status(400)
+				.json({ error: "All fields are required for signup." });
+		}
 
-      try {
-          user = await User.findOne({ where: { email } });
-          if (user) {
-              return res.status(400).json({ error: "User with this email already exists." });
-          }
+		try {
+			user = await User.findOne({ where: { email } });
+			if (user) {
+				return res
+					.status(400)
+					.json({ error: "User with this email already exists." });
+			}
 
-          const hashedPassword = await bcrypt.hash(password, 10);
+			const hashedPassword = await bcrypt.hash(password, 10);
 
-          user = await User.create({
-              first_name: firstName,
-              last_name: lastName,
-              email,
-              phone_number: phoneNumber,
-              password_hash: hashedPassword,
-              user_type: "client",
-          });
+			user = await User.create({
+				first_name: firstName,
+				last_name: lastName,
+				email,
+				phone_number: phoneNumber,
+				password_hash: hashedPassword,
+				user_type: "client",
+			});
 
-          console.log(`✅ User "${user.first_name} ${user.last_name}" created successfully!`);
-          
-          await distributeUsers(user);
+			console.log(
+				`✅ User "${user.first_name} ${user.last_name}" created successfully!`
+			);
 
-          user = await User.findOne({ where: { email } });
+			await distributeUsers(user);
 
-      } catch (err) {
-          console.error("❌ Error creating user:", err);
-          return res.status(500).json({ error: "User creation failed" });
-      }
-  } else {
-      user = await User.findOne({ where: { email } });
+			user = await User.findOne({ where: { email } });
+		} catch (err) {
+			console.error("❌ Error creating user:", err);
+			return res.status(500).json({ error: "User creation failed" });
+		}
+	} else {
+		user = await User.findOne({ where: { email } });
 
-      if (!user) {
-          return res.status(404).json({ error: "User not found." });
-      }
-  }
+		if (!user) {
+			return res.status(404).json({ error: "User not found." });
+		}
+	}
 
-  // ✅ Debugging: Log the user object before sending response
-  console.log("🔍 Final user object before response:", user);
+	// ✅ Debugging: Log the user object before sending response
+	console.log("🔍 Final user object before response:", user);
 
-  if (!user || !user.user_id) {
-      console.error("❌ User ID is missing in response!");
-      return res.status(500).json({ error: "User ID is missing." });
-  }
+	if (!user || !user.user_id) {
+		console.error("❌ User ID is missing in response!");
+		return res.status(500).json({ error: "User ID is missing." });
+	}
 
-  let profilePicture = "";
-  const userProfile = await UserPfp.findOne({ where: { user_id: user.user_id } });
+	let profilePicture = "";
+	const userProfile = await UserPfp.findOne({
+		where: { user_id: user.user_id },
+	});
 
-  if (userProfile && userProfile.image_data) {
-      profilePicture = `data:image/png;base64,${userProfile.image_data.toString("base64")}`;
-      console.log(`✅ Retrieved Profile Picture for User ID: ${user.user_id}`);
-  } else {
-      console.log(`❌ No profile picture found for User ID: ${user.user_id}`);
-  }
+	if (userProfile && userProfile.image_data) {
+		profilePicture = `data:image/png;base64,${userProfile.image_data.toString(
+			"base64"
+		)}`;
+		console.log(`✅ Retrieved Profile Picture for User ID: ${user.user_id}`);
+	} else {
+		console.log(`❌ No profile picture found for User ID: ${user.user_id}`);
+	}
 
-  const accessToken = jwt.sign(
-      { userId: user.user_id, email: user.email, userType: user.user_type },
-      process.env.JWT_SECRET,
-      { expiresIn: "15m" }
-  );
+	const accessToken = jwt.sign(
+		{ userId: user.user_id, email: user.email, userType: user.user_type },
+		process.env.JWT_SECRET,
+		{ expiresIn: "15m" }
+	);
 
-  const refreshToken = jwt.sign(
-      { userId: user.user_id },
-      process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "7d" }
-  );
+	const refreshToken = jwt.sign(
+		{ userId: user.user_id },
+		process.env.JWT_REFRESH_SECRET,
+		{ expiresIn: "7d" }
+	);
 
-  refreshTokens.add(refreshToken);
+	refreshTokens.add(refreshToken);
 
-  res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "Strict",
-  });
+	res.cookie("refreshToken", refreshToken, {
+		httpOnly: true,
+		secure: true,
+		sameSite: "Strict",
+	});
 
-  // ✅ Debugging: Log the full response before sending it
-  console.log("✅ Final API Response:", {
-      success: true,
-      message: isForSignup ? "User registered and logged in successfully!" : "OTP verified successfully!",
-      accessToken,
-      refreshToken,
-      user: {
-          user_id: user.user_id,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          email: user.email,
-          profilePicture: profilePicture,
-      },
-  });
+	// ✅ Debugging: Log the full response before sending it
+	console.log("✅ Final API Response:", {
+		success: true,
+		message: isForSignup
+			? "User registered and logged in successfully!"
+			: "OTP verified successfully!",
+		accessToken,
+		refreshToken,
+		user: {
+			user_id: user.user_id,
+			first_name: user.first_name,
+			last_name: user.last_name,
+			email: user.email,
+			profilePicture: profilePicture,
+		},
+	});
 
-  return res.status(200).json({
-      success: true,
-      message: isForSignup ? "User registered and logged in successfully!" : "OTP verified successfully!",
-      accessToken,
-      refreshToken,
-      user: {
-          user_id: user.user_id,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          email: user.email,
-          profilePicture: profilePicture,
-      },
-  });
+	return res.status(200).json({
+		success: true,
+		message: isForSignup
+			? "User registered and logged in successfully!"
+			: "OTP verified successfully!",
+		accessToken,
+		refreshToken,
+		user: {
+			user_id: user.user_id,
+			first_name: user.first_name,
+			last_name: user.last_name,
+			email: user.email,
+			profilePicture: profilePicture,
+		},
+	});
 });
-
 
 router.post("/refresh-token", userController.refreshAccessToken);
 
@@ -518,7 +579,12 @@ router.delete("/:id", async (req, res) => {
 });
 
 router.get("/validate-token", authenticateToken, (req, res) => {
-	return res.status(200).json({ message: "Token is valid" });
+	return res
+		.status(200)
+		.json({ message: "Token is valid", userId: req.user.userId });
 });
+
+router.get("/profile", authenticateToken, getUserById);
+router.post("/preferences", authenticateToken, updateUserPreferences);
 
 module.exports = router;

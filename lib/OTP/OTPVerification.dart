@@ -1,18 +1,12 @@
 import 'package:adventura/OTP/SetPassword.dart';
-import 'package:adventura/Services/api_service.dart';
-import 'package:adventura/favorite/userPreferences.dart';
+import 'package:adventura/Services/otp_service.dart';
+import 'package:adventura/userPreferences/userPreferences.dart';
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async'; // ✅ Import for Timer
 import 'dart:ui' as ui; // ✅ Use alias for dart:ui
-import '../login/login.dart';
-import 'package:adventura/signUp page/Signup.dart';
-import 'package:adventura/Main screen components/MainScreen.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String email;
@@ -85,7 +79,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
     print("🔍 Requesting OTP resend for: ${widget.email}");
 
-    final response = await ApiService.resendOtp(
+    final response = await OtpService.resendOtp(
       widget.email,
       isForSignup: widget.isForSignup,
     );
@@ -116,7 +110,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     print("Entered OTP: ${_otpController.text}");
     print("isForSignup: ${widget.isForSignup}");
 
-    final response = await ApiService.verifyOtp(
+    final response = await OtpService.verifyOtp(
       widget.email,
       _otpController.text,
       isForSignup: widget.isForSignup,

@@ -15,7 +15,8 @@ class SetPassword extends StatefulWidget {
 
 class _SetPasswordState extends State<SetPassword> {
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   bool _isLoading = false;
   String _errorMessage = "";
 
@@ -30,7 +31,8 @@ class _SetPasswordState extends State<SetPassword> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.2.193:3000/users/reset-password'), // Adjust for emulator
+        Uri.parse(
+            'http://192.168.1.52:3000/users/reset-password'), // Adjust for emulator
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': widget.email,
@@ -38,9 +40,15 @@ class _SetPasswordState extends State<SetPassword> {
         }),
       );
 
+      print("🔍 API Response Code: ${response.statusCode}");
+      print("🔍 API Response Body: ${response.body}");
+
       setState(() => _isLoading = false);
 
-      if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && responseData["success"] == true) {
+        print("✅ Password Reset Successful!");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Password reset successful!")),
         );
@@ -49,9 +57,12 @@ class _SetPasswordState extends State<SetPassword> {
           MaterialPageRoute(builder: (context) => LoginPage()),
         );
       } else {
-        setState(() => _errorMessage = "Failed to reset password. Try again.");
+        print("❌ Password Reset Failed: ${responseData["error"]}");
+        setState(() => _errorMessage =
+            responseData["error"] ?? "Failed to reset password. Try again.");
       }
     } catch (e) {
+      print("❌ Error Resetting Password: $e");
       setState(() {
         _isLoading = false;
         _errorMessage = "Server error. Please try again.";
