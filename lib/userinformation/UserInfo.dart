@@ -57,6 +57,7 @@ class _UserInfoState extends State<UserInfo> {
           color: Colors.white,
           child: Row(
             children: [
+              // ✅ Back Arrow
               IconButton(
                 icon: Icon(Icons.arrow_back, color: Colors.black),
                 onPressed: () => Navigator.pop(context),
@@ -137,133 +138,21 @@ class _UserInfoState extends State<UserInfo> {
                     ),
                   ),
 
-            SizedBox(height: screenHeight * 0.01),
-            // ✅ Personal Account Text
-            Text(
-              "Personal Account",
-              style: TextStyle(
-                fontSize: screenHeight * 0.018,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[700],
-                fontFamily: "Poppins",
-              ),
-            ),
             SizedBox(height: screenHeight * 0.02),
 
-            // ✅ Dotted-Border Button
-            buildBusinessAccountButton(
-              screenWidth: screenWidth,
-              onPressed: () {
-                print("Open Business Account Tapped");
-              },
-            ),
-
-            SizedBox(height: screenHeight * 0.02),
+            // ✅ Grey Divider
             Padding(
-              padding: EdgeInsets.only(
-                left: screenWidth * 0.05,
-                top: screenHeight * 0.02,
-              ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Account",
-                  style: TextStyle(
-                    fontSize: screenHeight * 0.025,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                    fontFamily: "Poppins",
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: screenHeight * 0.01),
-
-            // inbox option
-            ProfileOptionTile(
-              icon: Icons.inbox,
-              title: "Inbox",
-              onTap: () {
-                // handle tap
-              },
-            ),
-            //help option
-            ProfileOptionTile(
-              icon: Icons.help,
-              title: "Help",
-              onTap: () {
-                // handle tap
-              },
-            ),
-            //statement and reports option
-            ProfileOptionTile(
-              icon: Icons.report,
-              title: "Security & Privacy",
-              onTap: () {
-                // handle tap
-              },
+              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+              child: Divider(thickness: 1, color: Colors.grey[300]),
             ),
 
-            SizedBox(height: screenHeight * 0.01),
+            // ✅ Profile Options
+            _profileOption(Icons.bookmark_border, "My Bookings", context),
+            _profileOption(Icons.credit_card, "My Cards", context),
+            _profileOption(Icons.settings, "Settings", context),
+            _profileOption(Icons.lock, "Privacy Policy", context),
+            _profileOption(Icons.description, "Terms & Conditions", context),
 
-            Padding(
-              padding: EdgeInsets.only(
-                left: screenWidth * 0.05,
-                top: screenHeight * 0.02,
-              ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Settings",
-                  style: TextStyle(
-                    fontSize: screenHeight * 0.025,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                    fontFamily: "Poppins",
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: screenHeight * 0.02),
-            //pivacy and security option
-            ProfileOptionTile(
-              icon: Icons.security,
-              title: "Security & Privacy",
-              subtitle: "Change your security and privacy settings",
-              onTap: () {
-                // handle tap
-              },
-            ),
-            //payment methods option
-            ProfileOptionTile(
-              icon: Icons.payment,
-              title: "Payment Methods",
-              subtitle:
-                  "Manage saved cards and bank accounts that are linked to this account",
-              onTap: () {
-                // handle tap
-              },
-            ),
-
-            //appearance options
-            ProfileOptionTile(
-              icon: Icons.dark_mode,
-              title: "Appearance",
-              subtitle: "Light",
-              onTap: () {
-                // handle tap
-              },
-            ),
-
-            //personal details option
-            ProfileOptionTile(
-              icon: Icons.person,
-              title: "Personal Details",
-              subtitle: "Update your personal informatin",
-              onTap: () {
-                // handle tap
-              },
-            ),
             SizedBox(height: screenHeight * 0.02),
 
             Padding(
@@ -423,9 +312,9 @@ Widget buildBusinessAccountButton({
           ],
         ),
       ),
-    ),
-  );
-}
+      ),
+    );
+  }
 
   // ✅ Profile Picture Handling
   Widget _buildProfileImage() {
@@ -461,19 +350,19 @@ Widget buildBusinessAccountButton({
     return Image.asset("assets/images/default_user.png", fit: BoxFit.cover);
   }
 
-// ✅ Original _profileOption (3 parameters)
-Widget _profileOption(IconData icon, String title, BuildContext context) {
-  return ListTile(
-    leading: Icon(icon, color: Colors.black87),
-    title: Text(
-      title,
-      style:
-          TextStyle(fontSize: 16, color: Colors.black, fontFamily: "Poppins"),
-    ),
-    trailing: Icon(Icons.arrow_forward_ios, color: Colors.black),
-    onTap: () {},
-  );
-}
+  // ✅ Profile Option Tile
+  Widget _profileOption(IconData icon, String title, BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.black87),
+      title: Text(
+        title,
+        style:
+            TextStyle(fontSize: 16, color: Colors.black, fontFamily: "Poppins"),
+      ),
+      trailing: Icon(Icons.arrow_forward_ios, color: Colors.black),
+      onTap: () {},
+    );
+  }
 
 // ✅ OPTIONAL: The new function with subtitles, renamed to avoid conflicts
 //    Use this if you want a bold title + grey subtitle. No lines removed, just placed at the end.
