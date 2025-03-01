@@ -116,7 +116,7 @@ class _UserInfoState extends State<UserInfo> {
                           ),
                           child: CircleAvatar(
                             backgroundColor: Colors.white,
-                            radius: 18,
+                            radius: 25,
                             child: Icon(Icons.camera_alt, color: Colors.black),
                           ),
                         ),
@@ -316,7 +316,7 @@ class _UserInfoState extends State<UserInfo> {
               title: "Close Account",
               subtitle: "Close your personal account",
               onTap: () {
-                // handle tap
+                _deleteAccountOption(context);
               },
             ),
             //logout
@@ -325,6 +325,7 @@ class _UserInfoState extends State<UserInfo> {
               title: "Logout",
               onTap: () {
                 // handle tap
+                 _logoutOption(context);
               },
             ),
             //membership section
@@ -462,18 +463,18 @@ Widget buildBusinessAccountButton({
   }
 
 // ✅ Original _profileOption (3 parameters)
-Widget _profileOption(IconData icon, String title, BuildContext context) {
-  return ListTile(
-    leading: Icon(icon, color: Colors.black87),
-    title: Text(
-      title,
-      style:
-          TextStyle(fontSize: 16, color: Colors.black, fontFamily: "Poppins"),
-    ),
-    trailing: Icon(Icons.arrow_forward_ios, color: Colors.black),
-    onTap: () {},
-  );
-}
+// Widget _profileOption(IconData icon, String title, BuildContext context) {
+//   return ListTile(
+//     leading: Icon(icon, color: Colors.black87),
+//     title: Text(
+//       title,
+//       style:
+//           TextStyle(fontSize: 16, color: Colors.black, fontFamily: "Poppins"),
+//     ),
+//     trailing: Icon(Icons.arrow_forward_ios, color: Colors.black),
+//     onTap: () {},
+//   );
+// }
 
 // ✅ OPTIONAL: The new function with subtitles, renamed to avoid conflicts
 //    Use this if you want a bold title + grey subtitle. No lines removed, just placed at the end.
