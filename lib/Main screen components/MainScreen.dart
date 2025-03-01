@@ -1,13 +1,10 @@
 import 'dart:ui';
 import 'package:adventura/Booking/MyBooking.dart';
-import 'package:adventura/intro/intro.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:adventura/login/login.dart';
 import 'package:adventura/Main%20screen%20components/Cards.dart';
 import 'package:adventura/colors.dart';
 import 'package:adventura/search%20screen/searchScreen.dart';
 import 'package:flutter/material.dart';
-import 'package:adventura/Services/api_service.dart';
 import 'package:adventura/userinformation/UserInfo.dart';
 import 'package:adventura/Notification/NotificationPage.dart';
 
@@ -18,7 +15,6 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int currentIndex = 0;
-  final ApiService authService = ApiService(); // Instance of auth service
   final FlutterSecureStorage storage = FlutterSecureStorage();
 
   @override

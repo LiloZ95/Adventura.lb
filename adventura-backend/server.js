@@ -1,54 +1,58 @@
+require("dotenv").config(); // ✅ Load environment variables at the top
+
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const bodyParser = require("body-parser");
-const dotenv = require("dotenv");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const User = require("./models/User.js"); // User model
-const sequelize = require("./db/db.js"); // Import Sequelize instance
+const { connectDB, sequelize } = require("./db/db.js"); // Import Sequelize instance
 const userRoutes = require("./routes/userRoutes"); // Import user routes
-const { QueryTypes } = require("sequelize");
-
-
-dotenv.config();
-
+const recommendationRoutes = require("./routes/recommendationRoutes");
+const { authenticateToken } = require("./middleware/auth.js");
+const { getUserById } = require("./controllers/userController");
 
 const app = express();
-app.use(bodyParser.json());
 
+// ✅ Middleware
+app.use(bodyParser.json());
 app.use(cors());
 app.use(helmet());
 app.use(express.json());
 
-// JWT Authentication Middleware
-function verifyToken(req, res, next) {
-  const token = req.headers["authorization"];
-
-  if (!token) {
-    return res.status(403).json({ message: "No token provided." });
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ message: "Unauthorized" });
+// ✅ Ensure database connection before setting up routes
+connectDB().then(async () => {
+    try {
+        await sequelize.sync(); // ✅ Sync models
+        console.log("✅ Database connected & models synced.");
+    } catch (err) {
+        console.error("❌ Error syncing database:", err);
+        process.exit(1); // Exit if DB sync fails
     }
-    req.userId = decoded.id; // Store user ID in request object
-    next(); // Proceed to the next middleware or route
-  });
-}
+});
 
-// // Routes
+// ✅ Register Routes
 app.use("/users", userRoutes);
+app.use("/recommendations", recommendationRoutes);
+app.get("/users/profile", authenticateToken, getUserById); // ✅ Correct authentication usage
 
-// ✅ Ensure userRoutes.js is correctly registered
-// app.use("/", userRoutes);
+// ✅ Global Error Handling Middleware (Prevents Crashes)
+app.use((err, req, res, next) => {
+    console.error("❌ Server Error:", err);
+    res.status(500).json({ error: "Internal server error" });
+});
 
-// Start the server after database connection
-sequelize
-  .authenticate()
-  .then(() => {
-    console.log("✅ Connected to PostgreSQL using Sequelize!");
-    app.listen(3000, () => console.log("🚀 Server running on port 3000"));
-  })
-  .catch((err) => console.error("❌ Database connection error:", err));
+// ✅ Start Server
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || "0.0.0.0"; // ✅ Use ENV for flexibility
+
+app.listen(PORT, HOST, async () => {
+    console.log(`🚀 Server running on http://${HOST}:${PORT}`);
+});
+
+// ✅ Handle Unexpected Errors
+process.on("uncaughtException", (err) => {
+    console.error("❌ Uncaught Exception:", err);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+    console.error("❌ Unhandled Promise Rejection:", reason);
+});

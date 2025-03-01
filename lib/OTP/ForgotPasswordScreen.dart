@@ -1,6 +1,6 @@
+import 'package:adventura/Services/otp_service.dart';
 import 'package:adventura/colors.dart';
 import 'package:flutter/material.dart';
-import 'package:adventura/Services/api_service.dart';
 import 'package:adventura/OTP/OTPVerification.dart';
 import '../login/login.dart'; // ✅ Import LoginPage
 import 'dart:ui' as ui; // For ImageFilter
@@ -25,7 +25,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     try {
       print("🔍 Sending OTP request to: ${_emailController.text}");
 
-      final response = await ApiService.sendOtp(_emailController.text, isForSignup: false); // Get response
+      final response = await OtpService.sendOtp(_emailController.text,
+          isForSignup: false); // Get response
 
       print("🔍 API Response: $response");
 
@@ -47,6 +48,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         setState(() {
           _errorMessage = response["error"] ?? "Failed to send OTP. Try again.";
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  "Failed to send OTP: ${response["error"] ?? "Unknown error"}")),
+        );
       }
     } catch (e) {
       setState(() {
@@ -150,7 +156,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         ),
                         decoration: InputDecoration(
                           hintText: "Enter Your Email Here",
-                        
+
                           hintStyle: TextStyle(color: Color(0xFF8E8E8E)),
                           // ✅ No background
                           filled: false,

@@ -1,22 +1,34 @@
 const jwt = require("jsonwebtoken");
+require("dotenv").config();
 
-const authenticateToken = (req, res, next) => {
-  const token = req.header("Authorization")?.split(" ")[1];
+function authenticateToken(req, res, next) {
+	const authHeader = req.headers["authorization"];
+	const token = authHeader && authHeader.split(" ")[1];
 
-  console.log("Received Token:", token); // DEBUG: See if token is received
+	if (!token) {
+		console.error("❌ No token found in request headers.");
+		return res.status(401).json({ error: "Access token missing" });
+	}
 
-  if (!token) {
-    return res.status(401).json({ error: "Access denied. No token provided." });
-  }
+	console.log("🔍 Received Token:", token);
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    console.error("JWT Verification Failed:", err); // Debug JWT errors
-    res.status(403).json({ error: "Invalid token" });
-  }
-};
+	jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+		if (err) {
+			console.error("❌ Token verification failed:", err.message);
+			return res.status(403).json({ error: "Invalid token" });
+		}
 
-module.exports = authenticateToken;
+		console.log("✅ Decoded User:", user);
+
+		if (!user.userId) {
+			console.error("❌ Token payload does not contain userId:", user);
+			return res.status(400).json({ error: "Invalid token payload" });
+		}
+
+		req.user = user; // ✅ Attach the userId to `req.user`
+		console.log("🔹 User attached to request:", req.user);
+		next();
+	});
+}
+
+module.exports = { authenticateToken };

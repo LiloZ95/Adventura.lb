@@ -1,27 +1,23 @@
 import 'package:adventura/OTP/SetPassword.dart';
-import 'package:adventura/Services/api_service.dart';
-import 'package:adventura/favorite/userPreferences.dart';
+import 'package:adventura/Services/otp_service.dart';
+import 'package:adventura/userPreferences/userPreferences.dart';
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async'; // ✅ Import for Timer
 import 'dart:ui' as ui; // ✅ Use alias for dart:ui
-import '../login/login.dart';
-import 'package:adventura/signUp page/Signup.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String email;
   final bool isForSignup;
-  final String? firstName, lastName, phoneNumber, password;
+  final Map<String, String>? signupData; // ✅ Store signup data
 
-  OtpVerificationScreen(
-      {required this.email,
-      required this.isForSignup,
-      this.firstName,
-      this.lastName,
-      this.phoneNumber,
-      this.password});
+  OtpVerificationScreen({
+    required this.email,
+    required this.isForSignup,
+    this.signupData, // ✅ Accept signup data
+  });
 
   @override
   _OtpVerificationScreenState createState() => _OtpVerificationScreenState();
@@ -29,6 +25,7 @@ class OtpVerificationScreen extends StatefulWidget {
 
 class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   final TextEditingController _otpController = TextEditingController();
+  final storage = FlutterSecureStorage();
   bool _isResendingOtp = false; // Track resend status
   bool _isLoading = false;
   String _errorMessage = "";
@@ -36,8 +33,10 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   // ✅ Countdown Timer Variables
   int _remainingSeconds = 300; // 5 minutes = 300 seconds
   late Timer _timer;
-  bool _showResendButton =
-      false; // ✅ Controls visibility of "Resend OTP" button
+  bool _showResendButton = false; // ✅ Controls visibility of "Resend OTP" button
+
+  // ✅ New: Border color for PinCodeTextField
+  Color _pinBorderColor = Colors.grey[600]!; // Default grey
 
   @override
   void initState() {
@@ -47,15 +46,12 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
   // ✅ Start countdown timer
   void _startCountdown() {
-    // _timer?.cancel(); // ✅ Cancel any existing timer before starting a new one
-
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (_remainingSeconds > 0) {
         setState(() => _remainingSeconds--);
       } else {
         setState(() {
-          _showResendButton =
-              true; // ✅ Show "Resend Code" button when timer ends
+          _showResendButton = true; // ✅ Show "Resend Code" button when timer ends
         });
         timer.cancel(); // Stop the timer at 00:00
       }
@@ -75,7 +71,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       _remainingSeconds = 300; // Reset to 5:00
       _showResendButton = false; // Hide reset button
     });
-
     _startCountdown(); // Restart countdown
   }
 
@@ -84,7 +79,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
     print("🔍 Requesting OTP resend for: ${widget.email}");
 
-    final response = await ApiService.resendOtp(
+    final response = await OtpService.resendOtp(
       widget.email,
       isForSignup: widget.isForSignup,
     );
@@ -115,43 +110,61 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     print("Entered OTP: ${_otpController.text}");
     print("isForSignup: ${widget.isForSignup}");
 
-    final response = await ApiService.verifyOtp(
+    final response = await OtpService.verifyOtp(
       widget.email,
       _otpController.text,
       isForSignup: widget.isForSignup,
-      firstName: widget.firstName,
-      lastName: widget.lastName,
-      phoneNumber: widget.phoneNumber,
-      password: widget.password,
+      firstName: widget.signupData?["firstName"],
+      lastName: widget.signupData?["lastName"],
+      phoneNumber: widget.signupData?["phoneNumber"],
+      password: widget.signupData?["password"],
     );
 
-    print("🔍 API Response: $response");
+    print("🔍 FULL API Response: $response");
 
-    if (response["success"] == true) {
-      print("✅ OTP Verified Successfully! Navigating to Login...");
+    // ✅ Ensure response contains "user"
+    if (!response.containsKey("user") || response["user"] == null) {
+      print("❌ User data is missing in response! Full Response: $response");
+      return;
+    }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text("OTP Verified Successfully! Redirecting to Login...")),
+    Map<String, dynamic> user = response["user"];
+
+    // ✅ Debugging: Ensure all fields are present
+    print("🔍 Extracted User Data: $user");
+
+    if (!user.containsKey("user_id") || user["user_id"] == null) {
+      print("❌ User ID is missing in response!");
+      return;
+    }
+
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    String userId = user["user_id"].toString();
+    String firstName = user["first_name"] ?? "";
+    String lastName = user["last_name"] ?? "";
+    String profilePicture = user["profilePicture"] ?? "";
+
+    // ✅ Store user data
+    await prefs.setString("userId", userId);
+    await prefs.setString("firstName", firstName);
+    await prefs.setString("lastName", lastName);
+    await prefs.setString("profilePicture", profilePicture);
+    await prefs.setBool("isLoggedIn", true);
+
+    print(
+        "✅ Stored User Data: ID=$userId, Name=$firstName $lastName, ProfilePicture=$profilePicture");
+
+    if (widget.isForSignup) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => Favorite()),
       );
-
-      if (widget.isForSignup) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => Favorite()),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (context) => SetPassword(email: widget.email)),
-        );
-      }
     } else {
-      print("❌ Failed OTP Verification: ${response["error"]}");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response["error"] ?? "Invalid OTP. Try again.")),
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+            builder: (context) => SetPassword(email: widget.email)),
       );
     }
 
@@ -162,6 +175,42 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   void dispose() {
     _timer.cancel(); // ✅ Stop the timer when widget is disposed
     super.dispose();
+  }
+
+  // ✅ We only color the timer portion, not the entire text
+  Widget _buildTimerRichText(double screenWidth) {
+    // If remaining seconds > 0, color is green, else red
+    Color timerColor = _remainingSeconds > 0 ? Colors.green : Colors.red;
+
+    return RichText(
+      textAlign: TextAlign.center,
+      text: TextSpan(
+        text: "We have sent a verification code to your email, it will expire in ",
+        style: TextStyle(
+          fontSize: screenWidth * 0.035,
+          color: Colors.black, // rest of text in black
+          fontFamily: "Poppins",
+        ),
+        children: [
+          TextSpan(
+            text: _formatTime(_remainingSeconds),
+            style: TextStyle(
+              fontSize: screenWidth * 0.035,
+              color: timerColor, // only timer portion changes color
+              fontFamily: "Poppins",
+            ),
+          ),
+          TextSpan(
+            text: ".", // end with a period
+            style: TextStyle(
+              fontSize: screenWidth * 0.035,
+              color: Colors.black,
+              fontFamily: "Poppins",
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -210,21 +259,14 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                               fontSize: screenWidth * 0.05,
                               fontWeight: FontWeight.bold,
                               fontFamily: "Poppins",
-                              color: Colors.black, // Text color based on dark mode
+                              color:
+                                  Colors.black, // Text color based on dark mode
                             ),
                           ),
                           SizedBox(height: screenHeight * 0.02),
 
-                          // ✅ Updated Text with Countdown Timer
-                          Text(
-                            "We have sent a verification code to your email, it will expire in ${_formatTime(_remainingSeconds)}.",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: screenWidth * 0.035,
-                              color: Colors.grey, // Text color based on dark mode
-                              fontFamily: "Poppins",
-                            ),
-                          ),
+                          // ✅ Timer Text with Dynamic Color (only timer portion)
+                          _buildTimerRichText(screenWidth),
 
                           SizedBox(height: screenHeight * 0.02),
 
@@ -235,12 +277,13 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                               fontSize: screenWidth * 0.04,
                               fontWeight: FontWeight.bold,
                               fontFamily: "Poppins",
-                              color: Colors.black, // Text color based on dark mode
+                              color:
+                                  Colors.black, // Text color based on dark mode
                             ),
                           ),
                           SizedBox(height: screenHeight * 0.02),
 
-                          // ✅ OTP Input Field
+                          // ✅ OTP Input Field with dynamic border color
                           Form(
                             child: PinCodeTextField(
                               controller: _otpController,
@@ -253,12 +296,15 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                                 borderRadius: BorderRadius.circular(8),
                                 fieldHeight: screenHeight * 0.06,
                                 fieldWidth: screenWidth * 0.12,
-                                activeFillColor: Colors.grey[300]!, // Dynamic color based on dark mode
+                                activeFillColor: Colors.grey[
+                                    300]!, // Dynamic color based on dark mode
                                 selectedFillColor: Colors.grey[300]!,
                                 inactiveFillColor: Colors.grey[300]!,
-                                activeColor: Colors.black,
-                                selectedColor: Colors.black,
-                                inactiveColor: Colors.black,
+
+                                // ✅ Use our dynamic color for the border
+                                activeColor: _pinBorderColor,
+                                selectedColor: _pinBorderColor,
+                                inactiveColor: _pinBorderColor,
                               ),
                               enableActiveFill: true,
                               showCursor: false,
@@ -272,8 +318,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                               padding: EdgeInsets.symmetric(vertical: 8.0),
                               child: Text(
                                 _errorMessage,
-                                style:
-                                    TextStyle(color: Colors.red, fontSize: 14),
+                                style: TextStyle(color: Colors.red, fontSize: 14),
                               ),
                             ),
 
@@ -282,14 +327,13 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           // ✅ Resend OTP Button (Shows only when _showResendButton is true)
                           if (_showResendButton)
                             TextButton(
-                              onPressed: _isResendingOtp
-                                  ? null
-                                  : _resendOtp, // Disable while resending
+                              onPressed: _isResendingOtp ? null : _resendOtp, // Disable while resending
                               child: Text(
                                 "Resend code",
                                 style: TextStyle(
-                                    color: Colors.blue, // Color based on dark mode
-                                    fontFamily: "Poppins"),
+                                  color: Colors.blue, // Color based on dark mode
+                                  fontFamily: "Poppins",
+                                ),
                               ),
                             ),
 
@@ -299,7 +343,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           ElevatedButton(
                             onPressed: _isLoading ? null : _verifyOtp,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.black,
+                              backgroundColor: Colors.blue,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),

@@ -1,10 +1,11 @@
+import 'package:adventura/Services/otp_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:ui';
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/colors.dart';
 import '../login/login.dart';
-import 'package:adventura/Services/api_service.dart';
+import 'package:adventura/Services/auth_service.dart';
 import 'package:adventura/OTP/OTPVerification.dart';
 
 class SignUpPage extends StatefulWidget {
@@ -80,24 +81,33 @@ class _SignUpPageState extends State<SignUpPage> {
     }
 
     final email = _emailController.text.trim();
+    final firstName = _firstNameController.text.trim();
+    final lastName = _lastNameController.text.trim();
+    final phoneNumber = _phoneController.text.trim();
+    final password = _passwordController.text;
 
     try {
       print("🔍 Sending OTP request for email: $email");
-      final response = await ApiService.sendOtp(email, isForSignup: true);
-      print("🔍 API Response: $response");
+
+      final response = await OtpService.sendOtp(email, isForSignup: true);
+
       if (response["success"] == true) {
         print(
             "✅ OTP Sent Successfully! Navigating to OTP Verification screen.");
+
+        // ✅ Pass user data to the OTP verification screen
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => OtpVerificationScreen(
               email: email,
-              firstName: _firstNameController.text.trim(),
-              lastName: _lastNameController.text.trim(),
-              phoneNumber: _phoneController.text.trim(),
-              password: _passwordController.text,
               isForSignup: true,
+              signupData: {
+                "firstName": firstName,
+                "lastName": lastName,
+                "phoneNumber": phoneNumber,
+                "password": password,
+              },
             ),
           ),
         );

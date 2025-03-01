@@ -1,9 +1,15 @@
-import 'package:adventura/login/login.dart';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:adventura/Services/api_service.dart';
 import 'package:provider/provider.dart';
-import 'dart:convert';
+import 'package:adventura/login/login.dart';
+import 'package:adventura/Services/profile_service.dart';
+import 'package:adventura/Services/user_service.dart';
+import 'package:adventura/Services/storage_service.dart';
 import 'dart:typed_data';
+import 'dart:convert';
+import 'package:dotted_border/dotted_border.dart';
+import 'package:adventura/userinformation/profileOptionTile.dart';
 
 class UserInfo extends StatefulWidget {
   @override
@@ -11,14 +17,26 @@ class UserInfo extends StatefulWidget {
 }
 
 class _UserInfoState extends State<UserInfo> {
+  late String userId;
+  late String firstName;
+  late String lastName;
+  late String profilePicture;
+  bool isLoading = true;
+
   @override
   void initState() {
     super.initState();
-    // ✅ Call loadUserProfile() from ApiService
-    Future.microtask(() async {
-    final apiService = Provider.of<ApiService>(context, listen: false);
-    await apiService.getUserId(); // ✅ Ensure userId is loaded on startup
-  });
+    _loadUserData();
+  }
+
+  // ✅ Load user data from storage and fetch profile picture
+  Future<void> _loadUserData() async {
+    userId = await StorageService.getUserId();
+    firstName = await StorageService.getFirstName();
+    lastName = await StorageService.getLastName();
+    profilePicture = await ProfileService.fetchProfilePicture(userId);
+
+    setState(() => isLoading = false);
   }
 
   @override
@@ -61,84 +79,64 @@ class _UserInfoState extends State<UserInfo> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            SizedBox(height: screenHeight * 0.02),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  SizedBox(height: screenHeight * 0.02),
 
-            // ✅ Profile Picture Section
-            Consumer<ApiService>(
-  builder: (context, apiService, child) {
-    String userId = apiService.userId ?? ""; // ✅ Get logged-in user ID
-
-    return GestureDetector(
-      onTap: () async {
-        String userId = apiService.userId ?? ""; // ✅ Get logged-in user ID
-        if (userId.isNotEmpty) {
-          await apiService.pickImage(context, userId);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("❌ User ID is missing!"), backgroundColor: Colors.red),
-          );
-        }
-      },
-      child: Stack(
-        alignment: Alignment.bottomRight,
-        children: [
-          Container(
-            width: screenHeight * 0.13,
-            height: screenHeight * 0.13,
-            decoration: BoxDecoration(shape: BoxShape.circle),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(50), // ✅ Ensure circular shape
-              child: _buildProfileImage(apiService),
-            ),
-          ),
-          // ✅ Camera Icon with Black Border
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.black, width: 2),
-            ),
-            child: CircleAvatar(
-              backgroundColor: Colors.white,
-              radius: 18,
-              child: Icon(Icons.camera_alt, color: Colors.black),
-            ),
-          ),
-          // ✅ Show Error Message if Image is Too Large
-          // if (apiService.errorMessage != null)
-          //   Padding(
-          //     padding: const EdgeInsets.only(top: 8.0),
-          //     child: Text(
-          //       apiService.errorMessage!,
-          //       style: TextStyle(color: Colors.red, fontSize: 14),
-          //     ),
-          //   ),
-        ],
-      ),
-    );
-  },
-),
-
-            SizedBox(height: 8),
-
-            // ✅ Display User Name
-            Consumer<ApiService>(
-              builder: (context, apiService, child) {
-                return Text(
-                  apiService.fullName.isNotEmpty
-                      ? apiService.fullName
-                      : "User Name", // ✅ Show full name
-                  style: TextStyle(
-                    fontSize: screenHeight * 0.025,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                    fontFamily: "Poppins",
+                  // ✅ Profile Picture Section
+                  GestureDetector(
+                    onTap: () async {
+                      // Pick and upload new profile picture
+                      File? selectedImage = await ProfileService.pickImage();
+                      if (selectedImage != null) {
+                        await ProfileService.uploadProfilePicture(
+                            context, userId, selectedImage);
+                        _loadUserData(); // Reload after updating
+                      }
+                    },
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        Container(
+                          width: screenHeight * 0.13,
+                          height: screenHeight * 0.13,
+                          decoration: BoxDecoration(shape: BoxShape.circle),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(50),
+                            child: _buildProfileImage(),
+                          ),
+                        ),
+                        // ✅ Camera Icon with Border
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.black, width: 2),
+                          ),
+                          child: CircleAvatar(
+                            backgroundColor: Colors.white,
+                            radius: 18,
+                            child: Icon(Icons.camera_alt, color: Colors.black),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                );
-              },
-            ),
+
+                  SizedBox(height: 8),
+
+                  // ✅ Display User Name
+                  Text(
+                    "$firstName $lastName",
+                    style: TextStyle(
+                      fontSize: screenHeight * 0.025,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                      fontFamily: "Poppins",
+                    ),
+                  ),
 
             SizedBox(height: screenHeight * 0.02),
 
@@ -157,57 +155,200 @@ class _UserInfoState extends State<UserInfo> {
 
             SizedBox(height: screenHeight * 0.02),
 
-            // ✅ Logout & Delete Account Buttons
-            _logoutOption(context, screenHeight),
-            _deleteAccountOption(context, screenHeight),
+            Padding(
+              padding: EdgeInsets.only(
+                left: screenWidth * 0.05,
+                top: screenHeight * 0.02,
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Actions And Agreements",
+                  style: TextStyle(
+                    fontSize: screenHeight * 0.025,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                    fontFamily: "Poppins",
+                  ),
+                ),
+              ),
+            ),
+            //agreements sections
+            SizedBox(height: screenHeight * 0.02),
+            ProfileOptionTile(
+              icon: Icons.warning,
+              title: "Our Agreements",
+              onTap: () {
+                // handle tap
+              },
+            ),
+            //rate us options
+             ProfileOptionTile(
+              icon: Icons.star,
+              title: "Rate Us",
+              subtitle: "Write a review in App store",
+              onTap: () {
+                // handle tap
+              },
+            ),
+            //report bugs
+            ProfileOptionTile(
+              icon: Icons.bug_report,
+              title: "Report a bug",
+              onTap: () {
+                // handle tap
+              },
+            ),
+            //delete account option
+             ProfileOptionTile(
+              icon: Icons.close, 
+              title: "Close Account",
+              subtitle: "Close your personal account",
+              onTap: () {
+                // handle tap
+              },
+            ),
+            //logout
+            ProfileOptionTile(
+              icon: Icons.logout_outlined,
+              title: "Logout",
+              onTap: () {
+                // handle tap
+              },
+            ),
+            //membership section
+             Padding(
+              padding: EdgeInsets.only(
+                left: screenWidth * 0.05,
+                top: screenHeight * 0.02,
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Membership number",
+                  style: TextStyle(
+                    fontSize: screenHeight * 0.020,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                    fontFamily: "Poppins",
+                  ),
+                ),
+              ),
+            ),
+             Padding(
+              padding: EdgeInsets.only(
+                left: screenWidth * 0.05,
+                top: screenHeight * 0.02,
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "P122312802",
+                  style: TextStyle(
+                    fontSize: screenHeight * 0.015,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                    fontFamily: "Poppins",
+                  ),
+                ),
+              ),
+            ),
+            
           ],
         ),
       ),
     );
   }
 
-  Widget _buildProfileImage(ApiService apiService) {
-  if (apiService.selectedImage != null) {
-    return Image.file(apiService.selectedImage!, fit: BoxFit.cover);
-  } 
-  else if (apiService.profileImageUrl != null &&
-      apiService.profileImageUrl!.isNotEmpty) {
-    
-    // ✅ Check if the response contains Base64 data
-    if (apiService.profileImageUrl!.startsWith("data:image")) {
-      try {
-        String base64String = apiService.profileImageUrl!.split(",")[1]; // ✅ Extract base64 part
-        Uint8List imageBytes = base64Decode(base64String); // ✅ Convert to bytes
 
-        return Image.memory(
-          imageBytes,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            print("❌ Image Load Error: $error");
-            return Image.asset("assets/images/default_user.png", fit: BoxFit.cover);
-          },
-        );
-      } catch (e) {
-        print("❌ Error decoding Base64 image: $e");
-        return Image.asset("assets/images/default_user.png", fit: BoxFit.cover);
-      }
-    } 
-    
-    // ✅ Otherwise, it's a normal URL
-    return Image.network(
-      apiService.profileImageUrl!,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        print("❌ Image Load Error: $error");
-        return Image.asset("assets/images/default_user.png", fit: BoxFit.cover);
-      },
+// ✅ The Dotted-Border Button (Unchanged)
+Widget buildBusinessAccountButton({
+  required double screenWidth,
+  required VoidCallback onPressed,
+}) {
+  return InkWell(
+    onTap: onPressed,
+    child: DottedBorder(
+      color: Colors.grey,
+      strokeWidth: 1.5,
+      dashPattern: [5, 5],
+      borderType: BorderType.RRect,
+      radius: Radius.circular(12),
+      child: Container(
+        width: screenWidth * 0.85,
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.grey[200],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                Icon(Icons.business, size: 32, color: Colors.black),
+                Positioned(
+                  right: -2,
+                  bottom: -2,
+                  child: CircleAvatar(
+                    radius: 8,
+                    backgroundColor: Colors.green,
+                    child: Icon(Icons.add, size: 12, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(width: 12),
+            Text(
+              "Open a new business account",
+              style: TextStyle(
+                fontFamily: "poppins",
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
+              ),
+            ),
+          ],
+        ),
+      ),
+      ),
     );
-  } 
-  else {
+  }
+
+  // ✅ Profile Picture Handling
+  Widget _buildProfileImage() {
+    if (profilePicture.isNotEmpty) {
+      if (profilePicture.startsWith("data:image")) {
+        try {
+          String base64String = profilePicture.split(",")[1];
+          Uint8List imageBytes = base64Decode(base64String);
+
+          return Image.memory(
+            imageBytes,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _defaultProfileImage();
+            },
+          );
+        } catch (e) {
+          return _defaultProfileImage();
+        }
+      }
+      return Image.network(
+        profilePicture,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _defaultProfileImage();
+        },
+      );
+    }
+    return _defaultProfileImage();
+  }
+
+  Widget _defaultProfileImage() {
     return Image.asset("assets/images/default_user.png", fit: BoxFit.cover);
   }
-}
-
 
   // ✅ Profile Option Tile
   Widget _profileOption(IconData icon, String title, BuildContext context) {
@@ -223,8 +364,42 @@ class _UserInfoState extends State<UserInfo> {
     );
   }
 
+// ✅ OPTIONAL: The new function with subtitles, renamed to avoid conflicts
+//    Use this if you want a bold title + grey subtitle. No lines removed, just placed at the end.
+Widget _profileOptionWithSubtitle(
+  IconData icon,
+  String title,
+  String subtitle,
+  BuildContext context,
+) {
+  return ListTile(
+    leading: Icon(icon, color: Colors.black87),
+    title: Text(
+      title,
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: Colors.black,
+        fontFamily: "Poppins",
+      ),
+    ),
+    subtitle: Text(
+      subtitle,
+      style: TextStyle(
+        fontSize: 12,
+        color: Colors.grey[200],
+        fontFamily: "Poppins",
+      ),
+    ),
+    trailing: Icon(Icons.arrow_forward_ios, color: Colors.black),
+    onTap: () {
+      // Handle onTap
+    },
+  );
+}
+
   // ✅ Logout Button
-  Widget _logoutOption(BuildContext context, double screenHeight) {
+  Widget _logoutOption(BuildContext context) {
     return ListTile(
       leading: Icon(Icons.logout, color: Colors.red),
       title: Text(
@@ -233,17 +408,13 @@ class _UserInfoState extends State<UserInfo> {
             TextStyle(fontSize: 16, color: Colors.red, fontFamily: "Poppins"),
       ),
       onTap: () async {
-        await Provider.of<ApiService>(context, listen: false).logout();
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Logged out.")));
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => LoginPage()));
+        await StorageService.logout(context);
       },
     );
   }
 
   // ✅ Delete Account Button
-  Widget _deleteAccountOption(BuildContext context, double screenHeight) {
+  Widget _deleteAccountOption(BuildContext context) {
     return ListTile(
       leading: Icon(Icons.delete_forever, color: Colors.red),
       title: Text(
@@ -271,11 +442,7 @@ class _UserInfoState extends State<UserInfo> {
             ),
             TextButton(
               onPressed: () async {
-                final apiService =
-                    Provider.of<ApiService>(context, listen: false);
-                bool success =
-                    await apiService.deleteUser(); // ✅ No argument needed now
-
+                bool success = await UserService.deleteUser();
                 if (success) {
                   Navigator.pushReplacement(context,
                       MaterialPageRoute(builder: (context) => LoginPage()));
