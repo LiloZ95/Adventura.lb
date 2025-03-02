@@ -117,7 +117,7 @@ class _UserInfoState extends State<UserInfo> {
                           ),
                           child: CircleAvatar(
                             backgroundColor: Colors.white,
-                            radius: 18,
+                            radius: 25,
                             child: Icon(Icons.camera_alt, color: Colors.black),
                           ),
                         ),
@@ -138,180 +138,291 @@ class _UserInfoState extends State<UserInfo> {
                     ),
                   ),
 
-            SizedBox(height: screenHeight * 0.02),
-
-            // ✅ Grey Divider
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
-              child: Divider(thickness: 1, color: Colors.grey[300]),
-            ),
-
-            // ✅ Profile Options
-            _profileOption(Icons.bookmark_border, "My Bookings", context),
-            _profileOption(Icons.credit_card, "My Cards", context),
-            _profileOption(Icons.settings, "Settings", context),
-            _profileOption(Icons.lock, "Privacy Policy", context),
-            _profileOption(Icons.description, "Terms & Conditions", context),
-
-            SizedBox(height: screenHeight * 0.02),
-
-            Padding(
-              padding: EdgeInsets.only(
-                left: screenWidth * 0.05,
-                top: screenHeight * 0.02,
-              ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Actions And Agreements",
-                  style: TextStyle(
-                    fontSize: screenHeight * 0.025,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                    fontFamily: "Poppins",
+                  SizedBox(height: screenHeight * 0.01),
+                  // ✅ Personal Account Text
+                  Text(
+                    "Personal Account",
+                    style: TextStyle(
+                      fontSize: screenHeight * 0.018,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
+                      fontFamily: "Poppins",
+                    ),
                   ),
-                ),
-              ),
-            ),
-            //agreements sections
-            SizedBox(height: screenHeight * 0.02),
-            ProfileOptionTile(
-              icon: Icons.warning,
-              title: "Our Agreements",
-              onTap: () {
-                // handle tap
-              },
-            ),
-            //rate us options
-             ProfileOptionTile(
-              icon: Icons.star,
-              title: "Rate Us",
-              subtitle: "Write a review in App store",
-              onTap: () {
-                // handle tap
-              },
-            ),
-            //report bugs
-            ProfileOptionTile(
-              icon: Icons.bug_report,
-              title: "Report a bug",
-              onTap: () {
-                // handle tap
-              },
-            ),
-            //delete account option
-             ProfileOptionTile(
-              icon: Icons.close, 
-              title: "Close Account",
-              subtitle: "Close your personal account",
-              onTap: () {
-                // handle tap
-              },
-            ),
-            //logout
-            ProfileOptionTile(
-              icon: Icons.logout_outlined,
-              title: "Logout",
-              onTap: () {
-                // handle tap
-              },
-            ),
-            //membership section
-             Padding(
-              padding: EdgeInsets.only(
-                left: screenWidth * 0.05,
-                top: screenHeight * 0.02,
-              ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Membership number",
-                  style: TextStyle(
-                    fontSize: screenHeight * 0.020,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                    fontFamily: "Poppins",
+                  SizedBox(height: screenHeight * 0.02),
+
+                  // ✅ Dotted-Border Button
+                  buildBusinessAccountButton(
+                    screenWidth: screenWidth,
+                    onPressed: () {
+                      print("Open Business Account Tapped");
+                    },
                   ),
-                ),
-              ),
-            ),
-             Padding(
-              padding: EdgeInsets.only(
-                left: screenWidth * 0.05,
-                top: screenHeight * 0.02,
-              ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "P122312802",
-                  style: TextStyle(
-                    fontSize: screenHeight * 0.015,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                    fontFamily: "Poppins",
+
+                  SizedBox(height: screenHeight * 0.02),
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: screenWidth * 0.05,
+                      top: screenHeight * 0.02,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "Account",
+                        style: TextStyle(
+                          fontSize: screenHeight * 0.025,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                          fontFamily: "Poppins",
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  SizedBox(height: screenHeight * 0.01),
+
+                  // inbox option
+                  ProfileOptionTile(
+                    icon: Icons.inbox,
+                    title: "Inbox",
+                    onTap: () {
+                      // handle tap
+                    },
+                  ),
+                  //help option
+                  ProfileOptionTile(
+                    icon: Icons.help,
+                    title: "Help",
+                    onTap: () {
+                      // handle tap
+                    },
+                  ),
+                  //statement and reports option
+                  ProfileOptionTile(
+                    icon: Icons.report,
+                    title: "Security & Privacy",
+                    onTap: () {
+                      // handle tap
+                    },
+                  ),
+
+                  SizedBox(height: screenHeight * 0.01),
+
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: screenWidth * 0.05,
+                      top: screenHeight * 0.02,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "Settings",
+                        style: TextStyle(
+                          fontSize: screenHeight * 0.025,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                          fontFamily: "Poppins",
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: screenHeight * 0.02),
+                  //pivacy and security option
+                  ProfileOptionTile(
+                    icon: Icons.security,
+                    title: "Security & Privacy",
+                    subtitle: "Change your security and privacy settings",
+                    onTap: () {
+                      // handle tap
+                    },
+                  ),
+                  //payment methods option
+                  ProfileOptionTile(
+                    icon: Icons.payment,
+                    title: "Payment Methods",
+                    subtitle:
+                        "Manage saved cards and bank accounts that are linked to this account",
+                    onTap: () {
+                      // handle tap
+                    },
+                  ),
+
+                  //appearance options
+                  ProfileOptionTile(
+                    icon: Icons.dark_mode,
+                    title: "Appearance",
+                    subtitle: "Light",
+                    onTap: () {
+                      // handle tap
+                    },
+                  ),
+
+                  //personal details option
+                  ProfileOptionTile(
+                    icon: Icons.person,
+                    title: "Personal Details",
+                    subtitle: "Update your personal informatin",
+                    onTap: () {
+                      // handle tap
+                    },
+                  ),
+                  SizedBox(height: screenHeight * 0.02),
+
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: screenWidth * 0.05,
+                      top: screenHeight * 0.02,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "Actions And Agreements",
+                        style: TextStyle(
+                          fontSize: screenHeight * 0.025,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                          fontFamily: "Poppins",
+                        ),
+                      ),
+                    ),
+                  ),
+                  //agreements sections
+                  SizedBox(height: screenHeight * 0.02),
+                  ProfileOptionTile(
+                    icon: Icons.warning,
+                    title: "Our Agreements",
+                    onTap: () {
+                      // handle tap
+                    },
+                  ),
+                  //rate us options
+                  ProfileOptionTile(
+                    icon: Icons.star,
+                    title: "Rate Us",
+                    subtitle: "Write a review in App store",
+                    onTap: () {
+                      // handle tap
+                    },
+                  ),
+                  //report bugs
+                  ProfileOptionTile(
+                    icon: Icons.bug_report,
+                    title: "Report a bug",
+                    onTap: () {
+                      // handle tap
+                    },
+                  ),
+                  //delete account option
+                  ProfileOptionTile(
+                    icon: Icons.close,
+                    title: "Close Account",
+                    subtitle: "Close your personal account",
+                    onTap: () {
+                      _deleteAccountOption(context);
+                    },
+                  ),
+                  //logout
+                  ProfileOptionTile(
+                    icon: Icons.logout_outlined,
+                    title: "Logout",
+                    onTap: () {
+                      // handle tap
+                      _logoutOption(context);
+                    },
+                  ),
+                  //membership section
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: screenWidth * 0.05,
+                      top: screenHeight * 0.02,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "Membership number",
+                        style: TextStyle(
+                          fontSize: screenHeight * 0.020,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                          fontFamily: "Poppins",
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: screenWidth * 0.05,
+                      top: screenHeight * 0.02,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "P122312802",
+                        style: TextStyle(
+                          fontSize: screenHeight * 0.015,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                          fontFamily: "Poppins",
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            
-          ],
-        ),
-      ),
     );
   }
 
-
 // ✅ The Dotted-Border Button (Unchanged)
-Widget buildBusinessAccountButton({
-  required double screenWidth,
-  required VoidCallback onPressed,
-}) {
-  return InkWell(
-    onTap: onPressed,
-    child: DottedBorder(
-      color: Colors.grey,
-      strokeWidth: 1.5,
-      dashPattern: [5, 5],
-      borderType: BorderType.RRect,
-      radius: Radius.circular(12),
-      child: Container(
-        width: screenWidth * 0.85,
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.grey[200],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              alignment: Alignment.bottomRight,
-              children: [
-                Icon(Icons.business, size: 32, color: Colors.black),
-                Positioned(
-                  right: -2,
-                  bottom: -2,
-                  child: CircleAvatar(
-                    radius: 8,
-                    backgroundColor: Colors.green,
-                    child: Icon(Icons.add, size: 12, color: Colors.white),
+  Widget buildBusinessAccountButton({
+    required double screenWidth,
+    required VoidCallback onPressed,
+  }) {
+    return InkWell(
+      onTap: onPressed,
+      child: DottedBorder(
+        color: Colors.grey,
+        strokeWidth: 1.5,
+        dashPattern: [5, 5],
+        borderType: BorderType.RRect,
+        radius: Radius.circular(12),
+        child: Container(
+          width: screenWidth * 0.85,
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: Colors.grey[200],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  Icon(Icons.business, size: 32, color: Colors.black),
+                  Positioned(
+                    right: -2,
+                    bottom: -2,
+                    child: CircleAvatar(
+                      radius: 8,
+                      backgroundColor: Colors.green,
+                      child: Icon(Icons.add, size: 12, color: Colors.white),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            SizedBox(width: 12),
-            Text(
-              "Open a new business account",
-              style: TextStyle(
-                fontFamily: "poppins",
-                fontSize: 13.5,
-                fontWeight: FontWeight.w500,
-                color: Colors.black,
+                ],
               ),
-            ),
-          ],
+              SizedBox(width: 12),
+              Text(
+                "Open a new business account",
+                style: TextStyle(
+                  fontFamily: "poppins",
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -350,53 +461,53 @@ Widget buildBusinessAccountButton({
     return Image.asset("assets/images/default_user.png", fit: BoxFit.cover);
   }
 
-  // ✅ Profile Option Tile
-  Widget _profileOption(IconData icon, String title, BuildContext context) {
+// ✅ Original _profileOption (3 parameters)
+// Widget _profileOption(IconData icon, String title, BuildContext context) {
+//   return ListTile(
+//     leading: Icon(icon, color: Colors.black87),
+//     title: Text(
+//       title,
+//       style:
+//           TextStyle(fontSize: 16, color: Colors.black, fontFamily: "Poppins"),
+//     ),
+//     trailing: Icon(Icons.arrow_forward_ios, color: Colors.black),
+//     onTap: () {},
+//   );
+// }
+
+// ✅ OPTIONAL: The new function with subtitles, renamed to avoid conflicts
+//    Use this if you want a bold title + grey subtitle. No lines removed, just placed at the end.
+  Widget _profileOptionWithSubtitle(
+    IconData icon,
+    String title,
+    String subtitle,
+    BuildContext context,
+  ) {
     return ListTile(
       leading: Icon(icon, color: Colors.black87),
       title: Text(
         title,
-        style:
-            TextStyle(fontSize: 16, color: Colors.black, fontFamily: "Poppins"),
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.black,
+          fontFamily: "Poppins",
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          fontSize: 12,
+          color: Colors.grey[200],
+          fontFamily: "Poppins",
+        ),
       ),
       trailing: Icon(Icons.arrow_forward_ios, color: Colors.black),
-      onTap: () {},
+      onTap: () {
+        // Handle onTap
+      },
     );
   }
-
-// ✅ OPTIONAL: The new function with subtitles, renamed to avoid conflicts
-//    Use this if you want a bold title + grey subtitle. No lines removed, just placed at the end.
-Widget _profileOptionWithSubtitle(
-  IconData icon,
-  String title,
-  String subtitle,
-  BuildContext context,
-) {
-  return ListTile(
-    leading: Icon(icon, color: Colors.black87),
-    title: Text(
-      title,
-      style: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-        color: Colors.black,
-        fontFamily: "Poppins",
-      ),
-    ),
-    subtitle: Text(
-      subtitle,
-      style: TextStyle(
-        fontSize: 12,
-        color: Colors.grey[200],
-        fontFamily: "Poppins",
-      ),
-    ),
-    trailing: Icon(Icons.arrow_forward_ios, color: Colors.black),
-    onTap: () {
-      // Handle onTap
-    },
-  );
-}
 
   // ✅ Logout Button
   Widget _logoutOption(BuildContext context) {
