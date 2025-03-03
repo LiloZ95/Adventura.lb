@@ -1,5 +1,6 @@
 import 'package:adventura/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:adventura/OrderDetail/Order.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final String title;
@@ -25,6 +26,16 @@ class EventDetailsScreen extends StatefulWidget {
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
   bool isFavorite = false; // State variable for the favorite button
 
+  // Variables to track the selected image in the PageView
+  int _currentImageIndex = 0;
+  final PageController _pageController = PageController();
+
+  @override
+  void dispose() {
+    _pageController.dispose(); // Dispose the controller when not needed
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     // Obtain screen dimensions and safe area padding
@@ -33,7 +44,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     double bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      // Prevent auto-resizing to avoid overflow issues
       resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -61,14 +71,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             ),
             onPressed: () {
               setState(() {
-                isFavorite = !isFavorite; // Toggle the favorite state
+                isFavorite = !isFavorite; // Toggle favorite state
               });
             },
           ),
         ],
       ),
       body: SingleChildScrollView(
-        // Bottom padding so content isn't hidden behind the bottom navigation bar
         padding: EdgeInsets.only(bottom: screenHeight * 0.12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,7 +86,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             Padding(
               padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.03),
               child: Container(
-                height: screenHeight * 0.3, // Adaptive image height
+                height: screenHeight * 0.3,
                 width: screenWidth * 0.96,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(screenWidth * 0.03),
@@ -95,6 +104,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   child: Stack(
                     children: [
                       PageView.builder(
+                        controller: _pageController,
+                        onPageChanged: (index) {
+                          setState(() {
+                            _currentImageIndex = index;
+                          });
+                        },
                         itemCount: widget.imagePaths.length,
                         itemBuilder: (context, index) {
                           return Image.asset(
@@ -117,7 +132,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                 BorderRadius.circular(screenWidth * 0.02),
                           ),
                           child: Text(
-                            '1/${widget.imagePaths.length}',
+                            '${_currentImageIndex + 1}/${widget.imagePaths.length}',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: screenWidth * 0.035,
@@ -130,7 +145,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 ),
               ),
             ),
-            // Main content
+            // Main content below the images (trip plan, description, etc.)
             Padding(
               padding: EdgeInsets.all(screenWidth * 0.04),
               child: Column(
@@ -173,7 +188,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     ],
                   ),
                   SizedBox(height: screenHeight * 0.015),
-                  // Trip plan
+                  // Trip plan and other content remain unchanged...
                   Row(
                     children: [
                       Padding(
@@ -260,7 +275,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     ),
                   ),
                   SizedBox(height: screenHeight * 0.01),
-                  // Description
+                  // Description header and text remain (if needed) or can be removed similarly
                   Row(
                     children: [
                       Padding(
@@ -385,6 +400,17 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     ElevatedButton(
                       onPressed: () {
                         print("Book Ticket pressed!");
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OrderDetailsPage(
+                              selectedImage: widget.imagePaths[_currentImageIndex],
+                              eventTitle: widget.title,
+                              eventDate: widget.date,
+                              eventLocation: widget.location,
+                            ),
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.blue,
