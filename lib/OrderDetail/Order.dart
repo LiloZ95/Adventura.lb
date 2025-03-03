@@ -1,3 +1,5 @@
+import 'package:adventura/OrderDetail/PurchaseConfiramtion.dart';
+import 'package:adventura/OrderDetail/ViewTicket.dart';
 import 'package:flutter/material.dart';
 
 enum PaymentMethod {
@@ -308,7 +310,11 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                           ),
                         ),
                         onPressed: () {
-                          // handle purchase confirmation
+                       Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>PurchaseConfirmationPage ()),
+                            );
                         },
                         child: const Text(
                           'Confirm purchase',
