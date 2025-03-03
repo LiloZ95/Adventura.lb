@@ -10,30 +10,38 @@ class OtpService {
   static final FlutterSecureStorage storage = FlutterSecureStorage();
 
   /// ✅ **Send OTP for Signup or Password Reset**
-  static Future<Map<String, dynamic>> sendOtp(String email, {required bool isForSignup}) async {
+  static Future<Map<String, dynamic>> sendOtp(String email,
+      {required bool isForSignup}) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/users/send-otp'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'isForSignup': isForSignup}),
+        body: jsonEncode({
+          'email': email,
+          'isForSignup': isForSignup
+        }), // ✅ Indicate purpose of OTP
       );
 
       final responseData = jsonDecode(response.body);
+      print("🔍 DEBUG: API Response -> ${response.body}"); // ✅ Debug response
+
       if (response.statusCode == 200) {
-        print("✅ OTP Sent Successfully!");
         return {"success": true, "message": responseData["message"]};
       } else {
-        print("❌ Failed to send OTP: ${responseData["error"] ?? "Unknown error"}");
-        return {"success": false, "error": responseData["error"] ?? "Failed to send OTP"};
+        return {
+          "success": false,
+          "error": responseData["error"] ?? "Unknown error"
+        };
       }
     } catch (e) {
-      print("❌ ERROR: Failed to send OTP -> $e");
+      print("❌ ERROR: Failed to send OTP -> $e"); // ✅ Debug error
       return {"success": false, "error": "Failed to connect to server"};
     }
   }
 
   /// ✅ **Resend OTP**
-  static Future<Map<String, dynamic>> resendOtp(String email, {required bool isForSignup}) async {
+  static Future<Map<String, dynamic>> resendOtp(String email,
+      {required bool isForSignup}) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/users/resend-otp'),
@@ -42,15 +50,18 @@ class OtpService {
       );
 
       final responseData = jsonDecode(response.body);
+      print("🔍 Resend OTP API Response: ${response.body}");
+
       if (response.statusCode == 200) {
-        print("✅ OTP Resent Successfully!");
         return {"success": true, "message": responseData["message"]};
       } else {
-        print("❌ Failed to resend OTP: ${responseData["error"] ?? "Unknown error"}");
-        return {"success": false, "error": responseData["error"] ?? "Failed to resend OTP"};
+        return {
+          "success": false,
+          "error": responseData["error"] ?? "Failed to resend OTP"
+        };
       }
     } catch (e) {
-      print("❌ ERROR: Failed to resend OTP -> $e");
+      print("❌ Error in resendOtp: $e");
       return {"success": false, "error": "Failed to connect to server"};
     }
   }
@@ -80,30 +91,43 @@ class OtpService {
         }),
       );
 
-      final data = jsonDecode(response.body);
+      print("🔍 FULL API RESPONSE: ${response.body}");
 
-      if (response.statusCode == 200 && data is Map<String, dynamic>) {
-        print("✅ OTP Verified Successfully!");
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
 
-        // 🛠 **Ensure user data is returned**
-        if (!data.containsKey("user") || data["user"] == null) {
-          print("❌ Missing user data in API response.");
-          return {"success": false, "error": "User data is missing in response"};
+        if (!data.containsKey("user") ||
+            !data.containsKey("accessToken") ||
+            !data.containsKey("refreshToken")) {
+          print("❌ Missing user or token data in response.");
+          return {
+            "success": false,
+            "error": "User data or tokens missing in response"
+          };
         }
 
-        // ✅ **Save user data after OTP verification**
-        await StorageService.saveAuthTokens(data["accessToken"], data["refreshToken"]);
-        await StorageService.saveUserData(data["user"]);
+        String userId = data["user"]["user_id"].toString();
+        String accessToken = data["accessToken"];
+        String refreshToken = data["refreshToken"];
 
-        print("✅ User data saved successfully after OTP verification.");
-        return data; // ✅ Return full response
+        await StorageService.saveAuthTokens(accessToken, refreshToken, userId);
+        await StorageService.saveUserData(userId, accessToken, refreshToken);
+
+        print("✅ Stored User Data: ID=$userId, Name=${data["user"]["first_name"]}");
+        return data;
       } else {
-        print("❌ OTP Verification Failed: ${data["error"] ?? "Unknown error"}");
-        return {"success": false, "error": data["error"] ?? "Invalid OTP or server error"};
+        final errorData = jsonDecode(response.body);
+        return {
+          "success": false,
+          "error": errorData["error"] ?? "Invalid OTP. Please try again."
+        };
       }
     } catch (e) {
       print("❌ Exception in verifyOtp: $e");
-      return {"success": false, "error": "Failed to connect to server"};
+      return {
+        "success": false,
+        "error": "Failed to connect to server. Check internet connection."
+      };
     }
   }
 }

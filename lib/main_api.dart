@@ -45,26 +45,30 @@ class MainApi extends ChangeNotifier {
   }
 
   Future<bool> validateAccessToken(String token) async {
-    print("🔍 Sending token validation request...");
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userId = prefs.getString("userId"); // ✅ Get user ID
 
-    try {
-      final accessToken = await storage.read(key: "accessToken");
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/validate-token'),
-        headers: {"Authorization": "Bearer $accessToken"},
-      );
+    if (userId == null) {
+      print("❌ No user ID found in storage.");
+      return false;
+    }
 
-      print("🔍 Server response: ${response.statusCode} - ${response.body}");
+    print("🔍 Validating token for user: $userId");
 
-      if (response.statusCode == 200) {
-        print("✅ Token is still valid.");
-        return true;
-      } else {
-        print("❌ Token is invalid. Response: ${response.body}");
-        return false;
-      }
-    } catch (e) {
-      print("❌ Error validating token: $e");
+    final response = await http.post(
+      Uri.parse("http://localhost:3000/users/validate-token"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({"user_id": userId}), // ✅ Include user_id in the request
+    );
+
+    if (response.statusCode == 200) {
+      print("✅ Token is valid.");
+      return true;
+    } else {
+      print("❌ Token is invalid. Response: ${response.body}");
       return false;
     }
   }
@@ -78,26 +82,23 @@ class MainApi extends ChangeNotifier {
     print("🔍 Stored Access Token: $accessToken");
     print("🔍 Stored Refresh Token: $refreshToken");
 
-    if (accessToken != null && accessToken.isNotEmpty && isLoggedIn) {
+    if (isLoggedIn && accessToken != null && accessToken.isNotEmpty) {
       bool isValid = await validateAccessToken(accessToken);
 
       if (isValid) {
-        print("✅ Token is valid! Redirecting to MainScreen.");
-        _initialScreen = MainScreen();
+        print("✅ User is already logged in. Redirecting to MainScreen...");
+        _initialScreen = MainScreen(); // ✅ Redirect to MainScreen
       } else {
-        print("❌ Token is invalid. Redirecting to Login.");
-        await storage.delete(key: "accessToken");
-        await storage.delete(key: "refreshToken");
-        await prefs.setBool("isLoggedIn", false);
-        _initialScreen = LoginPage();
+        print("❌ Token expired. Logging out.");
+        await logout();
+        _initialScreen = LoginPage(); // ✅ Redirect to Login
       }
     } else {
-      print("❌ No valid token found. Redirecting to Login.");
-      await prefs.setBool("isLoggedIn", false);
+      print("❌ No valid session found. Redirecting to Login...");
       _initialScreen = LoginPage();
     }
 
-    notifyListeners(); // ✅ Ensure UI updates after deciding the screen
+    notifyListeners(); // ✅ Update UI
   }
 
   Future<void> fetchUserData() async {

@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:adventura/Services/storage_service.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -66,31 +68,46 @@ class UserService {
   }
 
   /// ✅ **Delete User Account**
-  static Future<bool> deleteUser() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userId = prefs.getString("userId");
-
-    if (userId == null) {
-      print("❌ Error: User ID not found.");
-      return false;
-    }
-
+  static Future<bool> deleteUser(BuildContext context) async {
     try {
+      final String? accessToken = await StorageService.getAccessToken();
+      final String? userId = await StorageService.getUserId();
+
+      if (accessToken == null || userId == null) {
+        print("❌ No user ID or token found!");
+        return false;
+      }
+
       final response = await http.delete(
-        Uri.parse("$baseUrl/users/$userId"),
-        headers: {"Content-Type": "application/json"},
+        Uri.parse('$baseUrl/users/delete-account/$userId'),
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
       );
 
       if (response.statusCode == 200) {
-        print("✅ User deleted successfully. Clearing stored data...");
-        await prefs.clear(); // ✅ Clear local storage after deletion
+        print("✅ Account deleted successfully");
+
+        // Preserve onboarding status
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        bool hasSeenOnboarding = prefs.getBool("hasSeenOnboarding") ?? false;
+
+        // ✅ ONLY remove user data (DO NOT clear onboarding flag)
+        await prefs.remove("accessToken");
+        await prefs.remove("refreshToken");
+        await prefs.remove("userId");
+
+        await prefs.setBool("hasSeenOnboarding", hasSeenOnboarding);
+
+        await StorageService.logout(context); // Clear storage after deletion
         return true;
       } else {
-        print("❌ Failed to delete user: ${response.body}");
+        print("❌ Failed to delete account: ${response.body}");
         return false;
       }
     } catch (e) {
-      print("❌ Error deleting user: $e");
+      print("❌ Error deleting account: $e");
       return false;
     }
   }

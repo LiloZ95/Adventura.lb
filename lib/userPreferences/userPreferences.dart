@@ -25,7 +25,7 @@ class EventSelectionScreen extends StatefulWidget {
 
 class _EventSelectionScreenState extends State<EventSelectionScreen> {
   List<Map<String, dynamic>> categories = [];
-  List<int> selectedCategoryIds = [];
+  List<Map<String, dynamic>> selectedPreferences = [];
   final int minSelections = 1; // ✅ Minimum required selections
   final int maxSelections = 5; // ✅ Maximum allowed selections
   String? errorMessage; // ✅ Store error message
@@ -63,20 +63,26 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
 
   Future<void> fetchCategories() async {
     try {
-      final response = await http
-          .get(Uri.parse("http://localhost:3000/users/categories"));
+      final response =
+          await http.get(Uri.parse("http://localhost:3000/categories"));
 
       if (response.statusCode == 200) {
         List<dynamic> data = jsonDecode(response.body);
-        setState(() {
-          categories = data
-              .map((item) => {
-                    "id": item["category_id"],
-                    "name": item["name"],
-                    "emoji": item["emoji"]
-                  })
-              .toList();
-        });
+
+        // ✅ Check if data is valid before setting state
+        if (data != null && data.isNotEmpty) {
+          setState(() {
+            categories = data
+                .map((item) => {
+                      "id": item["category_id"] ?? 0, // Prevent null ID
+                      "name": item["name"] ??
+                          "Unknown Category" // Prevent null name
+                    })
+                .toList();
+          });
+        } else {
+          print("⚠️ No categories found.");
+        }
       } else {
         print("❌ Failed to fetch categories: ${response.body}");
       }
@@ -86,7 +92,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
   }
 
   Future<void> _savePreferences() async {
-    if (selectedCategoryIds.length < minSelections) {
+    if (selectedPreferences.length < minSelections) {
       setState(() {
         errorMessage = "❌ Please select at least $minSelections preference.";
       });
@@ -95,16 +101,21 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? userId = prefs.getString("userId");
+    String? accessToken = prefs.getString("accessToken"); // ✅ Retrieve token
 
-    if (userId == null) {
-      print("❌ No user ID found!");
+    if (userId == null || accessToken == null) {
+      print("❌ No user ID or token found!");
       return;
     }
 
     final response = await http.post(
       Uri.parse("http://localhost:3000/users/preferences"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"userId": userId, "preferences": selectedCategoryIds}),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $accessToken" // ✅ Include the token
+      },
+      body: jsonEncode(
+          {"userId": int.parse(userId), "preferences": selectedPreferences}),
     );
 
     if (response.statusCode == 200) {
@@ -157,69 +168,73 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
               ),
               SizedBox(height: 20),
               // Wrap widget for categories, which will wrap as screen size changes
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: categories.map((category) {
-                  bool isSelected =
-                      selectedCategoryIds.contains(category['id']);
-                  bool isDisabled =
-                      selectedCategoryIds.length >= maxSelections &&
-                          !isSelected;
-                  return GestureDetector(
-                    onTap: isDisabled
-                        ? null
-                        : () {
-                            setState(() {
-                              if (isSelected) {
-                                selectedCategoryIds.remove(category['id']);
-                              } else if (selectedCategoryIds.length <
-                                  maxSelections) {
-                                selectedCategoryIds.add(category['id']);
-                              }
-                            });
-                          },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isDisabled
-                            ? Colors.grey[
-                                200] // Disabled buttons have grey[200] background
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          // If no button is selected, give all buttons a 1px grey[200] border.
-                          // Otherwise, apply the specific logic based on state.
-                          color: isSelected ? Colors.blue : Colors.grey[300]!,
-                          width: 2,
-                        ),
-                      ),
-                      padding:
-                          EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (!isDisabled)
-                            Text(category['emoji']!,
-                                style: TextStyle(fontSize: 18)),
-                          SizedBox(width: 6),
-                          Text(
-                            category['name']!,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              fontStyle: isDisabled
-                                  ? FontStyle.italic
-                                  : FontStyle.normal,
-                              color:
-                                  isDisabled ? Colors.grey[500] : Colors.black,
+              categories.isEmpty
+                  ? Center(
+                      child:
+                          CircularProgressIndicator()) // Show loading spinner
+                  : Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: categories.map((category) {
+                        String categoryName = category["name"] ??
+                            "Unknown"; // ✅ Prevent null values
+                        bool isSelected = selectedPreferences
+                            .any((p) => p['category_id'] == category['id']);
+                        bool isDisabled =
+                            selectedPreferences.length >= maxSelections &&
+                                !isSelected;
+
+                        return GestureDetector(
+                          onTap: isDisabled
+                              ? null
+                              : () {
+                                  setState(() {
+                                    if (isSelected) {
+                                      selectedPreferences.removeWhere((p) =>
+                                          p['category_id'] == category['id']);
+                                    } else if (selectedPreferences.length <
+                                        maxSelections) {
+                                      selectedPreferences.add({
+                                        "category_id": category['id'],
+                                        "preference_level":
+                                            3, // Default preference level
+                                      });
+                                    }
+                                  });
+                                  print("Selected: $categoryName");
+                                },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                vertical: 10, horizontal: 15),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: isSelected
+                                    ? Colors.blue
+                                    : Colors.grey[300]!,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  category['name']!,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    fontStyle: FontStyle.normal,
+                                    color: isDisabled
+                                        ? Colors.grey[500]
+                                        : Colors.black,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
+                        );
+                      }).toList(),
                     ),
-                  );
-                }).toList(),
-              ),
               SizedBox(height: 20),
               if (errorMessage != null)
                 Text(

@@ -32,7 +32,7 @@ class _SetPasswordState extends State<SetPassword> {
     try {
       final response = await http.post(
         Uri.parse(
-            'http://192.168.1.52:3000/users/reset-password'), // Adjust for emulator
+            'http://localhost:3000/users/reset-password'), // Adjust for emulator
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': widget.email,

@@ -99,19 +99,17 @@ router.post("/login", async (req, res) => {
 });
 
 router.post("/logout", (req, res) => {
-	const { refreshToken } = req.cookies; // Read from secure HTTP-only cookie
+	const { refreshToken } = req.body; // ✅ Read from request body instead of cookies
 
 	if (!refreshToken) {
 		return res.status(400).json({ message: "No refresh token provided" });
 	}
 
-	refreshTokens.delete(refreshToken); // Remove token from DB or cache
+	if (!refreshTokens.has(refreshToken)) {
+		return res.status(403).json({ message: "Invalid refresh token" });
+	}
 
-	res.clearCookie("refreshToken", {
-		httpOnly: true,
-		secure: true,
-		sameSite: "Strict",
-	});
+	refreshTokens.delete(refreshToken); // Remove token from stored set
 
 	res.status(200).json({ message: "Logged out successfully!" });
 });
@@ -269,6 +267,7 @@ router.post("/verify-otp", async (req, res) => {
 		`🔍 OTP Verification Request - Email: ${email}, Entered OTP: ${otp}`
 	);
 
+	// ✅ Check if the email exists in OTP storage
 	if (!otpStore[email]) {
 		console.log("❌ No OTP found for this email.");
 		return res.status(400).json({ error: "No OTP found for this email" });
@@ -276,6 +275,7 @@ router.post("/verify-otp", async (req, res) => {
 
 	const { otp: storedOtp, expiresAt } = otpStore[email];
 
+	// ✅ Check if OTP has expired
 	if (Date.now() > expiresAt) {
 		console.log("❌ OTP Expired.");
 		delete otpStore[email];
@@ -284,6 +284,7 @@ router.post("/verify-otp", async (req, res) => {
 			.json({ error: "OTP has expired. Please request a new one." });
 	}
 
+	// ✅ Check if OTP is correct
 	if (storedOtp !== otp) {
 		console.log(
 			`❌ Invalid OTP entered. Expected: ${storedOtp}, Received: ${otp}`
@@ -296,6 +297,7 @@ router.post("/verify-otp", async (req, res) => {
 
 	let user;
 
+	// 🔹 If it's for signup, create a new user
 	if (isForSignup) {
 		if (!firstName || !lastName || !phoneNumber || !password) {
 			console.log("❌ Missing required signup fields.");
@@ -305,6 +307,7 @@ router.post("/verify-otp", async (req, res) => {
 		}
 
 		try {
+			// ✅ Ensure user does not already exist
 			user = await User.findOne({ where: { email } });
 			if (user) {
 				return res
@@ -314,6 +317,7 @@ router.post("/verify-otp", async (req, res) => {
 
 			const hashedPassword = await bcrypt.hash(password, 10);
 
+			// ✅ Create new user
 			user = await User.create({
 				first_name: firstName,
 				last_name: lastName,
@@ -327,14 +331,17 @@ router.post("/verify-otp", async (req, res) => {
 				`✅ User "${user.first_name} ${user.last_name}" created successfully!`
 			);
 
+			// ✅ Assign user to correct category (client, provider, admin)
 			await distributeUsers(user);
 
+			// ✅ Fetch user from database after creation
 			user = await User.findOne({ where: { email } });
 		} catch (err) {
 			console.error("❌ Error creating user:", err);
 			return res.status(500).json({ error: "User creation failed" });
 		}
 	} else {
+		// 🔹 If it's OTP for login, fetch existing user
 		user = await User.findOne({ where: { email } });
 
 		if (!user) {
@@ -342,28 +349,13 @@ router.post("/verify-otp", async (req, res) => {
 		}
 	}
 
-	// ✅ Debugging: Log the user object before sending response
-	console.log("🔍 Final user object before response:", user);
-
+	// ✅ Ensure user exists and has `user_id`
 	if (!user || !user.user_id) {
 		console.error("❌ User ID is missing in response!");
 		return res.status(500).json({ error: "User ID is missing." });
 	}
 
-	let profilePicture = "";
-	const userProfile = await UserPfp.findOne({
-		where: { user_id: user.user_id },
-	});
-
-	if (userProfile && userProfile.image_data) {
-		profilePicture = `data:image/png;base64,${userProfile.image_data.toString(
-			"base64"
-		)}`;
-		console.log(`✅ Retrieved Profile Picture for User ID: ${user.user_id}`);
-	} else {
-		console.log(`❌ No profile picture found for User ID: ${user.user_id}`);
-	}
-
+	// ✅ Generate Access & Refresh Tokens
 	const accessToken = jwt.sign(
 		{ userId: user.user_id, email: user.email, userType: user.user_type },
 		process.env.JWT_SECRET,
@@ -378,29 +370,14 @@ router.post("/verify-otp", async (req, res) => {
 
 	refreshTokens.add(refreshToken);
 
+	// ✅ Store refresh token as HTTP-only cookie
 	res.cookie("refreshToken", refreshToken, {
 		httpOnly: true,
 		secure: true,
 		sameSite: "Strict",
 	});
 
-	// ✅ Debugging: Log the full response before sending it
-	console.log("✅ Final API Response:", {
-		success: true,
-		message: isForSignup
-			? "User registered and logged in successfully!"
-			: "OTP verified successfully!",
-		accessToken,
-		refreshToken,
-		user: {
-			user_id: user.user_id,
-			first_name: user.first_name,
-			last_name: user.last_name,
-			email: user.email,
-			profilePicture: profilePicture,
-		},
-	});
-
+	// ✅ Send response with full user details
 	return res.status(200).json({
 		success: true,
 		message: isForSignup
@@ -413,9 +390,33 @@ router.post("/verify-otp", async (req, res) => {
 			first_name: user.first_name,
 			last_name: user.last_name,
 			email: user.email,
-			profilePicture: profilePicture,
 		},
 	});
+});
+
+router.post("/validate-token", async (req, res) => {
+	const { user_id } = req.body;
+	const authHeader = req.header("Authorization");
+
+	if (!authHeader) {
+		return res.status(401).json({ error: "No token provided." });
+	}
+
+	const token = authHeader.split(" ")[1]; // Extract token from "Bearer <token>"
+
+	try {
+		const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+		if (!decoded || decoded.userId != user_id) {
+			return res.status(401).json({ error: "Invalid token for this user." });
+		}
+
+		console.log(`✅ Token is valid for user ID: ${decoded.userId}`);
+		return res.status(200).json({ success: true, message: "Token is valid." });
+	} catch (err) {
+		console.log("❌ Invalid Token:", err.message);
+		return res.status(401).json({ error: "Invalid or expired token." });
+	}
 });
 
 router.post("/refresh-token", userController.refreshAccessToken);
@@ -552,7 +553,7 @@ router.delete("/delete-profile-picture/:id", async (req, res) => {
 
 router.get("/:id", userController.getUserById);
 router.put("/:id", userController.updateUser);
-router.delete("/:id", async (req, res) => {
+router.delete("/delete-account/:id", async (req, res) => {
 	try {
 		const userId = req.params.id;
 		console.log(`🗑 Deleting user with ID: ${userId}`);
