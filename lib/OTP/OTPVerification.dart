@@ -33,7 +33,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   // ✅ Countdown Timer Variables
   int _remainingSeconds = 300; // 5 minutes = 300 seconds
   late Timer _timer;
-  bool _showResendButton = false; // ✅ Controls visibility of "Resend OTP" button
+  bool _showResendButton =
+      false; // ✅ Controls visibility of "Resend OTP" button
 
   // ✅ New: Border color for PinCodeTextField
   Color _pinBorderColor = Colors.grey[600]!; // Default grey
@@ -51,7 +52,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         setState(() => _remainingSeconds--);
       } else {
         setState(() {
-          _showResendButton = true; // ✅ Show "Resend Code" button when timer ends
+          _showResendButton =
+              true; // ✅ Show "Resend Code" button when timer ends
         });
         timer.cancel(); // Stop the timer at 00:00
       }
@@ -103,72 +105,104 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   }
 
   void _verifyOtp() async {
-    setState(() => _isLoading = true);
+    if (_otpController.text.isEmpty) {
+      setState(() {
+        _errorMessage = "❌ OTP cannot be empty!"; // ✅ Show error message
+        _isLoading = false;
+      });
+      return; // ✅ Stop execution
+    }
+
+    setState(() {
+      _isLoading = true; // ✅ Start loading only if OTP is not empty
+      _errorMessage = ""; // ✅ Clear previous errors
+    });
 
     print("🔍 Sending OTP Verification Request:");
     print("Email: ${widget.email}");
     print("Entered OTP: ${_otpController.text}");
     print("isForSignup: ${widget.isForSignup}");
 
-    final response = await OtpService.verifyOtp(
-      widget.email,
-      _otpController.text,
-      isForSignup: widget.isForSignup,
-      firstName: widget.signupData?["firstName"],
-      lastName: widget.signupData?["lastName"],
-      phoneNumber: widget.signupData?["phoneNumber"],
-      password: widget.signupData?["password"],
-    );
-
-    print("🔍 FULL API Response: $response");
-
-    // ✅ Ensure response contains "user"
-    if (!response.containsKey("user") || response["user"] == null) {
-      print("❌ User data is missing in response! Full Response: $response");
-      return;
-    }
-
-    Map<String, dynamic> user = response["user"];
-
-    // ✅ Debugging: Ensure all fields are present
-    print("🔍 Extracted User Data: $user");
-
-    if (!user.containsKey("user_id") || user["user_id"] == null) {
-      print("❌ User ID is missing in response!");
-      return;
-    }
-
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    String userId = user["user_id"].toString();
-    String firstName = user["first_name"] ?? "";
-    String lastName = user["last_name"] ?? "";
-    String profilePicture = user["profilePicture"] ?? "";
-
-    // ✅ Store user data
-    await prefs.setString("userId", userId);
-    await prefs.setString("firstName", firstName);
-    await prefs.setString("lastName", lastName);
-    await prefs.setString("profilePicture", profilePicture);
-    await prefs.setBool("isLoggedIn", true);
-
-    print(
-        "✅ Stored User Data: ID=$userId, Name=$firstName $lastName, ProfilePicture=$profilePicture");
-
-    if (widget.isForSignup) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => Favorite()),
+    try {
+      final response = await OtpService.verifyOtp(
+        widget.email,
+        _otpController.text,
+        isForSignup: widget.isForSignup,
+        firstName: widget.signupData?["firstName"],
+        lastName: widget.signupData?["lastName"],
+        phoneNumber: widget.signupData?["phoneNumber"],
+        password: widget.signupData?["password"],
       );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-            builder: (context) => SetPassword(email: widget.email)),
-      );
-    }
 
-    setState(() => _isLoading = false);
+      print("🔍 FULL API Response: $response");
+
+      // ✅ Ensure response contains "user"
+      if (!response.containsKey("user") || response["user"] == null) {
+        print("❌ User data is missing in response! Full Response: $response");
+        return;
+      }
+
+      Map<String, dynamic> user = response["user"];
+
+      // ✅ Debugging: Ensure all fields are present
+      print("🔍 Extracted User Data: $user");
+
+      if (!user.containsKey("user_id") || user["user_id"] == null) {
+        print("❌ User ID is missing in response!");
+        return;
+      }
+
+      if (response["success"] == true) {
+        print("✅ OTP Verified Successfully!");
+
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+        String userId = user["user_id"].toString();
+        String firstName = user["first_name"] ?? "";
+        String lastName = user["last_name"] ?? "";
+        String profilePicture = user["profilePicture"] ?? "";
+
+        // ✅ Store user data
+        await prefs.setString("userId", userId);
+        await prefs.setString("firstName", firstName);
+        await prefs.setString("lastName", lastName);
+        await prefs.setString("profilePicture", profilePicture);
+        await prefs.setBool("isLoggedIn", true);
+
+        print(
+            "✅ Stored User Data: ID=$userId, Name=$firstName $lastName, ProfilePicture=$profilePicture");
+
+        setState(() {
+          _isLoading = false; // ✅ Ensure loading stops after success
+        });
+
+        if (widget.isForSignup) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => Favorite()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (context) => SetPassword(email: widget.email)),
+          );
+        }
+      } else {
+        print("❌ OTP Verification Failed: ${response["error"]}");
+        setState(() {
+          _errorMessage = response["error"] ??
+              "Invalid OTP. Please try again."; // ✅ Show error message
+          _isLoading = false; // ✅ Stop loading
+        });
+      }
+    } catch (e) {
+      print("❌ Network or Server Error: $e");
+      setState(() {
+        _errorMessage = "❌ Network error. Please try again.";
+        _isLoading = false; // ✅ Ensure loading stops on network error
+      });
+    }
   }
 
   @override
@@ -185,7 +219,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     return RichText(
       textAlign: TextAlign.center,
       text: TextSpan(
-        text: "We have sent a verification code to your email, it will expire in ",
+        text:
+            "We have sent a verification code to your email, it will expire in ",
         style: TextStyle(
           fontSize: screenWidth * 0.035,
           color: Colors.black, // rest of text in black
@@ -318,7 +353,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                               padding: EdgeInsets.symmetric(vertical: 8.0),
                               child: Text(
                                 _errorMessage,
-                                style: TextStyle(color: Colors.red, fontSize: 14),
+                                style:
+                                    TextStyle(color: Colors.red, fontSize: 14),
                               ),
                             ),
 
@@ -327,11 +363,14 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           // ✅ Resend OTP Button (Shows only when _showResendButton is true)
                           if (_showResendButton)
                             TextButton(
-                              onPressed: _isResendingOtp ? null : _resendOtp, // Disable while resending
+                              onPressed: _isResendingOtp
+                                  ? null
+                                  : _resendOtp, // Disable while resending
                               child: Text(
                                 "Resend code",
                                 style: TextStyle(
-                                  color: Colors.blue, // Color based on dark mode
+                                  color:
+                                      Colors.blue, // Color based on dark mode
                                   fontFamily: "Poppins",
                                 ),
                               ),

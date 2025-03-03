@@ -61,7 +61,7 @@ const distributeUsers = async () => {
         insertQuery = `INSERT INTO administrator (user_id, permissions, admin_role) VALUES (:userId, 'All', 'Super Admin')`;
         insertValues = { userId: user_id };
       } else {
-        insertQuery = `INSERT INTO client (user_id, preferences, loyalty_points) VALUES (:userId, 'No preferences', 0)`;
+        insertQuery = `INSERT INTO client (user_id, loyalty_points) VALUES (:userId, 0)`;
         insertValues = { userId: user_id };
       }
 

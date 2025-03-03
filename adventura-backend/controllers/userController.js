@@ -162,27 +162,42 @@ const createUser = async (req, res) => {
 
 const updateUserPreferences = async (req, res) => {
 	try {
-	  const { userId, preferences } = req.body;
-  
-	  if (!userId || !preferences || preferences.length < 1 || preferences.length > 5) {
-		return res.status(400).json({ error: "User ID and 1-5 preferences are required." });
-	  }
-  
-	  await sequelize.query(
-		`UPDATE client SET preferences = :preferences WHERE user_id = :userId`,
-		{
-		  replacements: { userId, preferences: JSON.stringify(preferences) },
-		  type: QueryTypes.UPDATE,
+		const { userId, preferences } = req.body;
+
+		if (!userId || !preferences || preferences.length === 0) {
+			return res
+				.status(400)
+				.json({ error: "User ID and preferences are required." });
 		}
-	  );
-  
-	  res.status(200).json({ message: "Preferences updated successfully." });
+
+		// Remove old preferences
+		await sequelize.query(
+			`DELETE FROM user_preferences WHERE user_id = :userId`,
+			{ replacements: { userId }, type: QueryTypes.DELETE }
+		);
+
+		// Insert new preferences
+		for (const category of preferences) {
+			await sequelize.query(
+				`INSERT INTO user_preferences (user_id, category_id, preference_level)
+		   VALUES (:userId, :categoryId, :preferenceLevel)`,
+				{
+					replacements: {
+						userId,
+						categoryId: category.category_id,
+						preferenceLevel: category.preference_level || 3, // Default level = 3
+					},
+					type: QueryTypes.INSERT,
+				}
+			);
+		}
+
+		res.status(200).json({ message: "User preferences updated successfully." });
 	} catch (error) {
-	  console.error("❌ Error updating preferences:", error);
-	  res.status(500).json({ error: "Server error." });
+		console.error("❌ Error updating user preferences:", error);
+		res.status(500).json({ error: "Server error updating preferences." });
 	}
-  };
-  
+};
 
 // Function to distribute user into correct table
 const distributeUser = async (user) => {
@@ -272,9 +287,7 @@ const updateUser = async (req, res) => {
 // Delete user from every table.
 const deleteUser = async (req, res) => {
 	const { id } = req.params;
-
 	if (!id) {
-		console.log("❌ Error: No user ID provided");
 		return res
 			.status(400)
 			.json({ success: false, error: "User ID is required." });
@@ -282,17 +295,10 @@ const deleteUser = async (req, res) => {
 
 	console.log(`🗑 Attempting to delete user with ID: ${id}`);
 
-	const transaction = await sequelize.transaction(); // ✅ Start transaction
+	const transaction = await sequelize.transaction(); // Start transaction
 
 	try {
-		// ✅ Check if the user exists
-		const user = await User.findOne({ where: { user_id: id } });
-		if (!user) {
-			console.log(`❌ Error: User ID ${id} not found`);
-			return res.status(404).json({ success: false, error: "User not found." });
-		}
-
-		// ✅ Delete user from all related tables first
+		// Delete from all related tables
 		await sequelize.query(`DELETE FROM provider WHERE user_id = :id`, {
 			replacements: { id },
 			type: QueryTypes.DELETE,
@@ -311,26 +317,21 @@ const deleteUser = async (req, res) => {
 			transaction,
 		});
 
-		console.log(
-			`✅ Deleted related records for user ${id} from client, provider, administrator.`
-		);
+		console.log(`✅ Deleted related records for user ${id}.`);
 
-		// ✅ Finally, delete user from "USER" table
+		// Finally, delete user from USER table
 		await User.destroy({ where: { user_id: id }, transaction });
 
 		console.log(`✅ User ${id} deleted successfully.`);
+		await transaction.commit(); // Commit transaction
 
-		await transaction.commit(); // ✅ Commit transaction
-		return res.status(200).json({
-			success: true,
-			message: `User ${id} deleted successfully from all tables.`,
-		});
+		res
+			.status(200)
+			.json({ success: true, message: `User ${id} deleted successfully.` });
 	} catch (err) {
 		console.error("❌ Error deleting user:", err);
-		await transaction.rollback(); // ❌ Rollback transaction on error
-		return res
-			.status(500)
-			.json({ success: false, error: "Failed to delete user." });
+		await transaction.rollback(); // Rollback if an error occurs
+		res.status(500).json({ success: false, error: "Failed to delete user." });
 	}
 };
 

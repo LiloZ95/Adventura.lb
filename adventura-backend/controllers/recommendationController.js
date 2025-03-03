@@ -67,26 +67,36 @@ const setUserPreferences = async (req, res) => {
 // ✅ Get event recommendations based on AI
 const getRecommendations = async (req, res) => {
   try {
-    const user_id = req.user.userId;
+    const userId = req.user.userId;
 
-    // 🛠 Call AI Model (To be implemented in Python)
-    const recommendations = await fetchRecommendationsFromAI(user_id);
+    // Get user preferences from user_preferences table
+    const userPreferences = await sequelize.query(
+      `SELECT category_id, preference_level FROM user_preferences WHERE user_id = :userId`,
+      { replacements: { userId }, type: QueryTypes.SELECT }
+    );
 
-    res.status(200).json({ recommendations });
+    if (userPreferences.length === 0) {
+      return res.status(200).json({ recommendations: [], message: "No preferences found." });
+    }
+
+    // Fetch recommended events based on user preferences
+    const recommendedEvents = await sequelize.query(
+      `SELECT event.event_id, event.name, event.category_id, category.name AS category_name
+       FROM event
+       JOIN category ON event.category_id = category.category_id
+       WHERE event.category_id IN (:categoryIds)
+       ORDER BY RANDOM() LIMIT 10;`,
+      {
+        replacements: { categoryIds: userPreferences.map(p => p.category_id) },
+        type: QueryTypes.SELECT,
+      }
+    );
+
+    res.status(200).json({ recommendations: recommendedEvents });
   } catch (error) {
     console.error("❌ Error fetching recommendations:", error);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Server error fetching recommendations." });
   }
-};
-
-// 🛠 Placeholder function for AI-based recommendations
-const fetchRecommendationsFromAI = async (user_id) => {
-  // 🔹 This should call the Python ML model
-  console.log(`🔍 Fetching AI recommendations for user ${user_id}...`);
-  return [
-    { event_id: 5, name: "Music Festival", category: "Music", score: 0.92 },
-    { event_id: 12, name: "Tech Conference", category: "Technology", score: 0.88 },
-  ];
 };
 
 module.exports = {

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
 import 'package:adventura/login/login.dart';
 import 'package:adventura/Services/profile_service.dart';
@@ -10,6 +11,8 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:adventura/userinformation/profileOptionTile.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart';
 
 class UserInfo extends StatefulWidget {
   @override
@@ -313,20 +316,22 @@ class _UserInfoState extends State<UserInfo> {
                   ),
                   //delete account option
                   ProfileOptionTile(
-                    icon: Icons.close,
+                    icon: Icons.delete,
                     title: "Close Account",
                     subtitle: "Close your personal account",
-                    onTap: () {
-                      _deleteAccountOption(context);
+                    onTap: () async {
+                      print("🚨 Delete button pressed!");
+                      _showDeleteConfirmationDialog(
+                          context); // ✅ Call dialog directly
                     },
                   ),
                   //logout
                   ProfileOptionTile(
-                    icon: Icons.logout_outlined,
+                    icon: Icons.logout,
                     title: "Logout",
-                    onTap: () {
-                      // handle tap
-                      _logoutOption(context);
+                    onTap: () async {
+                      print("🚀 Logout button pressed!");
+                      await StorageService.logout(context);
                     },
                   ),
                   //membership section
@@ -519,21 +524,28 @@ class _UserInfoState extends State<UserInfo> {
             TextStyle(fontSize: 16, color: Colors.red, fontFamily: "Poppins"),
       ),
       onTap: () async {
+        print("🚀 Logout button pressed!");
         await StorageService.logout(context);
+        print("✅ Logout function finished!");
       },
     );
   }
 
   // ✅ Delete Account Button
   Widget _deleteAccountOption(BuildContext context) {
-    return ListTile(
-      leading: Icon(Icons.delete_forever, color: Colors.red),
-      title: Text(
-        "Delete Account",
-        style:
-            TextStyle(fontSize: 16, color: Colors.red, fontFamily: "Poppins"),
+    return GestureDetector(
+      onTap: () {
+        print("🚨 Delete Account button tapped!");
+        _showDeleteConfirmationDialog(context);
+      },
+      child: ListTile(
+        leading: Icon(Icons.delete_forever, color: Colors.red),
+        title: Text(
+          "Delete Account",
+          style:
+              TextStyle(fontSize: 16, color: Colors.red, fontFamily: "Poppins"),
+        ),
       ),
-      onTap: () => _showDeleteConfirmationDialog(context),
     );
   }
 
@@ -541,26 +553,46 @@ class _UserInfoState extends State<UserInfo> {
   void _showDeleteConfirmationDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: Text("Delete Account"),
+          title: Text(
+            "⚠️ Confirm Account Deletion",
+            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+          ),
           content: Text(
-              "Are you sure you want to delete your account? This action is irreversible."),
+            "Are you sure you want to delete your account? This action is irreversible.",
+            style: TextStyle(fontSize: 16),
+          ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                print("❌ User canceled account deletion.");
+                Navigator.pop(dialogContext);
+              },
               child: Text("Cancel", style: TextStyle(color: Colors.grey)),
             ),
             TextButton(
               onPressed: () async {
-                bool success = await UserService.deleteUser();
+                Navigator.pop(dialogContext); // ✅ Close dialog first
+
+                print("🚨 User confirmed account deletion.");
+
+                bool success = await UserService.deleteUser(context);
                 if (success) {
-                  Navigator.pushReplacement(context,
-                      MaterialPageRoute(builder: (context) => LoginPage()));
+                  if (context.mounted) {
+                    // ✅ Check if the widget is still in the tree
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (context) => LoginPage()),
+                      (route) => false,
+                    );
+                  }
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Failed to delete account.")),
-                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Failed to delete account.")),
+                    );
+                  }
                 }
               },
               child: Text("Delete", style: TextStyle(color: Colors.red)),

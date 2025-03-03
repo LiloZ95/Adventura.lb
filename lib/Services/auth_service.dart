@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:adventura/Services/storage_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -34,7 +35,10 @@ class AuthService {
         return {"success": true, "message": responseData["message"]};
       } else {
         print("❌ Signup Failed: ${responseData["error"] ?? "Unknown error"}");
-        return {"success": false, "error": responseData["error"] ?? "Signup failed"};
+        return {
+          "success": false,
+          "error": responseData["error"] ?? "Signup failed"
+        };
       }
     } catch (e) {
       print("❌ Exception in Signup: $e");
@@ -43,101 +47,130 @@ class AuthService {
   }
 
   /// ✅ **Login User**
-Future<Map<String, dynamic>> loginUser(String email, String password) async {
-  try {
-    final response = await http.post(
-      Uri.parse('$baseUrl/users/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'email': email, 'password': password}),
-    );
+  Future<Map<String, dynamic>> loginUser(String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': email, 'password': password}),
+      );
 
-    final data = jsonDecode(response.body);
-    print("🔍 Login API Response: $data");
+      final data = jsonDecode(response.body);
+      print("🔍 Login API Response: $data");
 
-    if (response.statusCode == 200 && data is Map) {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
+      if (response.statusCode == 200 && data is Map) {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
 
-      String? accessToken = data["accessToken"];
-      String? refreshToken = data["refreshToken"];
-      Map<String, dynamic>? user = data["user"];
+        String? accessToken = data["accessToken"];
+        String? refreshToken = data["refreshToken"];
+        Map<String, dynamic>? user = data["user"];
 
-      print("🔑 Received Access Token: $accessToken");
-      print("🔑 Received Refresh Token: $refreshToken");
+        print("🔑 Received Access Token: $accessToken");
+        print("🔑 Received Refresh Token: $refreshToken");
 
-      // ✅ Check if the API response is valid
-      if (accessToken == null || refreshToken == null || user == null) {
-        print("❌ API response missing required fields.");
-        return {"success": false, "error": "Invalid server response. Please try again."};
+        // ✅ Check if the API response is valid
+        if (accessToken == null || refreshToken == null || user == null) {
+          print("❌ API response missing required fields.");
+          return {
+            "success": false,
+            "error": "Invalid server response. Please try again."
+          };
+        }
+
+        // ✅ Securely store tokens
+        await storage.write(key: "accessToken", value: accessToken);
+        await storage.write(key: "refreshToken", value: refreshToken);
+
+        // ✅ Verify tokens were saved correctly
+        String? storedAccessToken = await storage.read(key: "accessToken");
+        String? storedRefreshToken = await storage.read(key: "refreshToken");
+
+        if (storedAccessToken == null || storedRefreshToken == null) {
+          print("❌ Token storage failed. Check storage permissions.");
+          return {
+            "success": false,
+            "error": "Failed to store authentication tokens."
+          };
+        }
+
+        print("✅ Tokens successfully stored!");
+
+        try {
+          // ✅ Store user details in SharedPreferences
+          await prefs.setBool("isLoggedIn", true);
+          await prefs.setString("userId", user["user_id"].toString());
+          await prefs.setString("firstName", user["first_name"] ?? "");
+          await prefs.setString("lastName", user["last_name"] ?? "");
+          await prefs.setString("profilePicture", user["profilePicture"] ?? "");
+
+          print(
+              "✅ User details saved: ID=${user["user_id"]}, Name=${user["first_name"]} ${user["last_name"]}");
+        } catch (e) {
+          print("❌ Error storing user data: $e");
+          return {"success": false, "error": "Failed to store user data."};
+        }
+
+        return {"success": true, "user": user};
+      } else {
+        print("❌ Login failed. API Error: ${data["error"] ?? "Unknown error"}");
+        return {
+          "success": false,
+          "error": data["error"] ?? "Invalid credentials"
+        };
       }
-
-      // ✅ Securely store tokens
-      await storage.write(key: "accessToken", value: accessToken);
-      await storage.write(key: "refreshToken", value: refreshToken);
-
-      // ✅ Verify tokens were saved correctly
-      String? storedAccessToken = await storage.read(key: "accessToken");
-      String? storedRefreshToken = await storage.read(key: "refreshToken");
-
-      if (storedAccessToken == null || storedRefreshToken == null) {
-        print("❌ Token storage failed. Check storage permissions.");
-        return {"success": false, "error": "Failed to store authentication tokens."};
-      }
-
-      print("✅ Tokens successfully stored!");
-
-      try {
-        // ✅ Store user details in SharedPreferences
-        await prefs.setBool("isLoggedIn", true);
-        await prefs.setString("userId", user["user_id"].toString());
-        await prefs.setString("firstName", user["first_name"] ?? "");
-        await prefs.setString("lastName", user["last_name"] ?? "");
-        await prefs.setString("profilePicture", user["profilePicture"] ?? "");
-
-        print("✅ User details saved: ID=${user["user_id"]}, Name=${user["first_name"]} ${user["last_name"]}");
-      } catch (e) {
-        print("❌ Error storing user data: $e");
-        return {"success": false, "error": "Failed to store user data."};
-      }
-
-      return {"success": true, "user": user};
-    } else {
-      print("❌ Login failed. API Error: ${data["error"] ?? "Unknown error"}");
-      return {"success": false, "error": data["error"] ?? "Invalid credentials"};
+    } catch (e) {
+      print("❌ Login Exception: $e");
+      return {"success": false, "error": "Failed to connect to server"};
     }
-  } catch (e) {
-    print("❌ Login Exception: $e");
-    return {"success": false, "error": "Failed to connect to server"};
   }
-}
 
+  static Future<Map<String, String>> getAuthHeaders() async {
+    String? accessToken = await StorageService.getAccessToken();
+    if (accessToken == null) {
+      print("❌ No access token found.");
+      return {
+        "Content-Type": "application/json"
+      }; // No token, send empty headers
+    }
+
+    return {
+      "Authorization": "Bearer $accessToken",
+      "Content-Type": "application/json",
+    };
+  }
 
   /// ✅ **Refresh JWT Token**
   static Future<bool> refreshToken() async {
-    String? refreshToken = await storage.read(key: "refreshToken");
+    print("🔄 Refreshing access token...");
 
+    String? refreshToken =
+        await StorageService.storage.read(key: "refreshToken");
     if (refreshToken == null) {
-      print("❌ No refresh token found. User must log in again.");
+      print("❌ No refresh token found!");
       return false;
     }
 
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/refresh-token'),
+      var response = await http.post(
+        Uri.parse("$baseUrl/users/refresh-token"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"refreshToken": refreshToken}),
       );
 
-      final responseData = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        await storage.write(key: "accessToken", value: responseData["accessToken"]);
-        print("✅ Token refreshed successfully.");
+        var data = jsonDecode(response.body);
+        String newAccessToken = data["accessToken"];
+
+        await StorageService.storage
+            .write(key: "accessToken", value: newAccessToken);
+        print("✅ Access token refreshed successfully!");
         return true;
       } else {
-        print("❌ Failed to refresh token: ${responseData["error"] ?? "Unknown error"}");
+        print("❌ Failed to refresh token. Server response: ${response.body}");
         return false;
       }
-    } catch (e) {
-      print("❌ Token refresh failed: $e");
+    } catch (error) {
+      print("❌ Error refreshing token: $error");
       return false;
     }
   }
