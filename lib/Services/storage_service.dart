@@ -51,15 +51,16 @@ class StorageService {
 
   /// ✅ **Fetch Access Token**
   static Future<String?> getAccessToken() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? token = await storage.read(key: "accessToken") ??
-        prefs.getString("accessToken");
+    String? token = await storage.read(key: "accessToken");
 
     if (token == null) {
       print(
           "❌ No token found in secure storage. Checking SharedPreferences...");
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      token = prefs.getString("accessToken");
     }
 
+    // ✅ Check if token is expired
     if (token != null && await isTokenExpired(token)) {
       print("🔄 Token expired, attempting to refresh...");
       bool refreshed = await AuthService.refreshToken();
