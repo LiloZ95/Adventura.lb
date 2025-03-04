@@ -36,9 +36,9 @@ connectDB()
 
 // ✅ Register Routes
 app.use("/users", userRoutes);
-app.use("/recommendations", recommendationRoutes);
 app.use("/categories", categoryRoutes); // Add category routes
 app.get("/users/profile", authenticateToken, getUserById); // ✅ Correct authentication usage
+app.use("/recommendations", recommendationRoutes);
 
 // ✅ Global Error Handling Middleware (Prevents Crashes)
 app.use((err, req, res, next) => {
