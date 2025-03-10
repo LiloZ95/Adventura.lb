@@ -178,7 +178,7 @@ class _LoginPageState extends State<LoginPage> {
                           color: Colors.black,
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.02), // Dynamic spacing
+                      SizedBox(height: screenHeight * 0.005), // Dynamic spacing
                       Text(
                         "Login with your credentials or create a new account.",
                         textAlign: TextAlign.center,
@@ -189,7 +189,7 @@ class _LoginPageState extends State<LoginPage> {
                           color: Color(0x77000000),
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.05), // Dynamic spacing
+                      SizedBox(height: screenHeight * 0.02), // Dynamic spacing
 
                       // Email text field with validation
                       TextField(
@@ -266,13 +266,9 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.03), // Dynamic spacing
 
-                      // "Forgotten password?" link, centered
+                      SizedBox(height: screenHeight * 0.03),
 
-                      SizedBox(height: screenHeight * 0.03), // Dynamic spacing
-
-                      // "Or continue with" text and divider
                       Row(
                         children: [
                           Expanded(
@@ -298,14 +294,18 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ],
                       ),
-                      SizedBox(height: screenHeight * 0.02), // Dynamic spacing
+                      SizedBox(height: screenHeight * 0.01), // Dynamic spacing
 
                       // Facebook login button
                       ElevatedButton.icon(
                         onPressed: () {
                           // Handle Facebook login
                         },
-                        icon: Image.asset('assets/Icons/Facebook.png'),
+                        icon: Image.asset(
+                          'assets/Icons/Facebook.png',
+                          width: screenWidth * 0.1,
+                          height: screenWidth * 0.1,
+                        ),
                         label: Text(
                           "Sign in With Facebook",
                           style: TextStyle(fontSize: 16, fontFamily: 'Poppins'),
@@ -326,7 +326,11 @@ class _LoginPageState extends State<LoginPage> {
                         onPressed: () {
                           // Handle Google login
                         },
-                        icon: Image.asset('assets/Icons/google.png'),
+                        icon: Image.asset(
+                          'assets/Icons/google.png',
+                          width: screenWidth * 0.1,
+                          height: screenWidth * 0.1,
+                        ),
                         label: Text(
                           "Sign in With Google",
                           style: TextStyle(fontSize: 16, fontFamily: 'Poppins'),
@@ -340,7 +344,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.03), // Dynamic spacing
+                      SizedBox(height: screenHeight * 0.01), // Dynamic spacing
                       Center(
                         child: TextButton(
                           onPressed: () {
@@ -363,7 +367,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       // Continue button
-                      SizedBox(height: 17),
+                      SizedBox(height: screenHeight * 0.01), // Dynamic spacing
                       ElevatedButton(
                         onPressed: _isLoading
                             ? null
@@ -380,7 +384,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
 
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.navy,
+                          backgroundColor: AppColors.blue,
                           padding: EdgeInsets.symmetric(
                             vertical: screenHeight * 0.02, // Dynamic padding
                           ),
@@ -389,7 +393,9 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-                      SizedBox(height: 24),
+                      SizedBox(
+                        height: screenWidth * 0.03,
+                      ),
 
                       // Not a member? Create an account
                       Center(
