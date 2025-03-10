@@ -383,35 +383,58 @@ const loginUser = async (req, res) => {
 };
 
 const refreshAccessToken = (req, res) => {
-	const { refreshToken } = req.cookies; // Read from secure HTTP-only cookie
+	try {
+		const { refreshToken } = req.body;
+		if (!refreshToken)
+			return res.status(400).json({ error: "Refresh token required" });
 
-	if (!refreshToken) {
-		return res.status(401).json({ error: "Refresh token required" });
-	}
+		// Verify refresh token
+		jwt.verify(
+			refreshToken,
+			process.env.REFRESH_TOKEN_SECRET,
+			async (err, decoded) => {
+				if (err)
+					return res
+						.status(401)
+						.json({ error: "Invalid or expired refresh token." });
 
-	if (!refreshTokens.has(refreshToken)) {
-		return res.status(403).json({ error: "Invalid refresh token" });
-	}
+				const userId = decoded.userId;
+				const user = await User.findByPk(userId);
+				if (!user) return res.status(404).json({ error: "User not found." });
 
-	jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, (err, decoded) => {
-		if (err) {
-			return res
-				.status(403)
-				.json({ error: "Invalid or expired refresh token" });
-		}
+				// Check last login time (only allow refresh within 7 days)
+				const lastLogin = new Date(user.lastLogin || 0);
+				const now = new Date();
+				const diffDays = (now - lastLogin) / (1000 * 60 * 60 * 24);
 
-		const newAccessToken = jwt.sign(
-			{
-				userId: decoded.userId,
-				email: decoded.email,
-				userType: decoded.userType,
-			},
-			process.env.JWT_SECRET,
-			{ expiresIn: "15m" }
+				if (diffDays > 7) {
+					return res
+						.status(403)
+						.json({ error: "Session expired. Please log in again." });
+				}
+
+				// Generate new access & refresh tokens
+				const newAccessToken = jwt.sign(
+					{ userId: user.user_id, email: user.email },
+					process.env.JWT_SECRET,
+					{ expiresIn: "15m" }
+				);
+				const newRefreshToken = jwt.sign(
+					{ userId: user.user_id },
+					process.env.JWT_REFRESH_SECRET,
+					{ expiresIn: "7d" }
+				);
+
+				res.json({
+					accessToken: newAccessToken,
+					refreshToken: newRefreshToken,
+				});
+			}
 		);
-
-		res.json({ accessToken: newAccessToken });
-	});
+	} catch (error) {
+		console.error("Error refreshing token:", error);
+		res.status(500).json({ error: "Internal server error" });
+	}
 };
 
 module.exports = {

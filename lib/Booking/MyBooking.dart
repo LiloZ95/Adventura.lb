@@ -1,21 +1,37 @@
 import 'package:adventura/Booking/CancelBooking.dart';
-import 'package:adventura/search%20screen/modalActivityView.dart';
 import 'package:flutter/material.dart';
 
+void main() {
+  runApp(MyApp());
+}
+
+/// The root widget of the application.
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'My Bookings',
+      debugShowCheckedModeBanner: false,
+      home: MyBookingsPage(),
+    );
+  }
+}
+
+/// The MyBookingsPage displays the list of bookings.
+/// Tapping the Cancel button on a booking opens the CancelBookingScreen
+/// as a responsive modal that covers about 80% of the screen height.
 class MyBookingsPage extends StatefulWidget {
-  const MyBookingsPage({super.key});
+  const MyBookingsPage({Key? key}) : super(key: key);
 
   @override
   _MyBookingsPageState createState() => _MyBookingsPageState();
 }
-bool isUpcomingSelected = true;
-class _MyBookingsPageState extends State<MyBookingsPage> {
-   // Variable to track the selected tab
 
+bool isUpcomingSelected = true;
+
+class _MyBookingsPageState extends State<MyBookingsPage> {
   @override
   Widget build(BuildContext context) {
-    
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white, // Matches the page background
@@ -59,9 +75,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                       },
                       child: Container(
                         decoration: BoxDecoration(
-                          color: isUpcomingSelected
-                              ? Colors.white
-                              : Colors.transparent,
+                          color: isUpcomingSelected ? Colors.white : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         alignment: Alignment.center,
@@ -71,15 +85,12 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Poppins',
-                            color: isUpcomingSelected
-                                ? Colors.black
-                                : Colors.grey[600],
+                            color: isUpcomingSelected ? Colors.black : Colors.grey[600],
                           ),
                         ),
                       ),
                     ),
                   ),
-
                   // Past Button
                   Expanded(
                     child: GestureDetector(
@@ -90,9 +101,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                       },
                       child: Container(
                         decoration: BoxDecoration(
-                          color: !isUpcomingSelected
-                              ? Colors.white
-                              : Colors.transparent,
+                          color: !isUpcomingSelected ? Colors.white : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         alignment: Alignment.center,
@@ -102,9 +111,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Poppins',
-                            color: !isUpcomingSelected
-                                ? Colors.black
-                                : Colors.grey[600],
+                            color: !isUpcomingSelected ? Colors.black : Colors.grey[600],
                           ),
                         ),
                       ),
@@ -114,7 +121,6 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
               ),
             ),
             const SizedBox(height: 20), // Spacing below toggle buttons
-
             // Dynamic Title
             Align(
               alignment: Alignment.centerLeft,
@@ -128,7 +134,6 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
               ),
             ),
             const SizedBox(height: 10),
-
             // Booking List
             Expanded(
               child: ListView(
@@ -142,42 +147,32 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                     guests: '3 Guests',
                     status: 'Upcoming',
                     onCancel: () {
-                       
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => CancelBookingScreen(),
-    ),
-  );
-
+                      // Show CancelBookingScreen as a responsive modal with rounded top corners.
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            topRight: Radius.circular(16),
+                          ),
+                        ),
+                        builder: (context) {
+                          return FractionallySizedBox(
+                            heightFactor: 0.8, // Modal takes 80% of screen height
+                            child: CancelBookingScreen(),
+                          );
+                        },
+                      );
                     },
                     onView: () {
+                      // Replace with your view booking functionality.
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => EventDetailsScreen(
-                            title: 'Saint Moritz',
-                            date: 'May 22, 2024 - May 26, 2024',
-                            location: 'Switzerland',
-                            imagePaths: [
-                              'assets/Pictures/island.jpg'
-                            ], // Assuming only one image, add more if available
-                            tripPlan: [
-                              {
-                                'time': '10:00 AM',
-                                'event': 'Arrival at Resort'
-                              },
-                              {
-                                'time': '12:00 PM',
-                                'event': 'Lunch by the Beach'
-                              },
-                              {
-                                'time': '3:00 PM',
-                                'event': 'Snorkeling Adventure'
-                              },
-                            ], // Add trip plan details
-                            description:
-                                'Experience a luxurious getaway in the Maldives with breathtaking ocean views, premium dining, and exciting activities like snorkeling and sunset cruises.',
+                          builder: (context) => Scaffold(
+                            appBar: AppBar(title: Text("View Booking")),
+                            body: Center(child: Text("Booking details here")),
                           ),
                         ),
                       );
@@ -191,34 +186,31 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                     date: 'May 22, 2024 - May 26, 2024',
                     guests: '2 Guests',
                     status: 'Upcoming',
-                    onCancel: () {},
+                    onCancel: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            topRight: Radius.circular(16),
+                          ),
+                        ),
+                        builder: (context) {
+                          return FractionallySizedBox(
+                            heightFactor: 0.8,
+                            child: CancelBookingScreen(),
+                          );
+                        },
+                      );
+                    },
                     onView: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>  EventDetailsScreen(
-                            title: 'Addu Atoll',
-                            date: 'May 22, 2024 - May 26, 2024',
-                            location: 'Maldives',
-                            imagePaths: [
-                              'assets/Pictures/picnic.webp'
-                            ], // Assuming only one image, add more if available
-                            tripPlan: [
-                              {
-                                'time': '10:00 AM',
-                                'event': 'Arrival at Resort'
-                              },
-                              {
-                                'time': '12:00 PM',
-                                'event': 'Lunch by the Beach'
-                              },
-                              {
-                                'time': '3:00 PM',
-                                'event': 'Snorkeling Adventure'
-                              },
-                            ], // Add trip plan details
-                            description:
-                                'Experience a luxurious getaway in the Maldives with breathtaking ocean views, premium dining, and exciting activities like snorkeling and sunset cruises.',
+                          builder: (context) => Scaffold(
+                            appBar: AppBar(title: Text("View Booking")),
+                            body: Center(child: Text("Booking details here")),
                           ),
                         ),
                       );
@@ -234,6 +226,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
   }
 }
 
+/// The BookingCard widget displays booking details with options to cancel or view.
 class BookingCard extends StatelessWidget {
   final String imageUrl;
   final String title;
@@ -245,7 +238,8 @@ class BookingCard extends StatelessWidget {
   final VoidCallback onCancel;
   final VoidCallback onView;
 
-  const BookingCard({super.key, 
+  const BookingCard({
+    Key? key,
     required this.imageUrl,
     required this.title,
     required this.location,
@@ -255,142 +249,126 @@ class BookingCard extends StatelessWidget {
     required this.status,
     required this.onCancel,
     required this.onView,
-  });
+  }) : super(key: key);
+
+  void showReviewModal(BuildContext context, String title, String location, String imageUrl) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Leave a Review", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily:'Poppins')),
+              SizedBox(height: 10),
+              // Activity Image + Details
+              Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.asset(imageUrl, width: 80, height: 80, fit: BoxFit.cover),
+                  ),
+                  SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      Row(
+                        children: [
+                          Icon(Icons.location_on, size: 14, color: Colors.grey),
+                          SizedBox(width: 4),
+                          Text(location, style: TextStyle(fontSize: 14, color: Colors.grey)),
+                        ],
+                      ),
+                    ],
+                  )
+                ],
+              ),
+              SizedBox(height: 10),
+              // Rating Section
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  SizedBox(
+                    width: double.infinity,
+                    child: Text(
+                      "Please give your rating with us",
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  StatefulBuilder(
+                    builder: (context, setState) {
+                      int selectedRating = 0;
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(5, (index) {
+                          return IconButton(
+                            icon: Icon(
+                              index < selectedRating ? Icons.star : Icons.star_border,
+                              size: 32,
+                              color: index < selectedRating ? Colors.yellow : Colors.grey,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                selectedRating = index + 1;
+                              });
+                            },
+                          );
+                        }),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+              // Comment Box
+              SizedBox(
+                width: double.infinity,
+                height: 230,
+                child: TextField(
+                  maxLines: 10,
+                  decoration: InputDecoration(
+                    hintText: "Add a Comment",
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+              SizedBox(height: 40),
+              // Buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text("Cancel", style: TextStyle(fontSize: 16)),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: Text("Submit", style: TextStyle(fontSize: 16)),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.pink),
+                  )
+                ],
+              )
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    int selectedRating = 0;
-    void showReviewModal(BuildContext context, String title, String location, String imageUrl) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-    ),
-    builder: (context) {
-      return Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Leave a Review", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,fontFamily:'Poppins')),
-            SizedBox(height: 10),
-            
-            // Activity Image + Details
-            Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.asset(imageUrl, width: 80, height: 80, fit: BoxFit.cover),
-                ),
-                SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    Row(
-                      children: [
-                        Icon(Icons.location_on, size: 14, color: Colors.grey),
-                        SizedBox(width: 4),
-                        Text(location, style: TextStyle(fontSize: 14, color: Colors.grey)),
-                      ],
-                    ),
-                  ],
-                )
-              ],
-            ),
-            
-            SizedBox(height: 10),
-          Column(
-  mainAxisAlignment: MainAxisAlignment.center, // Centers vertically
-  crossAxisAlignment: CrossAxisAlignment.center, // Centers horizontally
-  children: <Widget>[
-    SizedBox(
-      width: double.infinity,
-      child: Text(
-        "Please give your rating with us",
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,fontFamily: 'Poppins'),
-        textAlign: TextAlign.center, // Centers the text itself
-      ),
-    ),
-    SizedBox(height: 10), // Adds spacing
-    StatefulBuilder(
-      builder: (context, setState) {
-      // Move this outside StatefulBuilder to retain value
-
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center, // Centers the stars
-          children: List.generate(5, (index) {
-            return IconButton(
-              icon: Icon(
-                index < selectedRating ? Icons.star : Icons.star_border, // Correct fill logic
-                size: 32,
-                color: index < selectedRating ? Colors.yellow : Colors.grey, // Updates color dynamically
-              ),
-              onPressed: () {
-                setState(() {
-                  selectedRating = index + 1; // Updates rating
-                });
-              },
-            );
-          }),
-        );
-      },
-    ),
-  ],
-),
-
-
-            
-            // Comment Box
-            SizedBox(
-              width:double.infinity,
-              height: 230,
-              child: TextField(
-                maxLines: 10,
-                decoration: InputDecoration(
-                  hintText: "Add a Comment",
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-            ),
-            
-            SizedBox(height: 40),
-
-            // Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text("Cancel", style: TextStyle(fontSize: 16)),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    // Save Rating & Close
-                    Navigator.pop(context);
-                  },
-                  child: Text("Submit", style: TextStyle(fontSize: 16)),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.pink),
-                )
-              ],
-            )
-          ],
-        ),
-      );
-    },
-  );
-}
-    void cancelBooking(String bookingId) {
-  // Add functionality to cancel a booking
-  print("Cancel booking: $bookingId");
-}
-
-void writeReview(String bookingId) {
-  // Add functionality to write a review
-  print("Write review for booking: $bookingId");
-}
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -441,10 +419,7 @@ void writeReview(String bookingId) {
                         const SizedBox(width: 4),
                         Text(
                           location,
-                          style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
-                              fontFamily: 'Poppins'),
+                          style: const TextStyle(fontSize: 14, color: Colors.grey, fontFamily: 'Poppins'),
                         ),
                       ],
                     ),
@@ -457,10 +432,7 @@ void writeReview(String bookingId) {
                       ),
                       child: Text(
                         status,
-                        style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'poppins'),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, fontFamily: 'poppins'),
                       ),
                     ),
                   ],
@@ -469,8 +441,6 @@ void writeReview(String bookingId) {
             ],
           ),
           const SizedBox(height: 10),
-
-          // Booking ID, Date, and Guests
           Text('Booking ID: $bookingId',
               style: const TextStyle(
                 fontSize: 16,
@@ -485,9 +455,9 @@ void writeReview(String bookingId) {
                 fontFamily: 'Poppins',
               )),
           const Align(
-            alignment: Alignment.centerLeft, // Keeps divider aligned
+            alignment: Alignment.centerLeft,
             child: SizedBox(
-              width: double.infinity, // Makes divider full width
+              width: double.infinity,
               child: Divider(
                 color: Colors.grey,
                 thickness: 1,
@@ -503,49 +473,41 @@ void writeReview(String bookingId) {
                   fontFamily: 'Poppins',
                 )),
           ),
-          // Buttons
-    Row(
-  children: [
-    Expanded(
-      child: ElevatedButton(
-        onPressed: isUpcomingSelected
-            ? onCancel // Function for Cancel
-            : onView, // Same View Booking functionality
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isUpcomingSelected ? Colors.red : Colors.blue,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        child: Text(
-          isUpcomingSelected ? 'Cancel' : 'View Booking',
-          style: TextStyle(color: Colors.white, fontFamily: 'Poppins', fontSize: 14),
-        ),
-      ),
-    ),
-    SizedBox(width: 12),
-    Expanded(
-      child: ElevatedButton(
-        onPressed: isUpcomingSelected
-            ? onView // Same View Booking functionality
-            : ()=> showReviewModal(context, 'Addu Atoll', 'maldives',  'assets/Pictures/picnic.webp'), // Function for Writing a Review
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isUpcomingSelected ? Colors.blue : Colors.blue,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        child: Text(
-          isUpcomingSelected ? 'View Booking' : 'Write a Review',
-          style: TextStyle(color: Colors.white, fontFamily: 'Poppins', fontSize: 14),
-        ),
-      ),
-    ),
-  ],
-),
-
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: isUpcomingSelected ? onCancel : onView,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isUpcomingSelected ? Colors.red : Colors.blue,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text(
+                    isUpcomingSelected ? 'Cancel' : 'View Booking',
+                    style: TextStyle(color: Colors.white, fontFamily: 'Poppins', fontSize: 14),
+                  ),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: isUpcomingSelected
+                      ? onView
+                      : () => showReviewModal(context, title, location, imageUrl),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text(
+                    isUpcomingSelected ? 'View Booking' : 'Write a Review',
+                    style: TextStyle(color: Colors.white, fontFamily: 'Poppins', fontSize: 14),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
-    
   }
-  
-
 }
-

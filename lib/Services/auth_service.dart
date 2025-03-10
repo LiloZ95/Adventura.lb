@@ -141,36 +141,37 @@ class AuthService {
 
   /// ✅ **Refresh JWT Token**
   static Future<bool> refreshToken() async {
-    print("🔄 Refreshing access token...");
-
-    String? refreshToken =
-        await StorageService.storage.read(key: "refreshToken");
-    if (refreshToken == null) {
-      print("❌ No refresh token found!");
-      return false;
-    }
-
     try {
-      var response = await http.post(
-        Uri.parse("$baseUrl/users/refresh-token"),
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? refreshToken = await storage.read(key: "refreshToken");
+
+      if (refreshToken == null) {
+        print("❌ No refresh token found. User must log in again.");
+        return false;
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/refresh'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"refreshToken": refreshToken}),
       );
 
       if (response.statusCode == 200) {
-        var data = jsonDecode(response.body);
-        String newAccessToken = data["accessToken"];
+        final responseData = jsonDecode(response.body);
+        String newAccessToken = responseData["accessToken"];
+        String newRefreshToken = responseData["refreshToken"];
 
-        await StorageService.storage
-            .write(key: "accessToken", value: newAccessToken);
-        print("✅ Access token refreshed successfully!");
+        await storage.write(key: "accessToken", value: newAccessToken);
+        await storage.write(key: "refreshToken", value: newRefreshToken);
+
+        print("✅ Token refreshed successfully.");
         return true;
       } else {
-        print("❌ Failed to refresh token. Server response: ${response.body}");
+        print("❌ Refresh token request failed: ${response.body}");
         return false;
       }
-    } catch (error) {
-      print("❌ Error refreshing token: $error");
+    } catch (e) {
+      print("❌ Error refreshing token: $e");
       return false;
     }
   }
