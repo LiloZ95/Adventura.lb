@@ -300,7 +300,12 @@ class _LoginPageState extends State<LoginPage> {
                       // Facebook login button
                       ElevatedButton.icon(
                         onPressed: () {
-                          // Handle Facebook login
+                          // Handle Apple login
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => MainScreen()),
+                          );
                         },
                         icon: Image.asset(
                           'assets/Icons/Facebook.png',
@@ -325,7 +330,12 @@ class _LoginPageState extends State<LoginPage> {
                       // Google login button
                       ElevatedButton.icon(
                         onPressed: () {
-                          // Handle Google login
+                          // Handle Apple login
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => MainScreen()),
+                          );
                         },
                         icon: Image.asset(
                           'assets/Icons/google.png',

@@ -46,7 +46,8 @@ class _MainScreenState extends State<MainScreen> {
                               "Let's Plan Your\nActivity",
                               style: TextStyle(
                                 height: 0.96,
-                                fontSize: screenWidth * 0.08, // Dynamic font size
+                                fontSize:
+                                    screenWidth * 0.08, // Dynamic font size
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Poppins',
                                 color: Colors.black,
@@ -56,7 +57,8 @@ class _MainScreenState extends State<MainScreen> {
                             Text(
                               "Navigate through the suggested activities and categories or search on your own.",
                               style: TextStyle(
-                                fontSize: screenWidth * 0.04, // Dynamic font size
+                                fontSize:
+                                    screenWidth * 0.04, // Dynamic font size
                                 height: 0.98,
                                 color: Colors.grey,
                                 fontFamily: 'Poppins',
@@ -73,10 +75,11 @@ class _MainScreenState extends State<MainScreen> {
                             IconButton(
                               onPressed: () {
                                 Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => NotificationScreen()),
-                                    );
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          NotificationScreen()),
+                                );
                               },
                               icon: Image.asset(
                                 'assets/Icons/bell-Bold.png',
@@ -91,7 +94,8 @@ class _MainScreenState extends State<MainScreen> {
                                 onPressed: () {
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (context) => UserInfo()),
+                                    MaterialPageRoute(
+                                        builder: (context) => UserInfo()),
                                   );
                                 },
                                 icon: Icon(Icons.person),
@@ -133,7 +137,7 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                 ),
                 SizedBox(
-                  height: screenHeight * 0.35, // Dynamic height
+                  height: screenHeight * 0.37, // Dynamic height
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Padding(
@@ -180,7 +184,7 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                 ),
                 SizedBox(
-                  height: screenHeight * 0.27, // Dynamic height
+                  height: screenHeight * 0.28, // Dynamic height
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Padding(
@@ -253,7 +257,7 @@ class _MainScreenState extends State<MainScreen> {
                 ),
                 SizedBox(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(0, 10, 0, 0),
+                    padding: EdgeInsets.fromLTRB(0, 12, 0, 0),
                     child: Column(
                       children: [
                         EventCard(
