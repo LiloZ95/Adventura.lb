@@ -18,9 +18,16 @@ const UserPreferences = sequelize.define("user_preferences", {
     type: DataTypes.INTEGER,
     defaultValue: 3, // Default preference level (1-5)
   },
+  last_updated: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW, // Auto-set to current timestamp
+  },
 }, {
   timestamps: false,
   tableName: "user_preferences",
 });
+
+
 
 module.exports = UserPreferences;

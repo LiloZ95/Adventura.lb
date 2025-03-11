@@ -59,12 +59,29 @@ Widget EventCard({
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(15),
-              child: Image.asset(
-                imagePath,
-                width: 380,
-                height: 208,
-                fit: BoxFit.cover,
-              ),
+              child: imagePath.isNotEmpty
+                  ? Image.network(
+                      imagePath,
+                      width: 380,
+                      height: 208,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        print(
+                            "❌ Failed to load image: $imagePath. Using default.");
+                        return Image.asset(
+                          "assets/Pictures/island.jpg", // ✅ Default fallback
+                          width: 380,
+                          height: 208,
+                          fit: BoxFit.cover,
+                        );
+                      },
+                    )
+                  : Image.asset(
+                      "assets/Pictures/island.jpg", // ✅ Default fallback
+                      width: 380,
+                      height: 208,
+                      fit: BoxFit.cover,
+                    ),
             ),
             Positioned(
               bottom: 52,

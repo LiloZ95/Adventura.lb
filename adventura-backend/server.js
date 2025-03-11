@@ -4,19 +4,27 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const bodyParser = require("body-parser");
-const { connectDB, sequelize } = require("./db/db.js"); // Import Sequelize instance
+const path = require("path");
+const { connectDB } = require("./db/db.js");
 const userRoutes = require("./routes/userRoutes"); // Import user routes
-const recommendationRoutes = require("./routes/recommendationRoutes");
+const { sequelize } = require("./models"); // ✅ Import from index.js
+const recommendationRoutes = require("./routes/recommendationRoutes.js");
 const { authenticateToken } = require("./middleware/auth.js");
 const Client = require("./models/client"); // Import Client model
 const { getUserById } = require("./controllers/userController");
 const categoryRoutes = require("./routes/categoryRoutes"); // Import category routes
+const activityRoutes = require("./routes/activityRoutes");
+const eventRoutes = require("./routes/eventRoutes"); // ✅ Import event routes
 
 const app = express();
 
 // ✅ Middleware
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors({
+    origin: "*", // Allow all origins
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 app.use(helmet());
 app.use(express.json());
 
@@ -39,6 +47,12 @@ app.use("/users", userRoutes);
 app.use("/categories", categoryRoutes); // Add category routes
 app.get("/users/profile", authenticateToken, getUserById); // ✅ Correct authentication usage
 app.use("/recommendations", recommendationRoutes);
+
+// ✅ Serve static files from 'public/images'
+app.use("/images", express.static(path.join(__dirname, "public/images")));
+app.use("/activities", activityRoutes);
+
+app.use("/events", eventRoutes);  // ✅ Add event routes
 
 // ✅ Global Error Handling Middleware (Prevents Crashes)
 app.use((err, req, res, next) => {

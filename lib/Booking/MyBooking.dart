@@ -8,14 +8,14 @@ class MyBookingsPage extends StatefulWidget {
   @override
   _MyBookingsPageState createState() => _MyBookingsPageState();
 }
+
 bool isUpcomingSelected = true;
+
 class _MyBookingsPageState extends State<MyBookingsPage> {
-   // Variable to track the selected tab
+  // Variable to track the selected tab
 
   @override
   Widget build(BuildContext context) {
-    
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white, // Matches the page background
@@ -142,14 +142,12 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                     guests: '3 Guests',
                     status: 'Upcoming',
                     onCancel: () {
-                       
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => CancelBookingScreen(),
-    ),
-  );
-
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CancelBookingScreen(),
+                        ),
+                      );
                     },
                     onView: () {
                       Navigator.push(
@@ -196,7 +194,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>  EventDetailsScreen(
+                          builder: (context) => EventDetailsScreen(
                             title: 'Addu Atoll',
                             date: 'May 22, 2024 - May 26, 2024',
                             location: 'Maldives',
@@ -245,7 +243,8 @@ class BookingCard extends StatelessWidget {
   final VoidCallback onCancel;
   final VoidCallback onView;
 
-  const BookingCard({super.key, 
+  const BookingCard({
+    super.key,
     required this.imageUrl,
     required this.title,
     required this.location,
@@ -260,137 +259,160 @@ class BookingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     int selectedRating = 0;
-    void showReviewModal(BuildContext context, String title, String location, String imageUrl) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-    ),
-    builder: (context) {
-      return Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Leave a Review", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,fontFamily:'Poppins')),
-            SizedBox(height: 10),
-            
-            // Activity Image + Details
-            Row(
+    void showReviewModal(
+        BuildContext context, String title, String location, String imageUrl) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (context) {
+          return Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.asset(imageUrl, width: 80, height: 80, fit: BoxFit.cover),
-                ),
-                SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Text("Leave a Review",
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Poppins')),
+                SizedBox(height: 10),
+
+                // Activity Image + Details
+                Row(
                   children: [
-                    Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    Row(
-                      children: [
-                        Icon(Icons.location_on, size: 14, color: Colors.grey),
-                        SizedBox(width: 4),
-                        Text(location, style: TextStyle(fontSize: 14, color: Colors.grey)),
-                      ],
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.asset(imageUrl,
+                          width: 80, height: 80, fit: BoxFit.cover),
                     ),
+                    SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title,
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
+                        Row(
+                          children: [
+                            Icon(Icons.location_on,
+                                size: 14, color: Colors.grey),
+                            SizedBox(width: 4),
+                            Text(location,
+                                style: TextStyle(
+                                    fontSize: 14, color: Colors.grey)),
+                          ],
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+
+                SizedBox(height: 10),
+                Column(
+                  mainAxisAlignment:
+                      MainAxisAlignment.center, // Centers vertically
+                  crossAxisAlignment:
+                      CrossAxisAlignment.center, // Centers horizontally
+                  children: <Widget>[
+                    SizedBox(
+                      width: double.infinity,
+                      child: Text(
+                        "Please give your rating with us",
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Poppins'),
+                        textAlign: TextAlign.center, // Centers the text itself
+                      ),
+                    ),
+                    SizedBox(height: 10), // Adds spacing
+                    StatefulBuilder(
+                      builder: (context, setState) {
+                        // Move this outside StatefulBuilder to retain value
+
+                        return Row(
+                          mainAxisAlignment:
+                              MainAxisAlignment.center, // Centers the stars
+                          children: List.generate(5, (index) {
+                            return IconButton(
+                              icon: Icon(
+                                index < selectedRating
+                                    ? Icons.star
+                                    : Icons.star_border, // Correct fill logic
+                                size: 32,
+                                color: index < selectedRating
+                                    ? Colors.yellow
+                                    : Colors.grey, // Updates color dynamically
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  selectedRating = index + 1; // Updates rating
+                                });
+                              },
+                            );
+                          }),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+
+                // Comment Box
+                SizedBox(
+                  width: double.infinity,
+                  height: 230,
+                  child: TextField(
+                    maxLines: 10,
+                    decoration: InputDecoration(
+                      hintText: "Add a Comment",
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: 40),
+
+                // Buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text("Cancel", style: TextStyle(fontSize: 16)),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Save Rating & Close
+                        Navigator.pop(context);
+                      },
+                      child: Text("Submit", style: TextStyle(fontSize: 16)),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.pink),
+                    )
                   ],
                 )
               ],
             ),
-            
-            SizedBox(height: 10),
-          Column(
-  mainAxisAlignment: MainAxisAlignment.center, // Centers vertically
-  crossAxisAlignment: CrossAxisAlignment.center, // Centers horizontally
-  children: <Widget>[
-    SizedBox(
-      width: double.infinity,
-      child: Text(
-        "Please give your rating with us",
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,fontFamily: 'Poppins'),
-        textAlign: TextAlign.center, // Centers the text itself
-      ),
-    ),
-    SizedBox(height: 10), // Adds spacing
-    StatefulBuilder(
-      builder: (context, setState) {
-      // Move this outside StatefulBuilder to retain value
-
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center, // Centers the stars
-          children: List.generate(5, (index) {
-            return IconButton(
-              icon: Icon(
-                index < selectedRating ? Icons.star : Icons.star_border, // Correct fill logic
-                size: 32,
-                color: index < selectedRating ? Colors.yellow : Colors.grey, // Updates color dynamically
-              ),
-              onPressed: () {
-                setState(() {
-                  selectedRating = index + 1; // Updates rating
-                });
-              },
-            );
-          }),
-        );
-      },
-    ),
-  ],
-),
-
-
-            
-            // Comment Box
-            SizedBox(
-              width:double.infinity,
-              height: 230,
-              child: TextField(
-                maxLines: 10,
-                decoration: InputDecoration(
-                  hintText: "Add a Comment",
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-            ),
-            
-            SizedBox(height: 40),
-
-            // Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text("Cancel", style: TextStyle(fontSize: 16)),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    // Save Rating & Close
-                    Navigator.pop(context);
-                  },
-                  child: Text("Submit", style: TextStyle(fontSize: 16)),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.pink),
-                )
-              ],
-            )
-          ],
-        ),
+          );
+        },
       );
-    },
-  );
-}
-    void cancelBooking(String bookingId) {
-  // Add functionality to cancel a booking
-  print("Cancel booking: $bookingId");
-}
+    }
 
-void writeReview(String bookingId) {
-  // Add functionality to write a review
-  print("Write review for booking: $bookingId");
-}
+    void cancelBooking(String bookingId) {
+      // Add functionality to cancel a booking
+      print("Cancel booking: $bookingId");
+    }
+
+    void writeReview(String bookingId) {
+      // Add functionality to write a review
+      print("Write review for booking: $bookingId");
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -437,7 +459,8 @@ void writeReview(String bookingId) {
                     ),
                     Row(
                       children: [
-                        const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                        const Icon(Icons.location_on,
+                            size: 14, color: Colors.grey),
                         const SizedBox(width: 4),
                         Text(
                           location,
@@ -450,7 +473,8 @@ void writeReview(String bookingId) {
                     ),
                     Container(
                       margin: const EdgeInsets.symmetric(vertical: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.yellow,
                         borderRadius: BorderRadius.circular(6),
@@ -504,48 +528,54 @@ void writeReview(String bookingId) {
                 )),
           ),
           // Buttons
-    Row(
-  children: [
-    Expanded(
-      child: ElevatedButton(
-        onPressed: isUpcomingSelected
-            ? onCancel // Function for Cancel
-            : onView, // Same View Booking functionality
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isUpcomingSelected ? Colors.red : Colors.blue,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        child: Text(
-          isUpcomingSelected ? 'Cancel' : 'View Booking',
-          style: TextStyle(color: Colors.white, fontFamily: 'Poppins', fontSize: 14),
-        ),
-      ),
-    ),
-    SizedBox(width: 12),
-    Expanded(
-      child: ElevatedButton(
-        onPressed: isUpcomingSelected
-            ? onView // Same View Booking functionality
-            : ()=> showReviewModal(context, 'Addu Atoll', 'maldives',  'assets/Pictures/picnic.webp'), // Function for Writing a Review
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isUpcomingSelected ? Colors.blue : Colors.blue,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        child: Text(
-          isUpcomingSelected ? 'View Booking' : 'Write a Review',
-          style: TextStyle(color: Colors.white, fontFamily: 'Poppins', fontSize: 14),
-        ),
-      ),
-    ),
-  ],
-),
-
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: isUpcomingSelected
+                      ? onCancel // Function for Cancel
+                      : onView, // Same View Booking functionality
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        isUpcomingSelected ? Colors.red : Colors.blue,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text(
+                    isUpcomingSelected ? 'Cancel' : 'View Booking',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontFamily: 'Poppins',
+                        fontSize: 14),
+                  ),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: isUpcomingSelected
+                      ? onView // Same View Booking functionality
+                      : () => showReviewModal(context, 'Addu Atoll', 'maldives',
+                          'assets/Pictures/picnic.webp'), // Function for Writing a Review
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        isUpcomingSelected ? Colors.blue : Colors.blue,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text(
+                    isUpcomingSelected ? 'View Booking' : 'Write a Review',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontFamily: 'Poppins',
+                        fontSize: 14),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
-    
   }
-  
-
 }
-

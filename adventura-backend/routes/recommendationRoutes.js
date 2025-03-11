@@ -4,6 +4,8 @@ const {
 	trackEventInteraction,
 	setUserPreferences,
 	getRecommendations,
+	getRecommendedActivities,
+	getClicks,
 } = require("../controllers/recommendationController");
 
 const router = express.Router();
@@ -15,7 +17,16 @@ router.post("/track-interaction", authenticateToken, trackEventInteraction);
 router.post("/set-preferences", authenticateToken, setUserPreferences);
 
 // ✅ Get AI-based recommendations for a user
-router.get("/recommend", authenticateToken, getRecommendations);
+router.get("/recommend", authenticateToken, async (req, res) => {
+	const userId = req.user?.userId || req.query.user_id; // ✅ Extract only the number
+	if (!userId || isNaN(userId)) {
+		return res.status(400).json({ error: "Invalid or missing user_id" });
+	}
+	const recommendations = await getRecommendedActivities(parseInt(userId)); // Ensure userId is an integer
+	res.json({ success: true, recommendations });
+});
+
+router.post("/track-click", authenticateToken, getClicks);
 
 // ✅ Get trending/popular events
 router.get("/trending", async (req, res) => {

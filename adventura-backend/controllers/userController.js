@@ -176,11 +176,11 @@ const updateUserPreferences = async (req, res) => {
 			{ replacements: { userId }, type: QueryTypes.DELETE }
 		);
 
-		// Insert new preferences
+		// Insert new preferences with last_updated timestamp
 		for (const category of preferences) {
 			await sequelize.query(
-				`INSERT INTO user_preferences (user_id, category_id, preference_level)
-		   VALUES (:userId, :categoryId, :preferenceLevel)`,
+				`INSERT INTO user_preferences (user_id, category_id, preference_level, last_updated)
+		   VALUES (:userId, :categoryId, :preferenceLevel, NOW())`, // ✅ Set last_updated to current timestamp
 				{
 					replacements: {
 						userId,

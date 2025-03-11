@@ -3,10 +3,10 @@ import 'package:adventura/Services/storage_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive/hive.dart'; // ✅ Use Hive for local storage
 
 class AuthService {
   static const String baseUrl = 'http://localhost:3000';
-  static final FlutterSecureStorage storage = FlutterSecureStorage();
 
   /// ✅ **Signup User**
   static Future<Map<String, dynamic>> signupUser({
@@ -59,7 +59,7 @@ class AuthService {
       print("🔍 Login API Response: $data");
 
       if (response.statusCode == 200 && data is Map) {
-        SharedPreferences prefs = await SharedPreferences.getInstance();
+        Box storageBox = await Hive.openBox('authBox'); // ✅ Use Hive
 
         String? accessToken = data["accessToken"];
         String? refreshToken = data["refreshToken"];
@@ -77,34 +77,22 @@ class AuthService {
           };
         }
 
-        // ✅ Securely store tokens
-        await storage.write(key: "accessToken", value: accessToken);
-        await storage.write(key: "refreshToken", value: refreshToken);
+        // ✅ Store tokens & login state in Hive
+        await storageBox.put("accessToken", accessToken);
+        await storageBox.put("refreshToken", refreshToken);
+        await storageBox.put("isLoggedIn", true); // ✅ Store login state
+        await storageBox.put("userId", user["user_id"].toString());
 
-        // ✅ Verify tokens were saved correctly
-        String? storedAccessToken = await storage.read(key: "accessToken");
-        String? storedRefreshToken = await storage.read(key: "refreshToken");
-
-        if (storedAccessToken == null || storedRefreshToken == null) {
-          print("❌ Token storage failed. Check storage permissions.");
-          return {
-            "success": false,
-            "error": "Failed to store authentication tokens."
-          };
-        }
-
-        print("✅ Tokens successfully stored!");
+        print("✅ Tokens successfully stored in Hive!");
 
         try {
-          // ✅ Store user details in SharedPreferences
-          await prefs.setBool("isLoggedIn", true);
-          await prefs.setString("userId", user["user_id"].toString());
+          // ✅ Store user details
+          SharedPreferences prefs = await SharedPreferences.getInstance();
           await prefs.setString("firstName", user["first_name"] ?? "");
           await prefs.setString("lastName", user["last_name"] ?? "");
           await prefs.setString("profilePicture", user["profilePicture"] ?? "");
 
-          print(
-              "✅ User details saved: ID=${user["user_id"]}, Name=${user["first_name"]} ${user["last_name"]}");
+          print("✅ User details saved: ID=${user["user_id"]}");
         } catch (e) {
           print("❌ Error storing user data: $e");
           return {"success": false, "error": "Failed to store user data."};
@@ -125,7 +113,9 @@ class AuthService {
   }
 
   static Future<Map<String, String>> getAuthHeaders() async {
-    String? accessToken = await StorageService.getAccessToken();
+    Box storageBox = await Hive.openBox('authBox'); // ✅ Use Hive
+    String? accessToken = storageBox.get("accessToken");
+
     if (accessToken == null) {
       print("❌ No access token found.");
       return {
@@ -142,8 +132,8 @@ class AuthService {
   /// ✅ **Refresh JWT Token**
   static Future<bool> refreshToken() async {
     try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? refreshToken = await storage.read(key: "refreshToken");
+      Box storageBox = await Hive.openBox('authBox'); // ✅ Open Hive
+      String? refreshToken = storageBox.get("refreshToken");
 
       if (refreshToken == null) {
         print("❌ No refresh token found. User must log in again.");
@@ -161,8 +151,8 @@ class AuthService {
         String newAccessToken = responseData["accessToken"];
         String newRefreshToken = responseData["refreshToken"];
 
-        await storage.write(key: "accessToken", value: newAccessToken);
-        await storage.write(key: "refreshToken", value: newRefreshToken);
+        await storageBox.put("accessToken", newAccessToken);
+        await storageBox.put("refreshToken", newRefreshToken);
 
         print("✅ Token refreshed successfully.");
         return true;
@@ -178,7 +168,9 @@ class AuthService {
 
   /// ✅ **Check if User is Logged In**
   static Future<bool> isUserLoggedIn() async {
-    String? accessToken = await storage.read(key: "accessToken");
+    Box storageBox = await Hive.openBox('authBox'); // ✅ Use Hive
+    String? accessToken = storageBox.get("accessToken");
+
     if (accessToken == null) return false;
 
     final response = await http.get(
