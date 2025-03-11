@@ -428,6 +428,46 @@ router.get("/dashboard", authenticateToken, (req, res) => {
 	// res.json({ message: "Dashboard is working!" });
 });
 
+// Upload multiple images for an activity
+router.post(
+	"/upload-activity-images/:activity_id",
+	upload.array("images", 10),
+	async (req, res) => {
+		const { activity_id } = req.params;
+
+		if (!req.files || req.files.length === 0) {
+			return res.status(400).json({ error: "No images uploaded." });
+		}
+
+		try {
+			// Convert images to Base64 and store in database
+			for (const file of req.files) {
+				await sequelize.query(
+					`INSERT INTO activity_images (activity_id, image_url) VALUES (:activity_id, :image_url)`,
+					{
+						replacements: {
+							activity_id,
+							image_url: `data:image/png;base64,${file.buffer.toString(
+								"base64"
+							)}`,
+						},
+						type: QueryTypes.INSERT,
+					}
+				);
+			}
+
+			return res
+				.status(200)
+				.json({ success: true, message: "Images uploaded successfully." });
+		} catch (error) {
+			console.error("❌ Error uploading images:", error);
+			return res
+				.status(500)
+				.json({ error: "Database error while uploading images." });
+		}
+	}
+);
+
 // ✅ Profile Picture Upload Route
 router.post(
 	"/upload-profile-picture",

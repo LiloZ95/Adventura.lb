@@ -1,14 +1,22 @@
 import 'dart:convert';
+import 'dart:io'; // ✅ Import dart:io for platform detection
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/login/login.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:adventura/intro/intro.dart';
+import 'package:flutter/foundation.dart'
+    show kIsWeb; // ✅ Detect if running on Web
 
 class MainApi extends ChangeNotifier {
   static const String baseUrl = 'http://localhost:3000';
+  late Box storageBox;
+
   final FlutterSecureStorage storage = FlutterSecureStorage();
   Widget _initialScreen =
       Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -16,25 +24,43 @@ class MainApi extends ChangeNotifier {
   Widget get initialScreen => _initialScreen; // Getter to access _initialScreen
 
   MainApi() {
-    initializeApp(); // ✅ Automatically check first-time user on creation
+    _initHive();
+    // initializeApp(); // ✅ Automatically check first-time user on creation
   }
 
+  // ✅ App Startup Logic
   Future<void> initializeApp() async {
     print("🚀 Initializing app...");
-    await checkFirstTimeUser();
+    await _ensureStorageBoxReady(); // Ensure Hive is ready
+    await checkFirstTimeUser(); // Check if it's the first time launching the app
   }
 
+  // ✅ Initialize Hive Storage
+  Future<void> _initHive() async {
+    if (!kIsWeb) {
+      final appDocumentDir = await getApplicationDocumentsDirectory();
+      await Hive.initFlutter(appDocumentDir.path);
+    }
+    storageBox = await Hive.openBox('authBox');
+
+    print(
+        "🟢 Hive Initialized. Current Storage: ${storageBox.toMap()}"); // Debugging
+    await initializeApp();
+  }
+
+  // ✅ Check if it's the first time launching the app
   Future<void> checkFirstTimeUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    bool isFirstTime = prefs.getBool("isFirstTime") ?? true;
-    bool isLoggedIn = prefs.getBool("isLoggedIn") ?? false;
+    await _ensureStorageBoxReady();
+
+    bool isFirstTime = storageBox.get("isFirstTime", defaultValue: true);
+    bool isLoggedIn = storageBox.get("isLoggedIn", defaultValue: false);
 
     if (isLoggedIn) {
       print("🔍 User is already logged in! Checking token...");
       await checkLoginStatus();
     } else if (isFirstTime) {
       print("🎉 First time launching the app! Showing onboarding.");
-      await prefs.setBool("isFirstTime", false);
+      storageBox.put("isFirstTime", false);
       _initialScreen = DynamicOnboarding();
     } else {
       print("🔍 User is NOT logged in. Redirecting to Login.");
@@ -44,9 +70,18 @@ class MainApi extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ✅ Ensure `storageBox` is initialized before use
+  Future<void> _ensureStorageBoxReady() async {
+    if (!Hive.isBoxOpen('authBox')) {
+      storageBox = await Hive.openBox('authBox');
+    }
+  }
+
+  // ✅ Validate Access Token
   Future<bool> validateAccessToken(String token) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userId = prefs.getString("userId"); // ✅ Get user ID
+    await _ensureStorageBoxReady();
+
+    String? userId = storageBox.get("userId");
 
     if (userId == null) {
       print("❌ No user ID found in storage.");
@@ -56,12 +91,12 @@ class MainApi extends ChangeNotifier {
     print("🔍 Validating token for user: $userId");
 
     final response = await http.post(
-      Uri.parse("http://localhost:3000/users/validate-token"),
+      Uri.parse("$baseUrl/users/validate-token"),
       headers: {
         "Authorization": "Bearer $token",
         "Content-Type": "application/json",
       },
-      body: jsonEncode({"user_id": userId}), // ✅ Include user_id in the request
+      body: jsonEncode({"user_id": userId}),
     );
 
     if (response.statusCode == 200) {
@@ -73,37 +108,93 @@ class MainApi extends ChangeNotifier {
     }
   }
 
+  // ✅ Check Login Status
   Future<void> checkLoginStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? accessToken = await storage.read(key: "accessToken");
-    String? refreshToken = await storage.read(key: "refreshToken");
-    bool isLoggedIn = prefs.getBool("isLoggedIn") ?? false;
+    await _ensureStorageBoxReady();
 
+    Box storageBox = await Hive.openBox('authBox'); // ✅ Open Hive
+
+    String? accessToken = storageBox.get("accessToken");
+    String? refreshToken = storageBox.get("refreshToken");
+    bool isLoggedIn = storageBox.get("isLoggedIn", defaultValue: false);
+
+    print("🔍 Checking Login Status...");
     print("🔍 Stored Access Token: $accessToken");
     print("🔍 Stored Refresh Token: $refreshToken");
+    print("🔍 Stored isLoggedIn: $isLoggedIn");
 
     if (isLoggedIn && accessToken != null && accessToken.isNotEmpty) {
+      print("🔍 Checking if stored token is still valid...");
+
       bool isValid = await validateAccessToken(accessToken);
 
       if (isValid) {
         print("✅ User is already logged in. Redirecting to MainScreen...");
-        _initialScreen = MainScreen(); // ✅ Redirect to MainScreen
+        _initialScreen = MainScreen();
       } else {
-        print("❌ Token expired. Logging out.");
-        await logout();
-        _initialScreen = LoginPage(); // ✅ Redirect to Login
+        print("❌ Token expired. Trying refresh...");
+        bool refreshed = await refreshTokens();
+
+        if (refreshed) {
+          print("✅ Tokens refreshed. Redirecting to MainScreen...");
+          _initialScreen = MainScreen();
+        } else {
+          print("❌ Token refresh failed. Logging out.");
+          await logout();
+        }
       }
     } else {
-      print("❌ No valid session found. Redirecting to Login...");
+      print("❌ No valid session found. Setting isLoggedIn = false.");
+      await storageBox.put("isLoggedIn", false);
       _initialScreen = LoginPage();
     }
 
-    notifyListeners(); // ✅ Update UI
+    print("🔍 Final Hive Storage State: ${storageBox.toMap()}");
+    notifyListeners();
   }
 
+  Future<bool> refreshTokens() async {
+    await _ensureStorageBoxReady();
+
+    String? refreshToken = storageBox.get("refreshToken");
+
+    if (refreshToken == null || refreshToken.isEmpty) {
+      print("❌ No refresh token available.");
+      return false;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/users/refresh-token"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"refreshToken": refreshToken}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data["success"] == true) {
+          await storageBox.put("accessToken", data["accessToken"]);
+          await storageBox.put("refreshToken", data["refreshToken"]);
+          await storageBox.put("isLoggedIn", true);
+          print("✅ Tokens refreshed successfully.");
+          return true;
+        }
+      }
+
+      print("❌ Failed to refresh token.");
+      return false;
+    } catch (e) {
+      print("❌ Error refreshing token: $e");
+      return false;
+    }
+  }
+
+  // ✅ Fetch User Data
   Future<void> fetchUserData() async {
-    final storage = FlutterSecureStorage();
-    String? accessToken = await storage.read(key: "accessToken");
+    await _ensureStorageBoxReady();
+
+    String? accessToken = storageBox.get("accessToken");
 
     if (accessToken == null || accessToken.isEmpty) {
       print("❌ No access token found. Cannot fetch user data.");
@@ -124,25 +215,17 @@ class MainApi extends ChangeNotifier {
         if (data["success"] == true && data.containsKey("user")) {
           Map<String, dynamic> user = data["user"];
 
-          // ✅ Ensure user_id is present
           if (!user.containsKey("user_id") || user["user_id"] == null) {
             print("❌ User ID is missing in response!");
             return;
           }
 
-          String userId = user["user_id"].toString();
-          String firstName = user["first_name"] ?? "";
-          String lastName = user["last_name"] ?? "";
-          String profilePicture = user["profilePicture"] ?? "";
+          storageBox.put("userId", user["user_id"].toString());
+          storageBox.put("firstName", user["first_name"] ?? "");
+          storageBox.put("lastName", user["last_name"] ?? "");
+          storageBox.put("profilePicture", user["profilePicture"] ?? "");
 
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString("userId", userId);
-          await prefs.setString("firstName", firstName);
-          await prefs.setString("lastName", lastName);
-          await prefs.setString("profilePicture", profilePicture);
-
-          print(
-              "✅ Fetched and stored user data: ID=$userId, Name=$firstName $lastName, ProfilePicture=$profilePicture");
+          print("✅ User data saved in Hive storage.");
         } else {
           print(
               "❌ Failed to fetch user data: ${data["error"] ?? "Unknown error"}");
@@ -155,10 +238,12 @@ class MainApi extends ChangeNotifier {
     }
   }
 
+  // ✅ Logout Function
   Future<void> logout() async {
+    await _ensureStorageBoxReady();
+
     print("🚪 Logging out...");
-    await storage.delete(key: "accessToken");
-    await storage.delete(key: "refreshToken");
+    await storageBox.clear();
     _initialScreen = LoginPage();
     notifyListeners();
   }

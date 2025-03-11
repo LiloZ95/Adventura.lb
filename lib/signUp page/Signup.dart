@@ -298,7 +298,7 @@ class _SignUpPageState extends State<SignUpPage> {
                             ),
                           ],
                         ),
-                        SizedBox(height: screenHeight * 0.02),
+                        SizedBox(height: screenHeight * 0.01),
                         // Social login buttons
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -345,7 +345,7 @@ class _SignUpPageState extends State<SignUpPage> {
                             ),
                           ],
                         ),
-                        SizedBox(height: screenHeight * 0.02),
+                        SizedBox(height: screenHeight * 0.01),
                         // Create Account Button
                         ElevatedButton(
                           onPressed: _isLoading ? null : _signup,
@@ -368,7 +368,7 @@ class _SignUpPageState extends State<SignUpPage> {
                             ),
                           ),
                         ),
-                        SizedBox(height: screenHeight * 0.02),
+                        SizedBox(height: screenHeight * 0.01),
                         Center(
                           child: RichText(
                             text: TextSpan(
@@ -427,7 +427,7 @@ class _SignUpPageState extends State<SignUpPage> {
         keyboardType: keyboardType,
         obscureText: obscureText,
         style: TextStyle(
-          color: Colors.grey[400],
+          color: const Color.fromARGB(255, 5, 5, 5),
           fontFamily: 'Poppins',
         ),
         decoration: InputDecoration(
@@ -448,7 +448,7 @@ class _SignUpPageState extends State<SignUpPage> {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(
-              color: Colors.grey[200]!,
+              // color: Colors.grey[200]!,
               width: 1,
             ),
           ),

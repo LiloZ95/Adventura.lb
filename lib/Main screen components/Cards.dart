@@ -48,7 +48,7 @@ Widget EventCard({
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.50),
+              color: Colors.black.withOpacity(0.70),
               offset: Offset(0, 1),
               blurRadius: 5,
               spreadRadius: 0,
@@ -59,12 +59,29 @@ Widget EventCard({
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(15),
-              child: Image.asset(
-                imagePath,
-                width: 380,
-                height: 208,
-                fit: BoxFit.cover,
-              ),
+              child: imagePath.isNotEmpty
+                  ? Image.network(
+                      imagePath,
+                      width: 380,
+                      height: 208,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        print(
+                            "❌ Failed to load image: $imagePath. Using default.");
+                        return Image.asset(
+                          "assets/Pictures/island.jpg", // ✅ Default fallback
+                          width: 380,
+                          height: 208,
+                          fit: BoxFit.cover,
+                        );
+                      },
+                    )
+                  : Image.asset(
+                      "assets/Pictures/island.jpg", // ✅ Default fallback
+                      width: 380,
+                      height: 208,
+                      fit: BoxFit.cover,
+                    ),
             ),
             Positioned(
               bottom: 52,
@@ -102,15 +119,6 @@ Widget EventCard({
                           fontFamily: 'Poppins',
                         ),
                       ),
-                      // SizedBox(width: 6),
-                      // Text(
-                      //   '-$providerName',
-                      //   style: TextStyle(
-                      //     fontSize: 10,
-                      //     color: Colors.grey,
-                      //     fontFamily: 'Poppins',
-                      //   ),
-                      // ),
                     ],
                   ),
                   SizedBox(height: 4),
@@ -195,10 +203,10 @@ Widget card(String imagePath) {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.90), // Semi-transparent black
-            offset: Offset(0, 3), // x = 0, y = 3
-            blurRadius: 10, // Blur = 10
-            spreadRadius: 0, // Spread = 0
+            color: Colors.black.withOpacity(0.70),
+            offset: Offset(0, 1),
+            blurRadius: 5,
+            spreadRadius: 0,
           ),
         ],
       ),
@@ -223,9 +231,9 @@ Widget card2(String imagePath, String categoryName, String description,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.90), // Semi-transparent black
-            offset: Offset(0, 3), // x = 0, y = 3
-            blurRadius: 10, // Blur = 10
+            color: Colors.black.withOpacity(0.70),
+            offset: Offset(0, 1),
+            blurRadius: 5,
             spreadRadius: 0, // Spread = 0
           ),
         ],
