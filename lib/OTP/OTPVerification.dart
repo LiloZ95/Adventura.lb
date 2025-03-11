@@ -139,6 +139,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       // ✅ Ensure response contains "user"
       if (!response.containsKey("user") || response["user"] == null) {
         print("❌ User data is missing in response! Full Response: $response");
+        setState(() {
+          _errorMessage = response["error"] ??
+              "Invalid OTP. Please try again."; // ✅ Show error message
+          _isLoading = false; // ✅ Stop loading
+        });
         return;
       }
 
@@ -149,6 +154,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
       if (!user.containsKey("user_id") || user["user_id"] == null) {
         print("❌ User ID is missing in response!");
+        setState(() {
+          _errorMessage = response["error"] ??
+              "Invalid OTP. Please try again."; // ✅ Show error message
+          _isLoading = false; // ✅ Stop loading
+        });
         return;
       }
 
@@ -298,7 +308,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                                   Colors.black, // Text color based on dark mode
                             ),
                           ),
-                          SizedBox(height: screenHeight * 0.02),
+                          SizedBox(height: screenHeight * 0.01),
 
                           // ✅ Timer Text with Dynamic Color (only timer portion)
                           _buildTimerRichText(screenWidth),
@@ -331,10 +341,10 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                                 borderRadius: BorderRadius.circular(8),
                                 fieldHeight: screenHeight * 0.06,
                                 fieldWidth: screenWidth * 0.12,
-                                activeFillColor: Colors.grey[
-                                    300]!, // Dynamic color based on dark mode
-                                selectedFillColor: Colors.grey[300]!,
-                                inactiveFillColor: Colors.grey[300]!,
+                                activeFillColor: Colors
+                                    .white, // Dynamic color based on dark mode
+                                selectedFillColor: Colors.white,
+                                inactiveFillColor: Colors.white,
 
                                 // ✅ Use our dynamic color for the border
                                 activeColor: _pinBorderColor,
@@ -350,7 +360,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           // ✅ Error Message Display
                           if (_errorMessage.isNotEmpty)
                             Padding(
-                              padding: EdgeInsets.symmetric(vertical: 8.0),
+                              padding: EdgeInsets.symmetric(vertical: 1.0),
                               child: Text(
                                 _errorMessage,
                                 style:
