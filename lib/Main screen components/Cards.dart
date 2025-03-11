@@ -48,7 +48,7 @@ Widget EventCard({
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.50),
+              color: Colors.black.withOpacity(0.70),
               offset: Offset(0, 1),
               blurRadius: 5,
               spreadRadius: 0,
@@ -119,15 +119,6 @@ Widget EventCard({
                           fontFamily: 'Poppins',
                         ),
                       ),
-                      // SizedBox(width: 6),
-                      // Text(
-                      //   '-$providerName',
-                      //   style: TextStyle(
-                      //     fontSize: 10,
-                      //     color: Colors.grey,
-                      //     fontFamily: 'Poppins',
-                      //   ),
-                      // ),
                     ],
                   ),
                   SizedBox(height: 4),
@@ -212,10 +203,10 @@ Widget card(String imagePath) {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.90), // Semi-transparent black
-            offset: Offset(0, 3), // x = 0, y = 3
-            blurRadius: 10, // Blur = 10
-            spreadRadius: 0, // Spread = 0
+            color: Colors.black.withOpacity(0.70),
+            offset: Offset(0, 1),
+            blurRadius: 5,
+            spreadRadius: 0,
           ),
         ],
       ),
@@ -240,9 +231,9 @@ Widget card2(String imagePath, String categoryName, String description,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.90), // Semi-transparent black
-            offset: Offset(0, 3), // x = 0, y = 3
-            blurRadius: 10, // Blur = 10
+            color: Colors.black.withOpacity(0.70),
+            offset: Offset(0, 1),
+            blurRadius: 5,
             spreadRadius: 0, // Spread = 0
           ),
         ],
