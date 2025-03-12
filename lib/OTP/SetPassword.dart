@@ -1,3 +1,4 @@
+import 'package:adventura/colors.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'dart:ui';
@@ -19,8 +20,61 @@ class _SetPasswordState extends State<SetPassword> {
       TextEditingController();
   bool _isLoading = false;
   String _errorMessage = "";
+  // Password visibility toggle
+  bool _obscureText = true;
+  bool _obscureConfirmText = true;
+
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscureText = !_obscureText;
+    });
+  }
+
+  void _toggleConfirmPasswordVisibility() {
+    setState(() {
+      _obscureConfirmText = !_obscureConfirmText;
+    });
+  }
+
+  String? validatePassword(String? password) {
+    if (password == null || password.isEmpty) {
+      return "Password is required.";
+    }
+    if (password.length < 8 &&
+        !RegExp(r'[A-Z]').hasMatch(password) &&
+        !RegExp(r'\d').hasMatch(password)) {
+      return "Password must contain at least 8 characters,\n one number, one uppercase character.";
+    }
+    if (!RegExp(r'[A-Z]').hasMatch(password) && password.length < 8) {
+      return "Password must contain at least 8 characters,\n one uppercase character.";
+    }
+    if (!RegExp(r'\d').hasMatch(password) && password.length < 8) {
+      return "Password must contain at least 8 characters,\n one number";
+    }
+    if (!RegExp(r'\d').hasMatch(password) &&
+        !RegExp(r'[A-Z]').hasMatch(password)) {
+      return "Password must contain at least \none uppercase character, one number.";
+    }
+    if (!RegExp(r'\d').hasMatch(password)) {
+      return "Password must contain at least one number";
+    }
+    if (!RegExp(r'[A-Z]').hasMatch(password)) {
+      return "Password must contain one uppercase character";
+    }
+    if (password.length < 8) {
+      return "Password must be at least 8 characters";
+    }
+    return null; // Password is valid
+  }
 
   Future<void> resetPassword() async {
+    // **Validate password before proceeding**
+    String? validationMessage = validatePassword(_passwordController.text);
+    if (validationMessage != null) {
+      setState(() => _errorMessage = validationMessage);
+      return;
+    }
+
     // **Check if passwords match**
     if (_passwordController.text != _confirmPasswordController.text) {
       setState(() => _errorMessage = "Passwords do not match");
@@ -72,14 +126,12 @@ class _SetPasswordState extends State<SetPassword> {
 
   @override
   Widget build(BuildContext context) {
-    // Screen dimensions for responsiveness
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       body: Stack(
         children: [
-          // ✅ Background Image with Blur
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
@@ -92,8 +144,6 @@ class _SetPasswordState extends State<SetPassword> {
               child: Container(color: Colors.black.withOpacity(0.5)),
             ),
           ),
-
-          // ✅ Centered Form
           Center(
             child: Container(
               padding: EdgeInsets.all(screenWidth * 0.05),
@@ -121,11 +171,22 @@ class _SetPasswordState extends State<SetPassword> {
                     ),
                   ),
                   SizedBox(height: screenHeight * 0.02),
+                  // Password Format Information
+                  Text(
+                    "Password must be at least 8 characters long,\ninclude one uppercase letter and one number.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                      fontFamily: "Poppins",
+                    ),
+                  ),
+                  SizedBox(height: screenHeight * 0.02),
 
                   // New Password Field
                   TextField(
                     controller: _passwordController,
-                    obscureText: true,
+                    obscureText: _obscureText,
                     style: TextStyle(
                       fontFamily: "Poppins",
                       fontSize: screenWidth * 0.04,
@@ -133,28 +194,37 @@ class _SetPasswordState extends State<SetPassword> {
                     ),
                     decoration: InputDecoration(
                       labelText: "New Password",
-                      // Default label color
                       labelStyle: TextStyle(
                         fontFamily: "Poppins",
                         color: Colors.black,
                       ),
-                      // Label color when floating (on focus)
                       floatingLabelStyle: TextStyle(
                         fontFamily: "Poppins",
-                        color: Colors.blue,
+                        color: AppColors.blue,
                       ),
-                      filled: false, // No background color
                       enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(
                           color: Colors.grey[600]!,
                           width: 1.0,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(
-                          color: Colors.grey[600]!,
+                          color: const Color.fromARGB(255, 0, 0, 0),
                           width: 1.0,
                         ),
+                      ),
+                      // Toggle Confirm Password Visibility
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureText
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: Colors.grey[400],
+                        ),
+                        onPressed: _togglePasswordVisibility,
                       ),
                     ),
                   ),
@@ -163,7 +233,7 @@ class _SetPasswordState extends State<SetPassword> {
                   // Confirm Password Field
                   TextField(
                     controller: _confirmPasswordController,
-                    obscureText: true,
+                    obscureText: _obscureConfirmText,
                     style: TextStyle(
                       fontFamily: "Poppins",
                       fontSize: screenWidth * 0.04,
@@ -171,34 +241,42 @@ class _SetPasswordState extends State<SetPassword> {
                     ),
                     decoration: InputDecoration(
                       labelText: "Confirm New Password",
-                      // Default label color
                       labelStyle: TextStyle(
                         fontFamily: "Poppins",
                         color: Colors.black,
                       ),
-                      // Label color when floating (on focus)
                       floatingLabelStyle: TextStyle(
                         fontFamily: "Poppins",
-                        color: Colors.blue,
+                        color: AppColors.blue,
                       ),
-                      filled: false, // No background color
                       enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(
                           color: Colors.grey[600]!,
                           width: 1.0,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(
-                          color: Colors.grey[600]!,
+                          color: const Color.fromARGB(255, 0, 0, 0),
                           width: 1.0,
                         ),
+                      ),
+                      // Toggle Confirm Password Visibility
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmText
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: Colors.grey[400],
+                        ),
+                        onPressed: _toggleConfirmPasswordVisibility,
                       ),
                     ),
                   ),
                   SizedBox(height: screenHeight * 0.02),
 
-                  // Error Message
                   if (_errorMessage.isNotEmpty)
                     Text(
                       _errorMessage,
@@ -211,13 +289,12 @@ class _SetPasswordState extends State<SetPassword> {
 
                   SizedBox(height: screenHeight * 0.02),
 
-                  // Set Password Button
                   SizedBox(
                     width: double.infinity,
                     height: screenHeight * 0.07,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
+                        backgroundColor: AppColors.blue,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -236,23 +313,6 @@ class _SetPasswordState extends State<SetPassword> {
                     ),
                   ),
                 ],
-              ),
-            ),
-          ),
-
-          // (Optional) Top-left arrow if needed
-          Positioned(
-            top: 16,
-            left: 16,
-            child: SafeArea(
-              child: IconButton(
-                icon: Icon(Icons.arrow_back_ios, color: Colors.white),
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => LoginPage()),
-                  );
-                },
               ),
             ),
           ),
