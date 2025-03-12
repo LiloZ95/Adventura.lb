@@ -44,6 +44,7 @@ class _MainScreenState extends State<MainScreen> {
       return;
     }
 
+
     userId = userIdString;
 
     // Load cached profile picture first
