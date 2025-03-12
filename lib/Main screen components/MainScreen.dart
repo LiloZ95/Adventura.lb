@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:adventura/Booking/MyBooking.dart';
+import 'package:adventura/Services/profile_service.dart';
 import 'package:adventura/Services/storage_service.dart';
+import 'package:adventura/Services/user_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:adventura/Main%20screen%20components/Cards.dart';
 import 'package:adventura/colors.dart';
@@ -11,6 +13,7 @@ import 'package:adventura/Notification/NotificationPage.dart';
 import 'package:adventura/Services/activity_service.dart';
 import 'package:hive/hive.dart'; // Add this for local caching
 import 'dart:convert'; // Add this for JSON encoding/decoding
+import 'package:adventura/config.dart'; // ✅ Import the global config file
 
 class MainScreen extends StatefulWidget {
   @override
@@ -18,7 +21,9 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  static const String baseUrl = 'http://localhost:3000';
+  late String userId;
+  String profilePicture = ""; // Default empty string
+  bool isLoading = true;
   int currentIndex = 0;
   List<dynamic> activities = [];
   List<dynamic> recommendedActivities = [];
@@ -27,6 +32,44 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     loadActivities();
+    fetchUserData();
+  }
+
+  void fetchUserData() async {
+    Box storageBox = await Hive.openBox('authBox');
+    String? userIdString = storageBox.get("userId");
+
+    if (userIdString == null) {
+      print("❌ User ID not found in Hive.");
+      return;
+    }
+
+    userId = userIdString;
+
+    // Load cached profile picture first
+    String cachedProfilePic = storageBox.get("profilePicture") ?? "";
+    if (cachedProfilePic.isNotEmpty) {
+      setState(() {
+        profilePicture = cachedProfilePic;
+        isLoading = false;
+      });
+      return;
+    }
+
+    // Fetch from API if not in cache
+    String fetchedProfilePic = await ProfileService.fetchProfilePicture(userId);
+
+    if (fetchedProfilePic.isNotEmpty) {
+      setState(() {
+        profilePicture = fetchedProfilePic;
+        isLoading = false;
+      });
+    } else {
+      print("❌ No profile picture available.");
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   // ✅ Load Activities from API
@@ -168,18 +211,26 @@ class _MainScreenState extends State<MainScreen> {
                             ),
                           ),
                           SizedBox(width: 8),
-                          CircleAvatar(
-                            backgroundColor: Colors.grey.shade300,
-                            child: IconButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => UserInfo(),
-                                  ),
-                                );
-                              },
-                              icon: Icon(Icons.person),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => UserInfo(),
+                                ),
+                              );
+                            },
+                            child: CircleAvatar(
+                              backgroundColor: Colors.grey.shade300,
+                              backgroundImage: profilePicture.isNotEmpty
+                                  ? NetworkImage(
+                                      profilePicture) // Load image if available
+                                  : null, // If empty, don't set an image
+                              child: profilePicture.isEmpty
+                                  ? Icon(Icons.person,
+                                      color: Colors
+                                          .white) // Show default icon if no image
+                                  : null, // Remove child if image is available
                             ),
                           ),
                         ],
