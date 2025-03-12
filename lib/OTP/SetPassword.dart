@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:http/http.dart' as http;
 import '../login/login.dart';
 import '../Main screen components/MainScreen.dart';
+import 'package:adventura/config.dart';
 
 class SetPassword extends StatefulWidget {
   final String email;
@@ -86,7 +87,7 @@ class _SetPasswordState extends State<SetPassword> {
     try {
       final response = await http.post(
         Uri.parse(
-            'http://localhost:3000/users/reset-password'), // Adjust for emulator
+            '$baseUrl/users/reset-password'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': widget.email,

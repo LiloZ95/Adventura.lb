@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart'; // ✅ Use Hive instead of StorageService
+import 'package:adventura/config.dart'; // ✅ Import the global config file
 
 class ActivityService {
-  static const String baseUrl = 'http://localhost:3000';
-  static const String recommendationsUrl = 'http://localhost:5001/recommend';
+  // static const String baseUrl = 'http://localhost:3000';
+  // static const String recommendationsUrl = 'http://localhost:5001/recommend';
 
   /// ✅ Fetch Activities with Images
   static Future<List<Map<String, dynamic>>> fetchActivities() async {

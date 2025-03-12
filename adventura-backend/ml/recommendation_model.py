@@ -29,6 +29,7 @@ last_model_update = None  # Stores last update time
 recommendation_cache = {}  # Stores last recommendations for each user
 MODEL_UPDATE_INTERVAL = 3 * 60 * 60  # Retrain model every 3 hours
 MODEL_FILE = "model.pkl"
+INTERACTION_THRESHOLD = 50  # Retrain when 50 new interactions occur
 
 # ✅ Helper: Check model last modified timestamp
 def get_model_timestamp():
@@ -56,6 +57,7 @@ def get_user_preferences(user_id):
 
 # ✅ Fetch User Interactions
 def get_user_interactions():
+    global interaction_count
     query = """
         SELECT user_id, activity_id, interaction_type, rating 
         FROM user_activity_interaction
@@ -83,7 +85,7 @@ def get_user_interactions():
 
 # ✅ Train ALS Model for Collaborative Filtering
 def train_als_model():
-    global last_model_update
+    global last_model_update, interaction_count
 
     interactions = get_user_interactions()
     if interactions.empty:
@@ -99,8 +101,7 @@ def train_als_model():
     interactions = interactions.groupby(["user_id", "activity_idx"])["rating"].max().reset_index()
 
     # ✅ Pivot to create User-Item Matrix
-    user_item_matrix = interactions.pivot(index="user_id", columns="activity_idx", values="rating").fillna(0)
-
+    user_item_matrix = interactions.pivot_table(index="user_id", columns="activity_idx", values="rating", aggfunc="sum").fillna(0)
     user_item_sparse = csr_matrix(user_item_matrix.values)
 
     # ✅ Train ALS Model
@@ -116,6 +117,7 @@ def train_als_model():
         pickle.dump((model, user_item_matrix, activity_id_mapping), f)
     
     last_model_update = time.time()
+    interaction_count = 0  # Reset counter
     print(f"✅ Trained ALS model saved at {time.ctime(last_model_update)}")
 
     return model, user_item_matrix, activity_id_mapping
@@ -232,19 +234,14 @@ def load_trained_model():
 # ✅ Scheduled Background Model Training
 def schedule_model_updates():
     global last_model_update, interaction_count
-
     while True:
-        time.sleep(60)  # Check every minute
+        time.sleep(60)  # Check every 1 minute
         time_since_update = time.time() - (last_model_update or 0)
 
-        if time_since_update >= MODEL_UPDATE_INTERVAL or interaction_count >= 50:
-            if (last_model_update and time.time() - last_model_update < 5 * 60):
-                print("⏳ Skipping redundant retraining (too soon)...")
-                continue  # Avoid retraining multiple times within 5 minutes
-
+        if time_since_update >= MODEL_UPDATE_INTERVAL or interaction_count >= INTERACTION_THRESHOLD:
             print("🔄 Retraining ALS model due to new interactions or time elapsed...")
             train_als_model()
-            interaction_count = 0  # Reset interaction count
+            interaction_count = 0  # Reset counter
 
 # ✅ API Endpoint
 @app.route("/recommend", methods=["GET"])
@@ -263,7 +260,8 @@ def recommend():
     return jsonify({"success": True, "recommendations": recommendations})
 
 # ✅ Start Scheduled Model Updates in a Separate Thread
-threading.Thread(target=schedule_model_updates, daemon=True).start()
+t = threading.Thread(target=schedule_model_updates, daemon=True)
+t.start()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True) 

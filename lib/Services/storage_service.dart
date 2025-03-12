@@ -1,9 +1,7 @@
 import 'dart:convert';
 import 'package:adventura/login/login.dart';
 import 'package:flutter/material.dart';
-// import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-// import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_service.dart';
 import 'package:hive/hive.dart';
 
@@ -34,7 +32,8 @@ class StorageService {
     await box.put("accessToken", accessToken);
     await box.put("refreshToken", refreshToken);
     await box.put("userId", userId);
-    await box.put("isLoggedIn", true);
+    await box.put("isLoggedIn", true);    
+    
 
     // Verify if data is saved correctly
     String? savedUserId = box.get("userId");

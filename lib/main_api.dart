@@ -3,23 +3,19 @@ import 'dart:io'; // ✅ Import dart:io for platform detection
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/login/login.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:adventura/intro/intro.dart';
+import 'package:adventura/config.dart'; // ✅ Import the global config file
 import 'package:flutter/foundation.dart'
     show kIsWeb; // ✅ Detect if running on Web
 
 class MainApi extends ChangeNotifier {
-  static const String baseUrl = 'http://localhost:3000';
   late Box storageBox;
 
-  final FlutterSecureStorage storage = FlutterSecureStorage();
   Widget _initialScreen =
-      Scaffold(body: Center(child: CircularProgressIndicator()));
+      const Scaffold(body: Center(child: CircularProgressIndicator()));
 
   Widget get initialScreen => _initialScreen; // Getter to access _initialScreen
 

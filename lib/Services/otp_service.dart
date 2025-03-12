@@ -1,13 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'auth_service.dart';
 import 'storage_service.dart';
+import 'package:adventura/config.dart'; // ✅ Import the global config file
 
 class OtpService {
-  static const String baseUrl = 'http://localhost:3000';
-  static final FlutterSecureStorage storage = FlutterSecureStorage();
 
   /// ✅ **Send OTP for Signup or Password Reset**
   static Future<Map<String, dynamic>> sendOtp(String email,

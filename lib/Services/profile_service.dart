@@ -4,12 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart'; // For filename extraction
-// import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive/hive.dart'; // ✅ Replace SharedPreferences with Hive
+import 'package:adventura/config.dart'; // ✅ Import the global config file
 
 class ProfileService {
-  static const String baseUrl = 'http://localhost:3000';
-
   /// ✅ Fetch Profile Picture
   static Future<String> fetchProfilePicture(String userId) async {
     final response =

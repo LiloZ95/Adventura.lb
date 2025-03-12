@@ -1,13 +1,11 @@
 import 'dart:convert';
 import 'package:adventura/Services/storage_service.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive/hive.dart'; // ✅ Use Hive for local storage
+import 'package:adventura/config.dart'; // ✅ Import the global config file
 
 class AuthService {
-  static const String baseUrl = 'http://localhost:3000';
-
   /// ✅ **Signup User**
   static Future<Map<String, dynamic>> signupUser({
     required String firstName,
@@ -87,10 +85,9 @@ class AuthService {
 
         try {
           // ✅ Store user details
-          SharedPreferences prefs = await SharedPreferences.getInstance();
-          await prefs.setString("firstName", user["first_name"] ?? "");
-          await prefs.setString("lastName", user["last_name"] ?? "");
-          await prefs.setString("profilePicture", user["profilePicture"] ?? "");
+          await storageBox.put("firstName", user["first_name"]);
+          await storageBox.put("lastName", user["last_name"]);
+          await storageBox.put("profilePicture", user["profilePicture"] ?? "");
 
           print("✅ User details saved: ID=${user["user_id"]}");
         } catch (e) {

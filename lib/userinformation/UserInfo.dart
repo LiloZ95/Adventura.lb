@@ -9,7 +9,6 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:adventura/userinformation/profileOptionTile.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart';
 
 class UserInfo extends StatefulWidget {
