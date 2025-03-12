@@ -449,6 +449,7 @@ class BookingCard extends StatelessWidget {
                   fit: BoxFit.cover,
                 ),
               ),
+              
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
