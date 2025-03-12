@@ -1,25 +1,24 @@
 import 'dart:convert';
 import 'package:adventura/login/login.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+// import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_service.dart';
+import 'package:hive/hive.dart';
 
 class StorageService {
   static const String baseUrl = 'http://localhost:3000';
-  static final FlutterSecureStorage storage = FlutterSecureStorage();
 
   /// ✅ **Save Authentication Tokens**
   static Future<void> saveAuthTokens(
       String accessToken, String refreshToken, String userId) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    Box box = await Hive.openBox('authBox');
 
-    await storage.write(key: "accessToken", value: accessToken);
-    await storage.write(key: "refreshToken", value: refreshToken);
-    await prefs.setString(
-        "userId", userId); // ✅ Ensure User ID is stored properly
-    await prefs.setBool("isLoggedIn", true); // ✅ Save login status
+    await box.put("accessToken", accessToken);
+    await box.put("refreshToken", refreshToken);
+    await box.put("userId", userId);
+    await box.put("isLoggedIn", true);
 
     print("✅ Tokens & User ID saved: userID=$userId, accessToken=$accessToken");
   }
@@ -27,19 +26,19 @@ class StorageService {
   /// ✅ **Save User Data Securely**
   static Future<void> saveUserData(
       String userId, String accessToken, String refreshToken) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
     print(
         "✅ Storing User Data: ID=$userId, Access Token=$accessToken, Refresh Token=$refreshToken");
 
-    await prefs.setString("userId", userId);
-    await prefs.setString("accessToken", accessToken);
-    await prefs.setString("refreshToken", refreshToken);
-    await prefs.setBool("isLoggedIn", true); // ✅ Ensure login persistence
+    Box box = await Hive.openBox('authBox');
+
+    await box.put("accessToken", accessToken);
+    await box.put("refreshToken", refreshToken);
+    await box.put("userId", userId);
+    await box.put("isLoggedIn", true);
 
     // Verify if data is saved correctly
-    String? savedUserId = prefs.getString("userId");
-    String? savedAccessToken = prefs.getString("accessToken");
+    String? savedUserId = box.get("userId");
+    String? savedAccessToken = box.get("accessToken");
 
     if (savedUserId == null || savedAccessToken == null) {
       print(
@@ -51,13 +50,13 @@ class StorageService {
 
   /// ✅ **Fetch Access Token**
   static Future<String?> getAccessToken() async {
-    String? token = await storage.read(key: "accessToken");
+    Box box = await Hive.openBox('authBox');
+    String? token = box.get("accessToken");
 
     if (token == null) {
       print(
           "❌ No token found in secure storage. Checking SharedPreferences...");
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      token = prefs.getString("accessToken");
+      token = box.get("accessToken");
     }
 
     // ✅ Check if token is expired
@@ -65,7 +64,7 @@ class StorageService {
       print("🔄 Token expired, attempting to refresh...");
       bool refreshed = await AuthService.refreshToken();
       if (refreshed) {
-        return await storage.read(key: "accessToken"); // Return new token
+        return await box.get("accessToken"); // Return new token
       } else {
         print("❌ Failed to refresh token.");
         return null;
@@ -130,8 +129,8 @@ class StorageService {
 
   /// ✅ **Check If User Is Logged In**
   static Future<bool> isUserLoggedIn() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool? isLoggedIn = prefs.getBool("isLoggedIn");
+    Box box = await Hive.openBox('authBox');
+    bool? isLoggedIn = box.get("isLoggedIn", defaultValue: false);
 
     if (isLoggedIn == null || !isLoggedIn) {
       print("❌ No stored login state found. User is not logged in.");
@@ -158,41 +157,36 @@ class StorageService {
   }
 
   static Future<String> getUserId() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString("userId") ?? "";
+    Box box = await Hive.openBox('authBox');
+    return box.get("userId", defaultValue: "");
   }
 
   static Future<String> getFirstName() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString("firstName") ?? "";
+    Box box = await Hive.openBox('authBox');
+    return box.get("firstName", defaultValue: "");
   }
 
   static Future<String> getLastName() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString("lastName") ?? "";
+    Box box = await Hive.openBox('authBox');
+    return box.get("lastName", defaultValue: "");
   }
 
   /// ✅ **Logout & Clear Data**
   static Future<void> logout(BuildContext context) async {
-    final storage = FlutterSecureStorage();
+    Box box = await Hive.openBox('authBox');
 
     print("🚪 Logging out user...");
 
-    // ✅ Clear stored credentials, but keep onboarding status
-    // Remove tokens
-    await storage.delete(key: "accessToken");
-    await storage.delete(key: "refreshToken");
+    // ✅ Clear stored credentials
+    await box.delete("accessToken");
+    await box.delete("refreshToken");
+    await box.delete("userId");
+    await box.put("isLoggedIn", false);
 
     // Clear Shared Preferences
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool hasSeenOnboarding = prefs.getBool("hasSeenOnboarding") ?? false;
+    bool hasSeenOnboarding = box.get("hasSeenOnboarding") ?? false;
 
-    // ✅ ONLY remove user data (DO NOT clear onboarding flag)
-    await prefs.remove("accessToken");
-    await prefs.remove("refreshToken");
-    await prefs.remove("userId");
-
-    await prefs.setBool(
+    await box.put(
         "hasSeenOnboarding", hasSeenOnboarding); // Restore onboarding status
 
     print("✅ User logged out. All data cleared.");

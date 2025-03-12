@@ -161,20 +161,20 @@ class ActivityService {
               List<Map<String, dynamic>>.from(data["activities"]);
 
           // 🔍 Debugging Print (Right After Receiving API Response)
-          print("🔍 FULL API Response: ${response.body}");
+          print("🔍 activitie Response: ${activities}");
 
           // 🔍 Debugging image URLs for each activity
-          for (var activity in activities) {
-            print("🔍 Checking activity: ${activity["name"]}");
+          // for (var activity in activities) {
+          //   print("🔍 Checking activity: ${activity["name"]}");
 
-            if (activity.containsKey("activity_images")) {
-              print(
-                  "🖼 Found images for '${activity["name"]}': ${activity["activity_images"]}");
-            } else {
-              print(
-                  "❌ No 'activity_images' field found for '${activity["name"]}'");
-            }
-          }
+          //   if (activity.containsKey("activity_images")) {
+          //     print(
+          //         "🖼 Found images for '${activity["name"]}': ${activity["activity_images"]}");
+          //   } else {
+          //     print(
+          //         "❌ No 'activity_images' field found for '${activity["name"]}'");
+          //   }
+          // }
 
           // 🔍 Ensure the correct order of activities and proper image processing
           List<Map<String, dynamic>> orderedActivities = activityIds

@@ -2,15 +2,16 @@ import 'dart:convert';
 import 'package:adventura/Services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive/hive.dart';
 
 class UserService {
   static const String baseUrl = 'http://localhost:3000';
 
   /// ✅ **Fetch User Profile**
-  static Future<Map<String, dynamic>?> fetchUserProfile() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userId = prefs.getString("userId");
+  static Future<Map<String, dynamic>?> fetchUserProfile() async {               
+    Box storageBox = await Hive.openBox('authBox');
+    String? userId = storageBox.get("userId");
 
     if (userId == null) {
       print("❌ Error: No user ID found in storage.");
@@ -26,6 +27,9 @@ class UserService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         print("✅ User profile fetched successfully: $data");
+
+        // ✅ Store user data in Hive
+        storageBox.put("userProfile", data);
         return data;
       } else {
         print("❌ Failed to fetch user profile. Response: ${response.body}");
@@ -39,8 +43,8 @@ class UserService {
 
   /// ✅ **Update User Details (e.g., Name, Phone)**
   static Future<bool> updateUserDetails(Map<String, String> updatedData) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userId = prefs.getString("userId");
+    Box storageBox = await Hive.openBox('authBox');
+    String? userId = storageBox.get("userId");
 
     if (userId == null) {
       print("❌ Error: No user ID found in storage.");
@@ -56,6 +60,9 @@ class UserService {
 
       if (response.statusCode == 200) {
         print("✅ User details updated successfully.");
+
+        // ✅ Update user data in Hive
+        storageBox.put("userProfile", updatedData);
         return true;
       } else {
         print("❌ Failed to update user details. Response: ${response.body}");
@@ -70,8 +77,9 @@ class UserService {
   /// ✅ **Delete User Account**
   static Future<bool> deleteUser(BuildContext context) async {
     try {
-      final String? accessToken = await StorageService.getAccessToken();
-      final String? userId = await StorageService.getUserId();
+      Box storageBox = await Hive.openBox('authBox');
+      String? accessToken = storageBox.get("accessToken");
+      String? userId = storageBox.get("userId");
 
       if (accessToken == null || userId == null) {
         print("❌ No user ID or token found!");
@@ -89,16 +97,10 @@ class UserService {
       if (response.statusCode == 200) {
         print("✅ Account deleted successfully");
 
-        // Preserve onboarding status
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        bool hasSeenOnboarding = prefs.getBool("hasSeenOnboarding") ?? false;
-
-        // ✅ ONLY remove user data (DO NOT clear onboarding flag)
-        await prefs.remove("accessToken");
-        await prefs.remove("refreshToken");
-        await prefs.remove("userId");
-
-        await prefs.setBool("hasSeenOnboarding", hasSeenOnboarding);
+        // ✅ Remove user data but preserve onboarding flag
+        bool hasSeenOnboarding = storageBox.get("hasSeenOnboarding") ?? false;
+        storageBox.clear();
+        storageBox.put("hasSeenOnboarding", hasSeenOnboarding);
 
         await StorageService.logout(context); // Clear storage after deletion
         return true;

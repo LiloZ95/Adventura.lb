@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart'; // For filename extraction
-import 'package:shared_preferences/shared_preferences.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive/hive.dart'; // ✅ Replace SharedPreferences with Hive
 
 class ProfileService {
   static const String baseUrl = 'http://localhost:3000';
@@ -18,6 +19,11 @@ class ProfileService {
       final data = jsonDecode(response.body);
       if (data["image"] != null && data["image"].isNotEmpty) {
         print("✅ Profile picture updated: ${data["image"]}");
+
+        // ✅ Save in Hive
+        Box storageBox = await Hive.openBox('authBox');
+        storageBox.put("profilePicture", data["image"]);
+
         return data["image"];
       } else {
         print("❌ Response did not contain an image.");
@@ -83,8 +89,9 @@ class ProfileService {
         if (responseData["success"] == true) {
           String? profileImageUrl = responseData["image"];
           if (profileImageUrl != null && profileImageUrl.isNotEmpty) {
-            SharedPreferences prefs = await SharedPreferences.getInstance();
-            await prefs.setString("profilePicture", profileImageUrl);
+            Box storageBox = await Hive.openBox('authBox');
+            storageBox.put("profilePicture", profileImageUrl);
+
             print("✅ Profile picture updated successfully!");
             return true;
           }
