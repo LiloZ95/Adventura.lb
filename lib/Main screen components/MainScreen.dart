@@ -1,11 +1,9 @@
 import 'dart:ui';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
-import '../colors.dart';
 import 'package:adventura/Booking/MyBooking.dart';
 import 'package:adventura/Services/profile_service.dart';
 import 'package:adventura/Services/storage_service.dart';
 import 'package:adventura/Services/user_service.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:adventura/Main%20screen%20components/Cards.dart';
 import 'package:adventura/colors.dart';
 import 'package:adventura/search%20screen/searchScreen.dart';
@@ -30,24 +28,24 @@ class _MainScreenState extends State<MainScreen> {
   List<dynamic> activities = [];
   List<dynamic> recommendedActivities = [];
   final FlutterSecureStorage storage = FlutterSecureStorage();
+  String selectedLocation = "Tripoli";
   String firstName = "";
-  String selectedLocation = "Tripoli"; 
-  
+  String lastName = "";
 
   @override
   void initState() {
     super.initState();
-    fetchUserData();
+    _loadUserData();
     loadActivities();
-    _loadUserName();
     fetchUserData();
   }
-  // Function to retrieve the first name from storage
-  Future<void> _loadUserName() async {
-    String? storedFirstName = await storage.read(key: "first_name");
-    setState(() {
-      firstName = storedFirstName ?? "Guest"; // Default to "Guest" if no name is found
-    });
+
+  Future<void> _loadUserData() async {
+    userId = await StorageService.getUserId();
+    firstName = await StorageService.getFirstName();
+    lastName = await StorageService.getLastName();
+
+    setState(() => isLoading = false);
   }
 
   void fetchUserData() async {
@@ -55,80 +53,71 @@ class _MainScreenState extends State<MainScreen> {
     String? userIdString = storageBox.get("userId");
 
     if (userIdString == null) {
-      debugPrint("❌ User ID not found in Hive.");
+      print("❌ User ID not found in Hive.");
       return;
     }
 
-
     userId = userIdString;
 
-    // ✅ Load cached profile picture first
+    // Load cached profile picture first
     String cachedProfilePic = storageBox.get("profilePicture") ?? "";
     if (cachedProfilePic.isNotEmpty) {
       setState(() {
-        profilePicture = formatProfilePictureUrl(cachedProfilePic);
+        profilePicture = cachedProfilePic;
         isLoading = false;
       });
       return;
     }
 
-    // ✅ Fetch from API if not in cache
+    // Fetch from API if not in cache
     String fetchedProfilePic = await ProfileService.fetchProfilePicture(userId);
 
     if (fetchedProfilePic.isNotEmpty) {
       setState(() {
-        profilePicture = formatProfilePictureUrl(fetchedProfilePic);
+        profilePicture = fetchedProfilePic;
         isLoading = false;
       });
-
-      // ✅ Save to Hive for next time
-      await storageBox.put("profilePicture", fetchedProfilePic);
     } else {
-      debugPrint("❌ No profile picture available.");
-      setState(() => isLoading = false);
+      print("❌ No profile picture available.");
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
-// ✅ Ensure the profile picture URL is correct
-  String formatProfilePictureUrl(String imageUrl) {
-    if (imageUrl.startsWith("http")) {
-      return imageUrl; // Already a valid URL
-    } else {
-      return "$baseUrl$imageUrl"; // Append base URL if needed
-    }
-  }
+  // ✅ Load Activities from API
+  void loadActivities() async {
+    final box = await Hive.openBox('cacheBox');
+    await box.delete('recommendations');
+    final String? cachedActivities = box.get('activities');
+    final String? cachedRecommendations = box.get('recommendations');
 
-  // ✅ Load activities from API or cache
-  Future<void> loadActivities() async {
+    if (cachedActivities != null && cachedRecommendations != null) {
+      setState(() {
+        activities = jsonDecode(cachedActivities);
+        recommendedActivities = jsonDecode(cachedRecommendations);
+      });
+      return;
+    }
+
     try {
-      Box box = await Hive.openBox('cacheBox');
-      await box.delete('recommendations');
-
-      final String? cachedActivities = box.get('activities');
-      final String? cachedRecommendations = box.get('recommendations');
-
-      if (cachedActivities != null && cachedRecommendations != null) {
-        setState(() {
-          activities = jsonDecode(cachedActivities);
-          recommendedActivities = jsonDecode(cachedRecommendations);
-        });
-        return;
-      }
-
       Box storageBox = await Hive.openBox('authBox');
       String? userIdString = storageBox.get("userId");
 
       if (userIdString == null) {
-        debugPrint("❌ User ID not found in Hive.");
+        print("❌ User ID not found in Hive.");
         return;
       }
 
       int userId = int.tryParse(userIdString) ?? 0;
-      debugPrint("🔍 Fetching recommended activities for user ID: $userId");
+      print("🔍 Fetching recommended activities for user ID: $userId");
 
       List<dynamic> fetchedActivities = await ActivityService.fetchActivities();
       List<dynamic> fetchedRecommended =
           await ActivityService.fetchRecommendedActivities(userId);
+
+      print("✅ Fetched Activities: ${fetchedActivities.length}");
+      print("✅ Fetched Recommendations: ${fetchedRecommended.length}");
 
       setState(() {
         activities = fetchedActivities;
@@ -138,7 +127,7 @@ class _MainScreenState extends State<MainScreen> {
       await box.put('activities', jsonEncode(fetchedActivities));
       await box.put('recommendations', jsonEncode(fetchedRecommended));
     } catch (error) {
-      debugPrint("❌ Error fetching activities: $error");
+      print("❌ Error fetching activities: $error");
     }
   }
 
@@ -174,8 +163,7 @@ class _MainScreenState extends State<MainScreen> {
       backgroundColor: Colors.white,
       body: RefreshIndicator(
         onRefresh: () async {
-          await loadActivities();
-          fetchUserData();
+          loadActivities();
         },
         child: SingleChildScrollView(
           child: Column(
@@ -192,50 +180,59 @@ class _MainScreenState extends State<MainScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(height: 24,),
+                          SizedBox(
+                            height: 24,
+                          ),
                           Text(
-                            "Welcome back, $firstName!",
+                            "Welcome back, $firstName $lastName!",
                             style: TextStyle(
                               height: 0.96,
-                              fontSize: screenWidth * 0.058, // Dynamic font size
+                              fontSize:
+                                  screenWidth * 0.058, // Dynamic font size
                               fontWeight: FontWeight.bold,
                               fontFamily: 'Poppins',
                               color: Colors.black,
                             ),
                           ),
                           SizedBox(height: 10.0),
-                           // **Current Location Dropdown**
-                            Text(
-                              "Current Location",
-                              style: TextStyle(
-                                fontSize: screenWidth * 0.045,
-                                color: Colors.grey.shade400,
-                              ),
+                          // **Current Location Dropdown**
+                          Text(
+                            "Current Location",
+                            style: TextStyle(
+                              fontSize: screenWidth * 0.045,
+                              color: Colors.grey.shade400,
                             ),
-                            Container(
+                          ),
+                          Container(
                               width: 130,
-                              padding: EdgeInsets.symmetric(horizontal: 12, ),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               decoration: BoxDecoration(
                                 color: Color.fromRGBO(124, 124, 124, 0.07),
                                 border: Border.all(color: Colors.white),
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: DropdownButtonHideUnderline(
-                                child: DropdownButton<String>(
-                                  value: selectedLocation,
-                                  items: ["Tripoli", "Beirut", "Jbeil", "Jounieh", "Sayda"]
-                                      .map((location) {
-                                    return DropdownMenuItem(
-                                      value: location,
-                                      child: Text(location),
-                                    );
-                                  }).toList(),
-                                  onChanged: (newValue) {
-                                    setState(() {
-                                      selectedLocation = newValue!;
-                                    });
-                                  }
-                                ))),
+                                  child: DropdownButton<String>(
+                                      value: selectedLocation,
+                                      items: [
+                                        "Tripoli",
+                                        "Beirut",
+                                        "Jbeil",
+                                        "Jounieh",
+                                        "Sayda"
+                                      ].map((location) {
+                                        return DropdownMenuItem(
+                                          value: location,
+                                          child: Text(location),
+                                        );
+                                      }).toList(),
+                                      onChanged: (newValue) {
+                                        setState(() {
+                                          selectedLocation = newValue!;
+                                        });
+                                      }))),
                         ],
                       ),
                     ),
@@ -244,7 +241,12 @@ class _MainScreenState extends State<MainScreen> {
                       padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
                       child: Row(
                         children: [
-                          IconButton(onPressed: (){}, icon: Image.asset('assets/Icons/AI Essentials Icon Set.png',width: 30,height:30)),
+                          IconButton(
+                              onPressed: () {},
+                              icon: Image.asset(
+                                  'assets/Icons/AI Essentials Icon Set.png',
+                                  width: 30,
+                                  height: 30)),
                           IconButton(
                             onPressed: () {
                               Navigator.push(
@@ -262,32 +264,25 @@ class _MainScreenState extends State<MainScreen> {
                           ),
                           SizedBox(width: 8),
                           GestureDetector(
-                            onTap: () => Navigator.push(
+                            onTap: () {
+                              Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => UserInfo())),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: profilePicture.isEmpty
-                                    ? Border.all(
-                                        color: Colors.black,
-                                        width: 1) // Black border if no image
-                                    : null,
-                              ),
-                              child: CircleAvatar(
-                                backgroundColor: Colors.grey.shade300,
-                                backgroundImage: (profilePicture.isNotEmpty &&
-                                        Uri.tryParse(profilePicture)
-                                                ?.hasAbsolutePath ==
-                                            true)
-                                    ? NetworkImage(profilePicture)
-                                    : null,
-                                child: profilePicture.isEmpty
-                                    ? Icon(Icons.person,
-                                        color: Colors.black, size: 30)
-                                    : null,
-                              ),
+                                  builder: (context) => UserInfo(),
+                                ),
+                              );
+                            },
+                            child: CircleAvatar(
+                              backgroundColor: Colors.grey.shade300,
+                              backgroundImage: profilePicture.isNotEmpty
+                                  ? NetworkImage(
+                                      profilePicture) // Load image if available
+                                  : null, // If empty, don't set an image
+                              child: profilePicture.isEmpty
+                                  ? Icon(Icons.person,
+                                      color: Colors
+                                          .white) // Show default icon if no image
+                                  : null, // Remove child if image is available
                             ),
                           ),
                         ],
