@@ -27,12 +27,24 @@ class _MainScreenState extends State<MainScreen> {
   int currentIndex = 0;
   List<dynamic> activities = [];
   List<dynamic> recommendedActivities = [];
+  final FlutterSecureStorage storage = FlutterSecureStorage();
+  String firstName = "";
+  String selectedLocation = "Tripoli"; 
+  
 
   @override
   void initState() {
     super.initState();
     loadActivities();
+    _loadUserName();
     fetchUserData();
+  }
+  // Function to retrieve the first name from storage
+  Future<void> _loadUserName() async {
+    String? storedFirstName = await storage.read(key: "first_name");
+    setState(() {
+      firstName = storedFirstName ?? "Guest"; // Default to "Guest" if no name is found
+    });
   }
 
   void fetchUserData() async {
@@ -168,26 +180,50 @@ class _MainScreenState extends State<MainScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          SizedBox(height: 24,),
                           Text(
-                            "Let's Plan Your\nActivity",
+                            "Welcome back, $firstName!",
                             style: TextStyle(
                               height: 0.96,
-                              fontSize: screenWidth * 0.08, // Dynamic font size
+                              fontSize: screenWidth * 0.058, // Dynamic font size
                               fontWeight: FontWeight.bold,
                               fontFamily: 'Poppins',
                               color: Colors.black,
                             ),
                           ),
                           SizedBox(height: 10.0),
-                          Text(
-                            "Navigate through the suggested activities and categories or search on your own.",
-                            style: TextStyle(
-                              fontSize: screenWidth * 0.04, // Dynamic font size
-                              height: 0.98,
-                              color: Colors.grey,
-                              fontFamily: 'Poppins',
+                           // **Current Location Dropdown**
+                            Text(
+                              "Current Location",
+                              style: TextStyle(
+                                fontSize: screenWidth * 0.045,
+                                color: Colors.grey.shade400,
+                              ),
                             ),
-                          ),
+                            Container(
+                              width: 130,
+                              padding: EdgeInsets.symmetric(horizontal: 12, ),
+                              decoration: BoxDecoration(
+                                color: Color.fromRGBO(124, 124, 124, 0.07),
+                                border: Border.all(color: Colors.white),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: selectedLocation,
+                                  items: ["Tripoli", "Beirut", "Jbeil", "Jounieh", "Sayda"]
+                                      .map((location) {
+                                    return DropdownMenuItem(
+                                      value: location,
+                                      child: Text(location),
+                                    );
+                                  }).toList(),
+                                  onChanged: (newValue) {
+                                    setState(() {
+                                      selectedLocation = newValue!;
+                                    });
+                                  }
+                                ))),
                         ],
                       ),
                     ),
@@ -196,6 +232,7 @@ class _MainScreenState extends State<MainScreen> {
                       padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
                       child: Row(
                         children: [
+                          IconButton(onPressed: (){}, icon: Image.asset('assets/Icons/AI Essentials Icon Set.png',width: 30,height:30)),
                           IconButton(
                             onPressed: () {
                               Navigator.push(
@@ -206,7 +243,7 @@ class _MainScreenState extends State<MainScreen> {
                               );
                             },
                             icon: Image.asset(
-                              'assets/Icons/bell-Bold.png',
+                              'assets/Icons/Notification-Icon.png',
                               width: 30,
                               height: 30,
                             ),
@@ -249,7 +286,7 @@ class _MainScreenState extends State<MainScreen> {
                     Text(
                       "Limited Time Activities",
                       style: TextStyle(
-                        fontSize: screenWidth * 0.06, // Dynamic font size
+                        fontSize: screenWidth * 0.055, // Dynamic font size
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
@@ -260,7 +297,7 @@ class _MainScreenState extends State<MainScreen> {
                       child: Text(
                         "see all",
                         style: TextStyle(
-                          fontSize: screenWidth * 0.04, // Dynamic font size
+                          fontSize: screenWidth * 0.035, // Dynamic font size
                           fontFamily: 'Poppins',
                           color: AppColors.blue,
                         ),
@@ -296,7 +333,7 @@ class _MainScreenState extends State<MainScreen> {
                     Text(
                       "Popular Categories",
                       style: TextStyle(
-                        fontSize: screenWidth * 0.06, // Dynamic font size
+                        fontSize: screenWidth * 0.055, // Dynamic font size
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
@@ -307,7 +344,7 @@ class _MainScreenState extends State<MainScreen> {
                       child: Text(
                         "see all",
                         style: TextStyle(
-                          fontSize: screenWidth * 0.04, // Dynamic font size
+                          fontSize: screenWidth * 0.035, // Dynamic font size
                           fontFamily: 'Poppins',
                           color: AppColors.blue,
                         ),
@@ -379,7 +416,7 @@ class _MainScreenState extends State<MainScreen> {
                       child: Text(
                         "see all",
                         style: TextStyle(
-                          fontSize: screenWidth * 0.04, // Dynamic font size
+                          fontSize: screenWidth * 0.035, // Dynamic font size
                           fontFamily: 'Poppins',
                           color: AppColors.blue,
                         ),
