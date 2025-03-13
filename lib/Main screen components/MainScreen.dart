@@ -1,9 +1,11 @@
 import 'dart:ui';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import '../colors.dart';
 import 'package:adventura/Booking/MyBooking.dart';
 import 'package:adventura/Services/profile_service.dart';
 import 'package:adventura/Services/storage_service.dart';
 import 'package:adventura/Services/user_service.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:adventura/Main%20screen%20components/Cards.dart';
 import 'package:adventura/colors.dart';
 import 'package:adventura/search%20screen/searchScreen.dart';
@@ -35,6 +37,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
+    fetchUserData();
     loadActivities();
     _loadUserName();
     fetchUserData();
@@ -52,72 +55,80 @@ class _MainScreenState extends State<MainScreen> {
     String? userIdString = storageBox.get("userId");
 
     if (userIdString == null) {
-      print("❌ User ID not found in Hive.");
+      debugPrint("❌ User ID not found in Hive.");
       return;
     }
 
 
     userId = userIdString;
 
-    // Load cached profile picture first
+    // ✅ Load cached profile picture first
     String cachedProfilePic = storageBox.get("profilePicture") ?? "";
     if (cachedProfilePic.isNotEmpty) {
       setState(() {
-        profilePicture = cachedProfilePic;
+        profilePicture = formatProfilePictureUrl(cachedProfilePic);
         isLoading = false;
       });
       return;
     }
 
-    // Fetch from API if not in cache
+    // ✅ Fetch from API if not in cache
     String fetchedProfilePic = await ProfileService.fetchProfilePicture(userId);
 
     if (fetchedProfilePic.isNotEmpty) {
       setState(() {
-        profilePicture = fetchedProfilePic;
+        profilePicture = formatProfilePictureUrl(fetchedProfilePic);
         isLoading = false;
       });
+
+      // ✅ Save to Hive for next time
+      await storageBox.put("profilePicture", fetchedProfilePic);
     } else {
-      print("❌ No profile picture available.");
-      setState(() {
-        isLoading = false;
-      });
+      debugPrint("❌ No profile picture available.");
+      setState(() => isLoading = false);
     }
   }
 
-  // ✅ Load Activities from API
-  void loadActivities() async {
-    final box = await Hive.openBox('cacheBox');
-    await box.delete('recommendations');
-    final String? cachedActivities = box.get('activities');
-    final String? cachedRecommendations = box.get('recommendations');
-
-    if (cachedActivities != null && cachedRecommendations != null) {
-      setState(() {
-        activities = jsonDecode(cachedActivities);
-        recommendedActivities = jsonDecode(cachedRecommendations);
-      });
-      return;
+// ✅ Ensure the profile picture URL is correct
+  String formatProfilePictureUrl(String imageUrl) {
+    if (imageUrl.startsWith("http")) {
+      return imageUrl; // Already a valid URL
+    } else {
+      return "$baseUrl$imageUrl"; // Append base URL if needed
     }
+  }
 
+  // ✅ Load activities from API or cache
+  Future<void> loadActivities() async {
     try {
+      Box box = await Hive.openBox('cacheBox');
+      await box.delete('recommendations');
+
+      final String? cachedActivities = box.get('activities');
+      final String? cachedRecommendations = box.get('recommendations');
+
+      if (cachedActivities != null && cachedRecommendations != null) {
+        setState(() {
+          activities = jsonDecode(cachedActivities);
+          recommendedActivities = jsonDecode(cachedRecommendations);
+        });
+        return;
+      }
+
       Box storageBox = await Hive.openBox('authBox');
       String? userIdString = storageBox.get("userId");
 
       if (userIdString == null) {
-        print("❌ User ID not found in Hive.");
+        debugPrint("❌ User ID not found in Hive.");
         return;
       }
 
       int userId = int.tryParse(userIdString) ?? 0;
-      print("🔍 Fetching recommended activities for user ID: $userId");
+      debugPrint("🔍 Fetching recommended activities for user ID: $userId");
 
       List<dynamic> fetchedActivities = await ActivityService.fetchActivities();
       List<dynamic> fetchedRecommended =
           await ActivityService.fetchRecommendedActivities(userId);
-
-      print("✅ Fetched Activities: ${fetchedActivities.length}");
-      print("✅ Fetched Recommendations: ${fetchedRecommended.length}");
 
       setState(() {
         activities = fetchedActivities;
@@ -127,7 +138,7 @@ class _MainScreenState extends State<MainScreen> {
       await box.put('activities', jsonEncode(fetchedActivities));
       await box.put('recommendations', jsonEncode(fetchedRecommended));
     } catch (error) {
-      print("❌ Error fetching activities: $error");
+      debugPrint("❌ Error fetching activities: $error");
     }
   }
 
@@ -163,7 +174,8 @@ class _MainScreenState extends State<MainScreen> {
       backgroundColor: Colors.white,
       body: RefreshIndicator(
         onRefresh: () async {
-          loadActivities();
+          await loadActivities();
+          fetchUserData();
         },
         child: SingleChildScrollView(
           child: Column(
@@ -250,25 +262,32 @@ class _MainScreenState extends State<MainScreen> {
                           ),
                           SizedBox(width: 8),
                           GestureDetector(
-                            onTap: () {
-                              Navigator.push(
+                            onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => UserInfo(),
-                                ),
-                              );
-                            },
-                            child: CircleAvatar(
-                              backgroundColor: Colors.grey.shade300,
-                              backgroundImage: profilePicture.isNotEmpty
-                                  ? NetworkImage(
-                                      profilePicture) // Load image if available
-                                  : null, // If empty, don't set an image
-                              child: profilePicture.isEmpty
-                                  ? Icon(Icons.person,
-                                      color: Colors
-                                          .white) // Show default icon if no image
-                                  : null, // Remove child if image is available
+                                    builder: (context) => UserInfo())),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: profilePicture.isEmpty
+                                    ? Border.all(
+                                        color: Colors.black,
+                                        width: 1) // Black border if no image
+                                    : null,
+                              ),
+                              child: CircleAvatar(
+                                backgroundColor: Colors.grey.shade300,
+                                backgroundImage: (profilePicture.isNotEmpty &&
+                                        Uri.tryParse(profilePicture)
+                                                ?.hasAbsolutePath ==
+                                            true)
+                                    ? NetworkImage(profilePicture)
+                                    : null,
+                                child: profilePicture.isEmpty
+                                    ? Icon(Icons.person,
+                                        color: Colors.black, size: 30)
+                                    : null,
+                              ),
                             ),
                           ),
                         ],
