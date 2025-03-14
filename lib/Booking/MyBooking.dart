@@ -27,7 +27,7 @@ class MyBookingsPage extends StatefulWidget {
   @override
   _MyBookingsPageState createState() => _MyBookingsPageState();
 }
-
+int selectedRating = 0;
 bool isUpcomingSelected = true;
 
 class _MyBookingsPageState extends State<MyBookingsPage> {
@@ -350,7 +350,7 @@ class BookingCard extends StatelessWidget {
                   SizedBox(height: 10),
                   StatefulBuilder(
                     builder: (context, setState) {
-                      int selectedRating = 0;
+                      
                       return Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(5, (index) {
