@@ -3,7 +3,6 @@ import '../colors.dart';
 import 'package:adventura/Booking/MyBooking.dart';
 import 'package:adventura/Services/profile_service.dart';
 import 'package:adventura/Services/storage_service.dart';
-import 'package:adventura/Services/user_service.dart';
 import 'package:adventura/Main%20screen%20components/Cards.dart';
 import 'package:adventura/colors.dart';
 import 'package:adventura/search%20screen/searchScreen.dart';
@@ -14,6 +13,7 @@ import 'package:adventura/Services/activity_service.dart';
 import 'package:hive/hive.dart'; // Add this for local caching
 import 'dart:convert'; // Add this for JSON encoding/decoding
 import 'package:adventura/config.dart'; // ✅ Import the global config file
+import 'package:cached_network_image/cached_network_image.dart';
 
 class MainScreen extends StatefulWidget {
   @override
@@ -44,25 +44,25 @@ class _MainScreenState extends State<MainScreen> {
       return;
     }
 
-
     userId = userIdString;
 
     // ✅ Load cached profile picture first
     String cachedProfilePic = storageBox.get("profilePicture") ?? "";
-    if (cachedProfilePic.isNotEmpty) {
-      setState(() {
-        profilePicture = formatProfilePictureUrl(cachedProfilePic);
-        isLoading = false;
-      });
-      return;
+    if (cachedProfilePic.isNotEmpty && profilePicture == cachedProfilePic) {
+      return; // ❌ Don't update state if the image is already set
     }
+
+    setState(() {
+      profilePicture = cachedProfilePic;
+      isLoading = false;
+    });
 
     // ✅ Fetch from API if not in cache
     String fetchedProfilePic = await ProfileService.fetchProfilePicture(userId);
 
-    if (fetchedProfilePic.isNotEmpty) {
+    if (fetchedProfilePic.isNotEmpty && fetchedProfilePic != profilePicture) {
       setState(() {
-        profilePicture = formatProfilePictureUrl(fetchedProfilePic);
+        profilePicture = fetchedProfilePic;
         isLoading = false;
       });
 
@@ -149,368 +149,350 @@ class _MainScreenState extends State<MainScreen> {
     return "assets/Pictures/island.jpg"; // ✅ Default image
   }
 
-  @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height;
-    double statusBarHeight = MediaQuery.of(context).padding.top;
+  double screenWidth = MediaQuery.of(context).size.width;
+  double screenHeight = MediaQuery.of(context).size.height;
+  double statusBarHeight = MediaQuery.of(context).padding.top;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await loadActivities();
-          fetchUserData();
-        },
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Header Section
-              Padding(
-                padding: EdgeInsets.fromLTRB(16, statusBarHeight + 6, 16, 6),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Text Content
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Let's Plan Your\nActivity",
-                            style: TextStyle(
-                              height: 0.96,
-                              fontSize: screenWidth * 0.08, // Dynamic font size
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Poppins',
-                              color: Colors.black,
-                            ),
-                          ),
-                          SizedBox(height: 10.0),
-                          Text(
-                            "Navigate through the suggested activities and categories or search on your own.",
-                            style: TextStyle(
-                              fontSize: screenWidth * 0.04, // Dynamic font size
-                              height: 0.98,
-                              color: Colors.grey,
-                              fontFamily: 'Poppins',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Icons
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => NotificationScreen(),
-                                ),
-                              );
-                            },
-                            icon: Image.asset(
-                              'assets/Icons/bell-Bold.png',
-                              width: 30,
-                              height: 30,
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => UserInfo())),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: profilePicture.isEmpty
-                                    ? Border.all(
-                                        color: Colors.black,
-                                        width: 1) // Black border if no image
-                                    : null,
-                              ),
-                              child: CircleAvatar(
-                                backgroundColor: Colors.grey.shade300,
-                                backgroundImage: (profilePicture.isNotEmpty &&
-                                        Uri.tryParse(profilePicture)
-                                                ?.hasAbsolutePath ==
-                                            true)
-                                    ? NetworkImage(profilePicture)
-                                    : null,
-                                child: profilePicture.isEmpty
-                                    ? Icon(Icons.person,
-                                        color: Colors.black, size: 30)
-                                    : null,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Limited Time Activities Section
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Limited Time Activities",
-                      style: TextStyle(
-                        fontSize: screenWidth * 0.06, // Dynamic font size
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {},
-                      child: Text(
-                        "see all",
-                        style: TextStyle(
-                          fontSize: screenWidth * 0.04, // Dynamic font size
-                          fontFamily: 'Poppins',
-                          color: AppColors.blue,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(
-                height: screenHeight * 0.35, // Dynamic height
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 0, 16, 0),
-                    child: Row(
-                      children: [
-                        card('Hikes/assirafting.webp'),
-                        card('Hikes/nighthike.webp'),
-                        card('Hikes/mechwarna.webp'),
-                        card('Hikes/batroun.jpg'),
-                        card('Hikes/sunsethike.webp'),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              // Popular Categories Section
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Popular Categories",
-                      style: TextStyle(
-                        fontSize: screenWidth * 0.06, // Dynamic font size
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {},
-                      child: Text(
-                        "see all",
-                        style: TextStyle(
-                          fontSize: screenWidth * 0.04, // Dynamic font size
-                          fontFamily: 'Poppins',
-                          color: AppColors.blue,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(
-                height: screenHeight * 0.27, // Dynamic height
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 0, 16, 0),
-                    child: Row(
-                      children: [
-                        card2(
-                            'paragliding.webp',
-                            'Paragliding',
-                            'Soar above the stunning bay of Jounieh and enjoy breath-taking aerial views of the Lebanese coast.',
-                            9,
-                            0),
-                        card2(
-                            'jetski.jpeg',
-                            'Jetski Rentals',
-                            'Experience the thrill of jetskiing along Lebanon’s shores, available at various coastal locations.',
-                            2,
-                            0.8),
-                        card2(
-                            'island.jpg',
-                            'Island Trips',
-                            'Explore Lebanon’s coastline with private boat rentals, island hopping, and unforgettable sea adventures.',
-                            5,
-                            0.0),
-                        card2(
-                            'picnic.webp',
-                            'Picnic Spots',
-                            'Relax and unwind at scenic picnic spots, options available for a perfect day out.',
-                            5,
-                            0.0),
-                        card2(
-                            'cars.webp',
-                            'Car Events',
-                            'Join Lebanon’s car enthusiasts at exciting car meets and events.',
-                            5,
-                            1),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              // You Might Like Section
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "You Might Like",
-                      style: TextStyle(
-                        fontSize: screenWidth * 0.06, // Dynamic font size
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {},
-                      child: Text(
-                        "see all",
-                        style: TextStyle(
-                          fontSize: screenWidth * 0.04, // Dynamic font size
-                          fontFamily: 'Poppins',
-                          color: AppColors.blue,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // ✅ Activity List (Dynamically Loaded)
-              recommendedActivities.isEmpty
-                  ? Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(20),
-                        child: CircularProgressIndicator(),
-                      ),
-                    )
-                  : Column(
-                      children: recommendedActivities.map((activity) {
-                        return EventCard(
-                          context: context,
-                          imagePath:
-                              getImageUrl(activity), // ✅ Safe image fetching
-                          title: activity["name"] ??
-                              "Unknown Activity", // ✅ Handle missing name
-                          providerName:
-                              activity["provider_name"] ?? "Unknown Provider",
-                          date: activity["date"] ?? "Ongoing",
-                          location: activity["location"] ?? "Unknown Location",
-                          rating: activity["rating"] != null
-                              ? double.tryParse(
-                                      activity["rating"].toString()) ??
-                                  0.0
-                              : 0.0,
-                          totalReviews: activity["total_reviews"] ?? 0,
-                          price: activity["price"] != null
-                              ? "\$${activity["price"]}"
-                              : "Free",
-                        );
-                      }).toList(),
-                    ),
-              // ✅ Bottom Navigation Bar
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 25),
-                  width: screenWidth * 0.93,
-                  height: 65,
-                  decoration: BoxDecoration(
-                    color: Color(0xFF1B1B1B),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+  return Scaffold(
+    backgroundColor: Colors.white,
+    body: RefreshIndicator(
+      onRefresh: () async {
+        await loadActivities();
+        fetchUserData();
+      },
+      child: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                // Header Section
+                Padding(
+                  padding: EdgeInsets.fromLTRB(16, statusBarHeight + 6, 16, 6),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IconButton(
-                        onPressed: () {
-                          // Navigate to Main Screen
-                          Navigator.pop(context);
-                        },
-                        icon: Image.asset(
-                          'assets/Icons/home.png',
-                          width: 35,
-                          height: 35,
-                          color: Colors.grey, // Adjust based on the screen
+                      // Text Content
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Let's Plan Your\nActivity",
+                              style: TextStyle(
+                                height: 0.96,
+                                fontSize: screenWidth * 0.08, // Dynamic font size
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Poppins',
+                                color: Colors.black,
+                              ),
+                            ),
+                            SizedBox(height: 10.0),
+                            Text(
+                              "Navigate through the suggested activities and categories or search on your own.",
+                              style: TextStyle(
+                                fontSize: screenWidth * 0.04, // Dynamic font size
+                                height: 0.98,
+                                color: Colors.grey,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      IconButton(
-                        onPressed: () {},
-                        icon: Image.asset(
-                          'assets/Icons/search.png',
-                          width: 35,
-                          height: 35,
-                          color: Colors.white, // Active
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => MyBookingsPage()));
-                        },
-                        icon: Image.asset(
-                          'assets/Icons/ticket.png',
-                          width: 35,
-                          height: 35,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {},
-                        icon: Image.asset(
-                          'assets/Icons/bookmark.png',
-                          width: 35,
-                          height: 35,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {},
-                        icon: Image.asset(
-                          'assets/Icons/paper-plane.png',
-                          width: 35,
-                          height: 35,
-                          color: Colors.grey,
+                      // Icons
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => NotificationScreen(),
+                                  ),
+                                );
+                              },
+                              icon: Image.asset(
+                                'assets/Icons/bell-Bold.png',
+                                width: 30,
+                                height: 30,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => UserInfo())),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: profilePicture.isEmpty
+                                      ? Border.all(
+                                          color: Colors.black,
+                                          width: 1) // Black border if no image
+                                      : null,
+                                ),
+                                child: CircleAvatar(
+                                  backgroundColor: Colors.grey.shade300,
+                                  backgroundImage: (profilePicture.isNotEmpty &&
+                                          Uri.tryParse(profilePicture)
+                                                  ?.hasAbsolutePath ==
+                                              true)
+                                      ? CachedNetworkImageProvider(
+                                          profilePicture) // ✅ Cached Image
+                                      : null,
+                                  child: profilePicture.isEmpty
+                                      ? Icon(Icons.person,
+                                          color: Colors.black, size: 30)
+                                      : null,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
+                // Limited Time Activities Section
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Limited Time Activities",
+                        style: TextStyle(
+                          fontSize: screenWidth * 0.06, // Dynamic font size
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {},
+                        child: Text(
+                          "see all",
+                          style: TextStyle(
+                            fontSize: screenWidth * 0.04, // Dynamic font size
+                            fontFamily: 'Poppins',
+                            color: AppColors.blue,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  height: screenHeight * 0.35, // Dynamic height
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(0, 0, 16, 0),
+                      child: Row(
+                        children: [
+                          card('Hikes/assirafting.webp'),
+                          card('Hikes/nighthike.webp'),
+                          card('Hikes/mechwarna.webp'),
+                          card('Hikes/batroun.jpg'),
+                          card('Hikes/sunsethike.webp'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Popular Categories Section
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Popular Categories",
+                        style: TextStyle(
+                          fontSize: screenWidth * 0.06, // Dynamic font size
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {},
+                        child: Text(
+                          "see all",
+                          style: TextStyle(
+                            fontSize: screenWidth * 0.04, // Dynamic font size
+                            fontFamily: 'Poppins',
+                            color: AppColors.blue,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  height: screenHeight * 0.27, // Dynamic height
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(0, 0, 16, 0),
+                      child: Row(
+                        children: [
+                          card2(
+                              'paragliding.webp',
+                              'Paragliding',
+                              'Soar above the stunning bay of Jounieh and enjoy breath-taking aerial views of the Lebanese coast.',
+                              9,
+                              0),
+                          card2(
+                              'jetski.jpeg',
+                              'Jetski Rentals',
+                              'Experience the thrill of jetskiing along Lebanon’s shores, available at various coastal locations.',
+                              2,
+                              0.8),
+                          card2(
+                              'island.jpg',
+                              'Island Trips',
+                              'Explore Lebanon’s coastline with private boat rentals, island hopping, and unforgettable sea adventures.',
+                              5,
+                              0.0),
+                          card2(
+                              'picnic.webp',
+                              'Picnic Spots',
+                              'Relax and unwind at scenic picnic spots, options available for a perfect day out.',
+                              5,
+                              0.0),
+                          card2(
+                              'cars.webp',
+                              'Car Events',
+                              'Join Lebanon’s car enthusiasts at exciting car meets and events.',
+                              5,
+                              1),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // You Might Like Section
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "You Might Like",
+                        style: TextStyle(
+                          fontSize: screenWidth * 0.06, // Dynamic font size
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {},
+                        child: Text(
+                          "see all",
+                          style: TextStyle(
+                            fontSize: screenWidth * 0.04, // Dynamic font size
+                            fontFamily: 'Poppins',
+                            color: AppColors.blue,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // ✅ Activity List (Dynamically Loaded)
+                recommendedActivities.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    : Column(
+                        children: recommendedActivities.map((activity) {
+                          return EventCard(
+                            context: context,
+                            imagePath:
+                                getImageUrl(activity), // ✅ Safe image fetching
+                            title: activity["name"] ??
+                                "Unknown Activity", // ✅ Handle missing name
+                            providerName:
+                                activity["provider_name"] ?? "Unknown Provider",
+                            date: activity["date"] ?? "Ongoing",
+                            location: activity["location"] ?? "Unknown Location",
+                            rating: activity["rating"] != null
+                                ? double.tryParse(
+                                        activity["rating"].toString()) ??
+                                    0.0
+                                : 0.0,
+                            totalReviews: activity["total_reviews"] ?? 0,
+                            price: activity["price"] != null
+                                ? "\$${activity["price"]}"
+                                : "Free",
+                          );
+                        }).toList(),
+                      ),
+              ],
+            ),
           ),
-        ),
+          // Bottom Navigation Bar stays fixed at the bottom
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 25),
+              width: screenWidth * 0.93,
+              height: 65,
+              decoration: BoxDecoration(
+                color: Color(0xFF1B1B1B),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Image.asset('assets/Icons/home.png',
+                        width: 35, height: 35, color: Colors.grey),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => SearchScreen())),
+                    icon: Image.asset('assets/Icons/search.png',
+                        width: 35, height: 35, color: Colors.white),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => MyBookingsPage())),
+                    icon: Image.asset('assets/Icons/ticket.png',
+                        width: 35, height: 35, color: Colors.grey),
+                  ),
+                  IconButton(
+                    onPressed: () {},
+                    icon: Image.asset('assets/Icons/bookmark.png',
+                        width: 35, height: 35, color: Colors.grey),
+                  ),
+                  IconButton(
+                    onPressed: () {},
+                    icon: Image.asset('assets/Icons/paper-plane.png',
+                        width: 35, height: 35, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
