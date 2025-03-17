@@ -9,6 +9,7 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:adventura/userinformation/profileOptionTile.dart';
+import 'package:hive/hive.dart';
 import 'package:http/http.dart';
 
 class UserInfo extends StatefulWidget {
@@ -31,13 +32,23 @@ class _UserInfoState extends State<UserInfo> {
 
   // ✅ Load user data from storage and fetch profile picture
   Future<void> _loadUserData() async {
-    userId = await StorageService.getUserId();
+  Box box = await Hive.openBox('authBox');
+
+  userId = box.get("userId", defaultValue: "");
+  firstName = box.get("firstName", defaultValue: "");
+  lastName = box.get("lastName", defaultValue: "");
+
+  // Fallback in case it's empty in Hive
+  if (firstName.isEmpty || lastName.isEmpty) {
     firstName = await StorageService.getFirstName();
     lastName = await StorageService.getLastName();
-    profilePicture = await ProfileService.fetchProfilePicture(userId);
-
-    setState(() => isLoading = false);
   }
+
+  profilePicture = await ProfileService.fetchProfilePicture(userId);
+
+  setState(() => isLoading = false);
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -431,7 +442,7 @@ class _UserInfoState extends State<UserInfo> {
 
   // ✅ Profile Picture Handling
   Widget _buildProfileImage() {
-    if (profilePicture.isNotEmpty) {
+    if (profilePicture.isNotEmpty && profilePicture.length > 50) {
       if (profilePicture.startsWith("data:image")) {
         try {
           String base64String = profilePicture.split(",")[1];

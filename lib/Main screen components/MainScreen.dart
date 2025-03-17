@@ -1,7 +1,8 @@
 import 'dart:ui';
+import 'dart:typed_data';
+import 'dart:convert';
 import 'package:adventura/Booking/MyBooking.dart';
 import 'package:adventura/Services/profile_service.dart';
-import 'package:adventura/Services/storage_service.dart';
 import 'package:adventura/Main%20screen%20components/Cards.dart';
 import 'package:adventura/colors.dart';
 import 'package:adventura/search%20screen/searchScreen.dart';
@@ -9,11 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:adventura/userinformation/UserInfo.dart';
 import 'package:adventura/Notification/NotificationPage.dart';
 import 'package:adventura/Services/activity_service.dart';
-import 'package:hive/hive.dart'; // Add this for local caching
-import 'dart:convert'; // Add this for JSON encoding/decoding
-import 'package:adventura/config.dart'; // ✅ Import the global config file
+import 'package:hive/hive.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:adventura/utils.dart';
 
 class MainScreen extends StatefulWidget {
   @override
@@ -40,9 +38,12 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _loadUserData() async {
-    userId = await StorageService.getUserId();
-    firstName = await StorageService.getFirstName();
-    lastName = await StorageService.getLastName();
+    Box box = await Hive.openBox('authBox');
+    userId = box.get('userId') ?? '';
+    firstName = box.get('firstName') ?? '';
+    lastName = box.get('lastName') ?? '';
+
+    profilePicture = box.get('profilePicture') ?? "";
 
     setState(() => isLoading = false);
   }
@@ -131,8 +132,6 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  
-
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
@@ -143,7 +142,9 @@ class _MainScreenState extends State<MainScreen> {
       body: RefreshIndicator(
         onRefresh: () async {
           loadActivities();
+          await ProfileService.fetchProfilePicture(userId);
           fetchUserData();
+          setState(() {});
         },
         child: Stack(
           children: [
@@ -243,34 +244,48 @@ class _MainScreenState extends State<MainScreen> {
                               SizedBox(width: 8),
                               GestureDetector(
                                 onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => UserInfo())),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: profilePicture.isEmpty
-                                        ? Border.all(
-                                            color: Colors.black,
-                                            width:
-                                                1) // Black border if no image
-                                        : null,
-                                  ),
-                                  child: CircleAvatar(
-                                    backgroundColor: Colors.grey.shade300,
-                                    backgroundImage: (profilePicture
-                                                .isNotEmpty &&
-                                            Uri.tryParse(profilePicture)
-                                                    ?.hasAbsolutePath ==
-                                                true)
-                                        ? CachedNetworkImageProvider(
-                                            profilePicture) // ✅ Cached Image
-                                        : null,
-                                    child: profilePicture.isEmpty
-                                        ? Icon(Icons.person,
-                                            color: Colors.black, size: 30)
-                                        : null,
-                                  ),
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => UserInfo()),
+                                ),
+                                child: FutureBuilder(
+                                  future: Hive.openBox('authBox'),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.done) {
+                                      Box box = Hive.box('authBox');
+                                      Uint8List? cachedBytes =
+                                          box.get('profileImageBytes');
+                                      String? cachedUrl =
+                                          box.get('profilePictureUrl');
+
+                                      ImageProvider<Object> imageProvider;
+
+                                      if (cachedBytes != null) {
+                                        imageProvider =
+                                            MemoryImage(cachedBytes);
+                                      } else if (cachedUrl != null &&
+                                          cachedUrl.isNotEmpty) {
+                                        imageProvider =
+                                            CachedNetworkImageProvider(
+                                                    cachedUrl)
+                                                as ImageProvider<Object>;
+                                      } else {
+                                        imageProvider = AssetImage(
+                                            "assets/images/default_user.png");
+                                      }
+
+                                      return CircleAvatar(
+                                        backgroundColor: Colors.grey.shade300,
+                                        backgroundImage: imageProvider,
+                                      );
+                                    }
+                                    return CircleAvatar(
+                                      backgroundColor: Colors.grey.shade300,
+                                      child: Icon(Icons.person,
+                                          color: Colors.black, size: 30),
+                                    );
+                                  },
                                 ),
                               ),
                             ],
