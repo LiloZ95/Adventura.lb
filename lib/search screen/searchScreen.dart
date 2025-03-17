@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:adventura/Booking/MyBooking.dart';
 import 'package:adventura/Main%20screen%20components/Cards.dart';
+import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/colors.dart';
 import 'package:flutter/material.dart';
 
@@ -465,16 +466,26 @@ class _SearchScreenState extends State<SearchScreen> {
               width: screenWidth * 0.93,
               height: 65,
               decoration: BoxDecoration(
-                color: Color(0xFF1B1B1B),
-                borderRadius: BorderRadius.circular(10),
+                color: const Color(0xFF1B1B1B),
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.70),
+                    offset: Offset(0, 1),
+                    blurRadius: 5,
+                    spreadRadius: 0,
+                  ),
+                ],
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   IconButton(
                     onPressed: () {
-                      // Navigate to Main Screen
-                      Navigator.pop(context);
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => MainScreen()));
                     },
                     icon: Image.asset(
                       'assets/Icons/home.png',
