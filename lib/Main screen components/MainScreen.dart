@@ -15,6 +15,8 @@ import 'package:adventura/config.dart'; // ✅ Import the global config file
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:adventura/utils.dart';
 
+import '../widgets/bouncing_dots_loader.dart';
+
 class MainScreen extends StatefulWidget {
   @override
   _MainScreenState createState() => _MainScreenState();
@@ -139,6 +141,7 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: RefreshIndicator(
+        color: AppColors.blue,
         onRefresh: () async {
           loadActivities();
           fetchUserData();
@@ -442,7 +445,7 @@ class _MainScreenState extends State<MainScreen> {
                       ? Center(
                           child: Padding(
                             padding: EdgeInsets.all(20),
-                            child: CircularProgressIndicator(),
+                            child: BouncingDotsLoader(),
                           ),
                         )
                       : Column(
