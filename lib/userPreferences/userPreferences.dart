@@ -2,11 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../Main screen components/MainScreen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-void main() {
-  runApp(Favorite());
-}
+import 'package:hive/hive.dart';
+import 'package:adventura/widgets/bouncing_dots_loader.dart';
 
 class Favorite extends StatelessWidget {
   @override
@@ -26,34 +23,9 @@ class EventSelectionScreen extends StatefulWidget {
 class _EventSelectionScreenState extends State<EventSelectionScreen> {
   List<Map<String, dynamic>> categories = [];
   List<Map<String, dynamic>> selectedPreferences = [];
-  final int minSelections = 1; // ✅ Minimum required selections
-  final int maxSelections = 5; // ✅ Maximum allowed selections
-  String? errorMessage; // ✅ Store error message
-
-  // final List<Map<String, String>> categories = [
-  //   {'name': 'Business', 'emoji': '🏢'},
-  //   {'name': 'Community', 'emoji': '🤝'},
-  //   {'name': 'Music & Entertainment', 'emoji': '🎵'},
-  //   {'name': 'Health', 'emoji': '⚕️'},
-  //   {'name': 'Food & drink', 'emoji': '🍔'},
-  //   {'name': 'Family & Education', 'emoji': '👨‍👩‍👧‍👦'},
-  //   {'name': 'Sport', 'emoji': '⚽'},
-  //   {'name': 'Fashion', 'emoji': '👗'},
-  //   {'name': 'Film & Media', 'emoji': '🎬'},
-  //   {'name': 'Home & Lifestyle', 'emoji': '🏡'},
-  //   {'name': 'Design', 'emoji': '🎨'},
-  //   {'name': 'Gaming', 'emoji': '🎮'},
-  //   {'name': 'Science & Tech', 'emoji': '🔬'},
-  //   {'name': 'School & Education', 'emoji': '📚'},
-  //   {'name': 'Holiday', 'emoji': '🎁'},
-  //   {'name': 'Travel', 'emoji': '✈️'},
-  //   {'name': 'Art & Culture', 'emoji': '🎨'},
-  //   {'name': 'Social Media & Blogging', 'emoji': '📱'},
-  //   {'name': 'Photography ', 'emoji': '📸'},
-  //   {'name': 'Travel & Adventure', 'emoji': '🏕️'},
-  //   {'name': 'Winter Sports ', 'emoji': '🏂'},
-  //   {'name': 'Health & Nutrition', 'emoji': '🥗'}
-  // ];
+  final int minSelections = 1;
+  final int maxSelections = 5;
+  String? errorMessage;
 
   @override
   void initState() {
@@ -69,19 +41,15 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
       if (response.statusCode == 200) {
         List<dynamic> data = jsonDecode(response.body);
 
-        // ✅ Check if data is valid before setting state
-        if (data != null && data.isNotEmpty) {
+        if (data.isNotEmpty) {
           setState(() {
             categories = data
                 .map((item) => {
-                      "id": item["category_id"] ?? 0, // Prevent null ID
-                      "name": item["name"] ??
-                          "Unknown Category" // Prevent null name
+                      "id": item["category_id"] ?? 0,
+                      "name": item["name"] ?? "Unknown Category"
                     })
                 .toList();
           });
-        } else {
-          print("⚠️ No categories found.");
         }
       } else {
         print("❌ Failed to fetch categories: ${response.body}");
@@ -99,12 +67,12 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
       return;
     }
 
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userId = prefs.getString("userId");
-    String? accessToken = prefs.getString("accessToken"); // ✅ Retrieve token
+    final Box authBox = await Hive.openBox('authBox');
+    String? userId = authBox.get("userId");
+    String? accessToken = authBox.get("accessToken");
 
     if (userId == null || accessToken == null) {
-      print("❌ No user ID or token found!");
+      print("❌ No user ID or token found in Hive!");
       return;
     }
 
@@ -112,7 +80,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
       Uri.parse("http://localhost:3000/users/preferences"),
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer $accessToken" // ✅ Include the token
+        "Authorization": "Bearer $accessToken"
       },
       body: jsonEncode(
           {"userId": int.parse(userId), "preferences": selectedPreferences}),
@@ -157,7 +125,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
                     ),
                     SizedBox(height: 5),
                     Text(
-                      'Get personalized event recommendation.',
+                      'Get personalized activity recommendation.',
                       style: TextStyle(
                         color: Colors.grey,
                         fontFamily: 'Poppins',
@@ -170,8 +138,14 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
               // Wrap widget for categories, which will wrap as screen size changes
               categories.isEmpty
                   ? Center(
-                      child:
-                          CircularProgressIndicator()) // Show loading spinner
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: BouncingDotsLoader(
+                          color: Colors.blue,
+                          size: 14.0,
+                        ),
+                      ),
+                    )
                   : Wrap(
                       spacing: 10,
                       runSpacing: 10,
