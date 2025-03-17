@@ -1,22 +1,14 @@
 import 'package:adventura/colors.dart';
+import 'package:adventura/config.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/OrderDetail/Order.dart';
+import 'package:adventura/utils.dart'; // Assuming you put it in utils.dart
 
 class EventDetailsScreen extends StatefulWidget {
-  final String title;
-  final String date;
-  final String location;
-  final List<String> imagePaths; // List of image paths for swipeable images
-  final List<Map<String, String>> tripPlan;
-  final String description;
+  final Map<String, dynamic> activity;
 
   EventDetailsScreen({
-    required this.title,
-    required this.date,
-    required this.location,
-    required this.imagePaths,
-    required this.tripPlan,
-    required this.description,
+    required this.activity,
   });
 
   @override
@@ -42,6 +34,18 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
     double bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    // Handle images safely
+    List<dynamic> rawImages = widget.activity["activity_images"] ?? [];
+    List<String> images = rawImages
+        .whereType<String>()
+        .where((img) => img.isNotEmpty)
+        .map((img) => img.startsWith("http") ? img : "$baseUrl$img")
+        .toList();
+
+    if (images.isEmpty) {
+      images.add("assets/Pictures/island.jpg");
+    }
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -110,13 +114,25 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             _currentImageIndex = index;
                           });
                         },
-                        itemCount: widget.imagePaths.length,
+                        itemCount: images.length,
                         itemBuilder: (context, index) {
-                          return Image.asset(
-                            widget.imagePaths[index],
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          );
+                          String imageUrl = images[index];
+                          return imageUrl.startsWith("http")
+                              ? Image.network(
+                                  imageUrl,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Image.asset(
+                                    "assets/Pictures/island.jpg",
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : Image.asset(
+                                  imageUrl,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                );
                         },
                       ),
                       Positioned(
@@ -132,7 +148,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                 BorderRadius.circular(screenWidth * 0.02),
                           ),
                           child: Text(
-                            '${_currentImageIndex + 1}/${widget.imagePaths.length}',
+                            '${_currentImageIndex + 1}/${images.length}',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: screenWidth * 0.035,
@@ -145,7 +161,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 ),
               ),
             ),
-            // Main content below the images (trip plan, description, etc.)
             Padding(
               padding: EdgeInsets.all(screenWidth * 0.04),
               child: Column(
@@ -153,7 +168,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 children: [
                   // Title
                   Text(
-                    widget.title,
+                    widget.activity["name"] ?? "Unknown Activity",
                     style: TextStyle(
                       fontSize: screenWidth * 0.06,
                       fontWeight: FontWeight.bold,
@@ -168,7 +183,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                           size: screenWidth * 0.045, color: Colors.grey),
                       SizedBox(width: screenWidth * 0.01),
                       Text(
-                        widget.date,
+                        widget.activity["date"] ?? "Date not available",
                         style: TextStyle(
                             fontSize: screenWidth * 0.04, color: Colors.grey),
                       ),
@@ -181,101 +196,116 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                           size: screenWidth * 0.045, color: Colors.grey),
                       SizedBox(width: screenWidth * 0.01),
                       Text(
-                        widget.location,
+                        widget.activity["location"] ?? "Location not available",
                         style: TextStyle(
                             fontSize: screenWidth * 0.04, color: Colors.grey),
                       ),
                     ],
                   ),
                   SizedBox(height: screenHeight * 0.015),
-                  // Trip plan and other content remain unchanged...
-                  Row(
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.only(right: screenWidth * 0.02),
-                        child: Text(
-                          "Trip plan",
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontFamily: 'Poppins',
-                            fontSize: screenWidth * 0.055,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Divider(
-                          color: Colors.grey,
-                          thickness: 1,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: screenHeight * 0.005),
-                  Container(
-                    height: screenHeight * 0.1,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: widget.tripPlan.length,
-                      itemBuilder: (context, index) {
-                        return Row(
+                  // Trip plan (optional - based on data availability)
+                  if (widget.activity.containsKey("trip_plan") &&
+                      widget.activity["trip_plan"] is List &&
+                      widget.activity["trip_plan"].isNotEmpty)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Container(
-                              margin: EdgeInsets.symmetric(
-                                  vertical: screenHeight * 0.015),
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: screenWidth * 0.03),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius:
-                                    BorderRadius.circular(screenWidth * 0.03),
-                                border: Border.all(
-                                  color: Color.fromARGB(255, 108, 108, 108),
-                                  width: 1,
+                            Padding(
+                              padding:
+                                  EdgeInsets.only(right: screenWidth * 0.02),
+                              child: Text(
+                                "Trip plan",
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontFamily: 'Poppins',
+                                  fontSize: screenWidth * 0.055,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '• ' + widget.tripPlan[index]['time']!,
-                                    style: TextStyle(
-                                      fontSize: screenWidth * 0.035,
-                                      color: Color.fromARGB(255, 108, 108, 108),
-                                      fontFamily: 'Poppins',
-                                    ),
-                                  ),
-                                  Text(
-                                    widget.tripPlan[index]['event']!,
-                                    style: TextStyle(
-                                      fontSize: screenWidth * 0.045,
-                                      color: Colors.black,
-                                      fontFamily: 'Poppins',
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
                               ),
                             ),
-                            if (index < widget.tripPlan.length - 1)
-                              Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: screenWidth * 0.02),
-                                child: Image.asset(
-                                  'assets/Icons/arrow-right.png',
-                                  width: screenWidth * 0.08,
-                                  height: screenWidth * 0.08,
-                                  color: Colors.grey,
-                                ),
+                            Expanded(
+                              child: Divider(
+                                color: Colors.grey,
+                                thickness: 1,
                               ),
+                            ),
                           ],
-                        );
-                      },
+                        ),
+                        SizedBox(height: screenHeight * 0.005),
+                        SizedBox(
+                          height: screenHeight * 0.1,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: widget.activity["trip_plan"].length,
+                            itemBuilder: (context, index) {
+                              var step = widget.activity["trip_plan"][index];
+                              return Row(
+                                children: [
+                                  Container(
+                                    margin: EdgeInsets.symmetric(
+                                        vertical: screenHeight * 0.015),
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: screenWidth * 0.03),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(
+                                          screenWidth * 0.03),
+                                      border: Border.all(
+                                        color:
+                                            Color.fromARGB(255, 108, 108, 108),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '• ${step["time"] ?? ""}',
+                                          style: TextStyle(
+                                            fontSize: screenWidth * 0.035,
+                                            color: Color.fromARGB(
+                                                255, 108, 108, 108),
+                                            fontFamily: 'Poppins',
+                                          ),
+                                        ),
+                                        Text(
+                                          step["event"] ?? "",
+                                          style: TextStyle(
+                                            fontSize: screenWidth * 0.045,
+                                            color: Colors.black,
+                                            fontFamily: 'Poppins',
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (index <
+                                      widget.activity["trip_plan"].length - 1)
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: screenWidth * 0.02),
+                                      child: Image.asset(
+                                        'assets/Icons/arrow-right.png',
+                                        width: screenWidth * 0.08,
+                                        height: screenWidth * 0.08,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  SizedBox(height: screenHeight * 0.01),
-                  // Description header and text remain (if needed) or can be removed similarly
+                  SizedBox(height: screenHeight * 0.02),
+                  // Description header
                   Row(
                     children: [
                       Padding(
@@ -299,7 +329,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     ],
                   ),
                   Text(
-                    widget.description,
+                    widget.activity["description"] ?? "No description provided",
                     style: TextStyle(
                       fontSize: screenWidth * 0.04,
                       color: Colors.black87,
@@ -307,23 +337,23 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       fontWeight: FontWeight.normal,
                     ),
                   ),
-                  Padding(
-                    padding:
-                        EdgeInsets.symmetric(vertical: screenHeight * 0.01),
-                    child: Wrap(
-                      spacing: screenWidth * 0.02,
-                      runSpacing: screenHeight * 0.005,
-                      children: [
-                        _buildFeatureTag("Trending"),
-                        _buildFeatureTag("All ages"),
-                        _buildFeatureTag("Fundraising"),
-                        _buildFeatureTag("Music"),
-                        _buildFeatureTag("Burnouts"),
-                        _buildFeatureTag("Food Trucks"),
-                      ],
+                  // Tags (optional)
+                  if (widget.activity["tags"] != null &&
+                      widget.activity["tags"] is List &&
+                      widget.activity["tags"].isNotEmpty)
+                    Padding(
+                      padding:
+                          EdgeInsets.symmetric(vertical: screenHeight * 0.01),
+                      child: Wrap(
+                        spacing: screenWidth * 0.02,
+                        runSpacing: screenHeight * 0.005,
+                        children: List.generate(
+                          widget.activity["tags"].length,
+                          (index) =>
+                              _buildFeatureTag(widget.activity["tags"][index]),
+                        ),
+                      ),
                     ),
-                  ),
-                  SizedBox(height: screenHeight * 0.02),
                 ],
               ),
             ),
@@ -359,55 +389,63 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Price info
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Price",
-                          style: TextStyle(
-                            fontSize: screenWidth * 0.04,
-                            fontFamily: 'Poppins',
-                            color: const Color.fromARGB(255, 0, 0, 0),
+                    Expanded(
+                      // ⬅️ This will let the left side take available space
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Price",
+                            style: TextStyle(
+                              fontSize: screenWidth * 0.04,
+                              fontFamily: 'Poppins',
+                              color: const Color.fromARGB(255, 0, 0, 0),
+                            ),
                           ),
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              "\$15",
-                              style: TextStyle(
-                                fontSize: screenWidth * 0.06,
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue,
+                          Row(
+                            children: [
+                              Text(
+                                widget.activity["price"] != null
+                                    ? "\$${widget.activity["price"]}"
+                                    : "Free",
+                                style: TextStyle(
+                                  fontSize: screenWidth * 0.06,
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue,
+                                ),
                               ),
-                            ),
-                            Text(
-                              "/Person",
-                              style: TextStyle(
-                                fontSize: screenWidth * 0.04,
-                                fontFamily: 'Poppins',
-                                color: Colors.black54,
+                              SizedBox(width: 4), // Optional spacing
+                              Flexible(
+                                // ⬅️ Make `/Person` text shrink if needed
+                                child: Text(
+                                  "/Person",
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: screenWidth * 0.04,
+                                    fontFamily: 'Poppins',
+                                    color: Colors.black54,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                     // Book Ticket button with icon
                     ElevatedButton(
                       onPressed: () {
-                        print("Book Ticket pressed!");
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => OrderDetailsPage(
-                              selectedImage: widget.imagePaths[_currentImageIndex],
-                              eventTitle: widget.title,
-                              eventDate: widget.date,
-                              eventLocation: widget.location,
+                              selectedImage: images[_currentImageIndex],
+                              eventTitle: widget.activity["name"] ?? "Event",
+                              eventDate: widget.activity["date"] ?? "Date",
+                              eventLocation:
+                                  widget.activity["location"] ?? "Location",
                             ),
                           ),
                         );

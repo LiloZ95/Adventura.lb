@@ -1,41 +1,23 @@
 import 'dart:ui';
 import 'package:adventura/search%20screen/modalActivityView.dart';
 import 'package:flutter/material.dart';
+import 'package:adventura/utils.dart';
 
 Widget EventCard({
   required BuildContext context,
-  required String imagePath,
-  required String title,
-  required String providerName,
-  required String date,
-  required String location,
-  required double rating,
-  required int totalReviews,
-  required String price,
+  required Map<String, dynamic> activity,
 }) {
+  String imagePath = getImageUrl(activity);
+
   return GestureDetector(
     onTap: () {
       Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => EventDetailsScreen(
-                  title: "Muscle Cars Meet Up",
-                  date: "SUN 4 Dec, 03:00 PM",
-                  location: "Beirut, CityMall Parking",
-                  imagePaths: [
-                    'assets/Pictures/Cars/car1.webp',
-                    'assets/Pictures/Cars/car2.webp',
-                    'assets/Pictures/Cars/car3.webp',
-                    'assets/Pictures/Cars/car4.webp',
-                  ],
-                  tripPlan: [
-                    {'time': "3:00 PM", 'event': "Meet up"},
-                    {'time': "4:30 PM", 'event': "Ride around"},
-                    {'time': "5:30 PM", 'event': "Conclude"},
-                  ],
-                  description:
-                      'Rev up for Beirut’s Ultimate Muscle Car Meetup! Feel the power, hear the roar, and witness the adrenaline-fueled showdown as Beirut’s streets come alive with the baddest muscle cars in the region. Get up close with iconic machines from classic cars to modern.',
-                )),
+          builder: (context) => EventDetailsScreen(
+            activity: activity, // Now pass full object!
+          ),
+        ),
       );
     },
     child: Padding(
@@ -66,10 +48,8 @@ Widget EventCard({
                       height: 208,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        print(
-                            "❌ Failed to load image: $imagePath. Using default.");
                         return Image.asset(
-                          "assets/Pictures/island.jpg", // ✅ Default fallback
+                          "assets/Pictures/island.jpg",
                           width: 380,
                           height: 208,
                           fit: BoxFit.cover,
@@ -77,7 +57,7 @@ Widget EventCard({
                       },
                     )
                   : Image.asset(
-                      "assets/Pictures/island.jpg", // ✅ Default fallback
+                      "assets/Pictures/island.jpg",
                       width: 380,
                       height: 208,
                       fit: BoxFit.cover,
@@ -112,7 +92,7 @@ Widget EventCard({
                   Row(
                     children: [
                       Text(
-                        title,
+                        activity["name"] ?? "Unknown Activity",
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -126,7 +106,7 @@ Widget EventCard({
                     children: [
                       Icon(Icons.calendar_today, size: 16, color: Colors.grey),
                       SizedBox(width: 4),
-                      Text(date,
+                      Text(activity["date"] ?? "Ongoing",
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey,
@@ -138,27 +118,7 @@ Widget EventCard({
                     children: [
                       Icon(Icons.location_on, size: 16, color: Colors.grey),
                       SizedBox(width: 4),
-                      Text(location,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                            fontFamily: 'Poppins',
-                          )),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Icon(Icons.star, size: 16, color: Colors.amber),
-                      SizedBox(width: 4),
-                      Text(
-                        '$rating ',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                      Text('($totalReviews reviews)',
+                      Text(activity["location"] ?? "Unknown Location",
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey,
@@ -173,7 +133,7 @@ Widget EventCard({
               bottom: 12,
               right: 16,
               child: Text(
-                price,
+                activity["price"] != null ? "\$${activity["price"]}" : "Free",
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,

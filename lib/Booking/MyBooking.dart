@@ -27,10 +27,40 @@ class MyBookingsPage extends StatefulWidget {
   @override
   _MyBookingsPageState createState() => _MyBookingsPageState();
 }
+
 int selectedRating = 0;
 bool isUpcomingSelected = true;
 
 class _MyBookingsPageState extends State<MyBookingsPage> {
+  // Temporary dummy bookings
+  List<Map<String, dynamic>> bookings = [
+    {
+      "activity": {
+        "name": "Saint Moritz",
+        "location": "Switzerland",
+        "date": "May 22, 2024 - May 26, 2024",
+        "price": "45",
+        "description": "A luxury mountain resort.",
+        "activity_images": ["assets/Pictures/island.jpg"]
+      },
+      "bookingId": "#UI891827BHY",
+      "guests": "3 Guests",
+      "status": "Upcoming",
+    },
+    {
+      "activity": {
+        "name": "Addu Atoll",
+        "location": "Maldives",
+        "date": "May 22, 2024 - May 26, 2024",
+        "price": "60",
+        "description": "Enjoy a tropical getaway.",
+        "activity_images": ["assets/Pictures/picnic.webp"]
+      },
+      "bookingId": "#TY671829BUI",
+      "guests": "2 Guests",
+      "status": "Upcoming",
+    },
+  ];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,79 +87,94 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
         child: Column(
           children: [
             // Tab Selector for Upcoming & Past
+            // Container(
+            //   height: 40,
+            //   width: double.infinity,
+            //   decoration: BoxDecoration(
+            //     color: const Color(0xFFF2F3F4), // Background color for toggle
+            //     borderRadius: BorderRadius.circular(12),
+            //   ),
+            //   child: Row(
+            //     children: [
+            //       // Upcoming Button
+            //       Expanded(
+            //         child: GestureDetector(
+            //           onTap: () {
+            //             setState(() {
+            //               isUpcomingSelected = true;
+            //             });
+            //           },
+            //           child: Container(
+            //             decoration: BoxDecoration(
+            //               color: isUpcomingSelected
+            //                   ? Colors.white
+            //                   : Colors.transparent,
+            //               borderRadius: BorderRadius.circular(12),
+            //             ),
+            //             alignment: Alignment.center,
+            //             child: Text(
+            //               'Upcoming',
+            //               style: TextStyle(
+            //                 fontSize: 16,
+            //                 fontWeight: FontWeight.bold,
+            //                 fontFamily: 'Poppins',
+            //                 color: isUpcomingSelected
+            //                     ? Colors.black
+            //                     : Colors.grey[600],
+            //               ),
+            //             ),
+            //           ),
+            //         ),
+            //       ),
+            //       // Past Button
+            //       Expanded(
+            //         child: GestureDetector(
+            //           onTap: () {
+            //             setState(() {
+            //               isUpcomingSelected = false;
+            //             });
+            //           },
+            //           child: Container(
+            //             decoration: BoxDecoration(
+            //               color: !isUpcomingSelected
+            //                   ? Colors.white
+            //                   : Colors.transparent,
+            //               borderRadius: BorderRadius.circular(12),
+            //             ),
+            //             alignment: Alignment.center,
+            //             child: Text(
+            //               'Past',
+            //               style: TextStyle(
+            //                 fontSize: 16,
+            //                 fontWeight: FontWeight.bold,
+            //                 fontFamily: 'Poppins',
+            //                 color: !isUpcomingSelected
+            //                     ? Colors.black
+            //                     : Colors.grey[600],
+            //               ),
+            //             ),
+            //           ),
+            //         ),
+            //       ),
+            //     ],
+            //   ),
+            // ),
+            // const SizedBox(height: 20), // Spacing below toggle buttons
             Container(
               height: 40,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0xFFF2F3F4), // Background color for toggle
+                color: const Color(0xFFF2F3F4),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
-                  // Upcoming Button
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          isUpcomingSelected = true;
-                        });
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isUpcomingSelected
-                              ? Colors.white
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'Upcoming',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Poppins',
-                            color: isUpcomingSelected
-                                ? Colors.black
-                                : Colors.grey[600],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Past Button
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          isUpcomingSelected = false;
-                        });
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: !isUpcomingSelected
-                              ? Colors.white
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'Past',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Poppins',
-                            color: !isUpcomingSelected
-                                ? Colors.black
-                                : Colors.grey[600],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  Expanded(child: bookingTab("Upcoming", true)),
+                  Expanded(child: bookingTab("Past", false)),
                 ],
               ),
             ),
-            const SizedBox(height: 20), // Spacing below toggle buttons
+            const SizedBox(height: 20),
             // Dynamic Title
             Align(
               alignment: Alignment.centerLeft,
@@ -143,68 +188,24 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
               ),
             ),
             const SizedBox(height: 10),
-            // Booking List
+            // Dynamic Booking List
             Expanded(
-              child: ListView(
-                children: [
-                  BookingCard(
-                    imageUrl: 'assets/Pictures/island.jpg',
-                    title: 'Saint Moritz',
-                    location: 'Switzerland',
-                    bookingId: '#UI891827BHY',
-                    date: 'May 22, 2024 - May 26, 2024',
-                    guests: '3 Guests',
-                    status: 'Upcoming',
-                    onCancel: () {
-                      // Show CancelBookingScreen as a responsive modal with rounded top corners.
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(16),
-                            topRight: Radius.circular(16),
-                          ),
-                        ),
-                        builder: (context) {
-                          return FractionallySizedBox(
-                            heightFactor:
-                                0.8, // Modal takes 80% of screen height
-                            child: CancelBookingScreen(),
-                          );
-                        },
-                      );
-                    },
-                    onView: () {
-                      // Replace with your view booking functionality.
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Scaffold(
-                            appBar: AppBar(title: Text("View Booking")),
-                            body: Center(child: Text("Booking details here")),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  BookingCard(
-                    imageUrl: 'assets/Pictures/picnic.webp',
-                    title: 'Addu Atoll',
-                    location: 'Maldives',
-                    bookingId: '#TY671829BUI',
-                    date: 'May 22, 2024 - May 26, 2024',
-                    guests: '2 Guests',
-                    status: 'Upcoming',
+              child: ListView.builder(
+                itemCount: bookings.length,
+                itemBuilder: (context, index) {
+                  final booking = bookings[index];
+                  return BookingCard(
+                    activity: booking["activity"],
+                    bookingId: booking["bookingId"],
+                    guests: booking["guests"],
+                    status: booking["status"],
                     onCancel: () {
                       showModalBottomSheet(
                         context: context,
                         isScrollControlled: true,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(16),
-                            topRight: Radius.circular(16),
-                          ),
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(16)),
                         ),
                         builder: (context) {
                           return FractionallySizedBox(
@@ -214,39 +215,8 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                         },
                       );
                     },
-                    onView: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => EventDetailsScreen(
-                            title: 'Addu Atoll',
-                            date: 'May 22, 2024 - May 26, 2024',
-                            location: 'Maldives',
-                            imagePaths: [
-                              'assets/Pictures/picnic.webp'
-                            ], // Assuming only one image, add more if available
-                            tripPlan: [
-                              {
-                                'time': '10:00 AM',
-                                'event': 'Arrival at Resort'
-                              },
-                              {
-                                'time': '12:00 PM',
-                                'event': 'Lunch by the Beach'
-                              },
-                              {
-                                'time': '3:00 PM',
-                                'event': 'Snorkeling Adventure'
-                              },
-                            ], // Add trip plan details
-                            description:
-                                'Experience a luxurious getaway in the Maldives with breathtaking ocean views, premium dining, and exciting activities like snorkeling and sunset cruises.',
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ],
@@ -254,31 +224,51 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
       ),
     );
   }
+  Widget bookingTab(String label, bool isUpcoming) {
+    bool isSelected = isUpcomingSelected == isUpcoming;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          isUpcomingSelected = isUpcoming;
+        });
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Poppins',
+            color: isSelected ? Colors.black : Colors.grey[600],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
+
 /// The BookingCard widget displays booking details with options to cancel or view.
+// DYNAMIC Booking Card
 class BookingCard extends StatelessWidget {
-  final String imageUrl;
-  final String title;
-  final String location;
+  final Map<String, dynamic> activity;
   final String bookingId;
-  final String date;
   final String guests;
   final String status;
   final VoidCallback onCancel;
-  final VoidCallback onView;
 
   const BookingCard({
     Key? key,
-    required this.imageUrl,
-    required this.title,
-    required this.location,
+    required this.activity,
     required this.bookingId,
-    required this.date,
     required this.guests,
     required this.status,
     required this.onCancel,
-    required this.onView,
   }) : super(key: key);
 
   void showReviewModal(
@@ -350,7 +340,6 @@ class BookingCard extends StatelessWidget {
                   SizedBox(height: 10),
                   StatefulBuilder(
                     builder: (context, setState) {
-                      
                       return Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(5, (index) {
@@ -436,27 +425,26 @@ class BookingCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image and Details
+          // Image & title
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.asset(
-                  imageUrl,
+                  activity["activity_images"][0],
                   width: 120,
                   height: 120,
                   fit: BoxFit.cover,
                 ),
               ),
-              
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      activity["name"] ?? "Unknown Activity",
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -469,7 +457,7 @@ class BookingCard extends StatelessWidget {
                             size: 14, color: Colors.grey),
                         const SizedBox(width: 4),
                         Text(
-                          location,
+                          activity["location"] ?? "Unknown Location",
                           style: const TextStyle(
                               fontSize: 14,
                               color: Colors.grey,
@@ -514,17 +502,11 @@ class BookingCard extends StatelessWidget {
               )),
           const Align(
             alignment: Alignment.centerLeft,
-            child: SizedBox(
-              width: double.infinity,
-              child: Divider(
-                color: Colors.grey,
-                thickness: 1,
-              ),
-            ),
+            child: Divider(color: Colors.grey),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Text(date,
+            child: Text(activity["date"] ?? "",
                 style: const TextStyle(
                   fontSize: 18,
                   color: Colors.black,
@@ -535,7 +517,7 @@ class BookingCard extends StatelessWidget {
             children: [
               Expanded(
                 child: ElevatedButton(
-                  onPressed: isUpcomingSelected ? onCancel : onView,
+                  onPressed: isUpcomingSelected ? onCancel : () => navigateToDetails(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
                         isUpcomingSelected ? Colors.red : Colors.blue,
@@ -551,30 +533,18 @@ class BookingCard extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: isUpcomingSelected
-                      ? onView
-                      : () =>
-                          showReviewModal(context, title, location, imageUrl),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: Text(
-                    isUpcomingSelected ? 'View Booking' : 'Write a Review',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'Poppins',
-                        fontSize: 14),
-                  ),
-                ),
-              ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  void navigateToDetails(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EventDetailsScreen(activity: activity),
       ),
     );
   }

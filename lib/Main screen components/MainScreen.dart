@@ -13,6 +13,7 @@ import 'package:hive/hive.dart'; // Add this for local caching
 import 'dart:convert'; // Add this for JSON encoding/decoding
 import 'package:adventura/config.dart'; // ✅ Import the global config file
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:adventura/utils.dart';
 
 class MainScreen extends StatefulWidget {
   @override
@@ -130,27 +131,7 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  String getImageUrl(Map<String, dynamic> activity) {
-    if (activity.containsKey("activity_images") &&
-        activity["activity_images"] is List) {
-      List<dynamic> images = activity["activity_images"];
-
-      // ✅ If the list contains strings directly, return the first valid URL
-      if (images.isNotEmpty && images[0] is String) {
-        String imageUrl = images[0];
-
-        if (imageUrl.isNotEmpty) {
-          print("🟢 Valid Image URL: $imageUrl"); // Debugging
-
-          // ✅ Ensure the URL is complete (handles both absolute and relative paths)
-          return imageUrl.startsWith("http") ? imageUrl : "$baseUrl$imageUrl";
-        }
-      }
-    }
-
-    print("❌ No valid image found, using default.");
-    return "assets/Pictures/island.jpg"; // ✅ Default image
-  }
+  
 
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -458,24 +439,7 @@ class _MainScreenState extends State<MainScreen> {
                           children: recommendedActivities.map((activity) {
                             return EventCard(
                               context: context,
-                              imagePath: getImageUrl(
-                                  activity), // ✅ Safe image fetching
-                              title: activity["name"] ??
-                                  "Unknown Activity", // ✅ Handle missing name
-                              providerName: activity["provider_name"] ??
-                                  "Unknown Provider",
-                              date: activity["date"] ?? "Ongoing",
-                              location:
-                                  activity["location"] ?? "Unknown Location",
-                              rating: activity["rating"] != null
-                                  ? double.tryParse(
-                                          activity["rating"].toString()) ??
-                                      0.0
-                                  : 0.0,
-                              totalReviews: activity["total_reviews"] ?? 0,
-                              price: activity["price"] != null
-                                  ? "\$${activity["price"]}"
-                                  : "Free",
+                              activity: activity,
                             );
                           }).toList(),
                         ),
