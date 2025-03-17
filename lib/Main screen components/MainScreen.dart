@@ -13,6 +13,8 @@ import 'package:adventura/Services/activity_service.dart';
 import 'package:hive/hive.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../widgets/bouncing_dots_loader.dart';
+
 class MainScreen extends StatefulWidget {
   @override
   _MainScreenState createState() => _MainScreenState();
@@ -140,6 +142,7 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: RefreshIndicator(
+        color: AppColors.blue,
         onRefresh: () async {
           loadActivities();
           await ProfileService.fetchProfilePicture(userId);
@@ -168,11 +171,11 @@ class _MainScreenState extends State<MainScreen> {
                                 height: 24,
                               ),
                               Text(
-                                "Welcome back, $firstName $lastName!",
+                                "Welcome back, \n$firstName !",
                                 style: TextStyle(
                                   height: 0.96,
                                   fontSize:
-                                      screenWidth * 0.058, // Dynamic font size
+                                      screenWidth * 0.07, // Dynamic font size
                                   fontWeight: FontWeight.bold,
                                   fontFamily: 'Poppins',
                                   color: Colors.black,
@@ -209,7 +212,11 @@ class _MainScreenState extends State<MainScreen> {
                                           ].map((location) {
                                             return DropdownMenuItem(
                                               value: location,
-                                              child: Text(location),
+                                              child: Text(
+                                                location,
+                                                style: TextStyle(
+                                                    fontFamily: 'poppins'),
+                                              ),
                                             );
                                           }).toList(),
                                           onChanged: (newValue) {
@@ -225,6 +232,14 @@ class _MainScreenState extends State<MainScreen> {
                           padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
                           child: Row(
                             children: [
+                              IconButton(
+                                onPressed: () {},
+                                icon: Image.asset(
+                                  'assets/Icons/ai.png',
+                                  width: 35,
+                                  height: 35,
+                                ),
+                              ),
                               IconButton(
                                 onPressed: () {
                                   Navigator.push(
@@ -447,7 +462,7 @@ class _MainScreenState extends State<MainScreen> {
                       ? Center(
                           child: Padding(
                             padding: EdgeInsets.all(20),
-                            child: CircularProgressIndicator(),
+                            child: BouncingDotsLoader(),
                           ),
                         )
                       : Column(
@@ -469,16 +484,24 @@ class _MainScreenState extends State<MainScreen> {
                 width: screenWidth * 0.93,
                 height: 65,
                 decoration: BoxDecoration(
-                  color: Color(0xFF1B1B1B),
-                  borderRadius: BorderRadius.circular(10),
+                  color: const Color(0xFF1B1B1B),
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.70),
+                      offset: Offset(0, 1),
+                      blurRadius: 5,
+                      spreadRadius: 0,
+                    ),
+                  ],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     IconButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {},
                       icon: Image.asset('assets/Icons/home.png',
-                          width: 35, height: 35, color: Colors.grey),
+                          width: 35, height: 35, color: Colors.white),
                     ),
                     IconButton(
                       onPressed: () => Navigator.push(
@@ -486,7 +509,7 @@ class _MainScreenState extends State<MainScreen> {
                           MaterialPageRoute(
                               builder: (context) => SearchScreen())),
                       icon: Image.asset('assets/Icons/search.png',
-                          width: 35, height: 35, color: Colors.white),
+                          width: 35, height: 35, color: Colors.grey),
                     ),
                     IconButton(
                       onPressed: () => Navigator.push(
