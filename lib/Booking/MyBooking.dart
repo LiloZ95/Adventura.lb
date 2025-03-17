@@ -1,6 +1,7 @@
 import 'package:adventura/Booking/CancelBooking.dart';
 import 'package:adventura/search%20screen/modalActivityView.dart';
 import 'package:flutter/material.dart';
+import 'package:adventura/provider/ticketScanner.dart';
 
 void main() {
   runApp(MyApp());
@@ -178,14 +179,9 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                     onView: () {
                       // Replace with your view booking functionality.
                       Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Scaffold(
-                            appBar: AppBar(title: Text("View Booking")),
-                            body: Center(child: Text("Booking details here")),
-                          ),
-                        ),
-                      );
+  context,
+  MaterialPageRoute(builder: (context) => TicketScanner()),
+);
                     },
                   ),
                   BookingCard(
