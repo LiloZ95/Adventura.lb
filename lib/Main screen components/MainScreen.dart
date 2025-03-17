@@ -131,8 +131,6 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  
-
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
@@ -461,9 +459,9 @@ class _MainScreenState extends State<MainScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     IconButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {},
                       icon: Image.asset('assets/Icons/home.png',
-                          width: 35, height: 35, color: Colors.grey),
+                          width: 35, height: 35, color: Colors.white),
                     ),
                     IconButton(
                       onPressed: () => Navigator.push(
@@ -471,7 +469,7 @@ class _MainScreenState extends State<MainScreen> {
                           MaterialPageRoute(
                               builder: (context) => SearchScreen())),
                       icon: Image.asset('assets/Icons/search.png',
-                          width: 35, height: 35, color: Colors.white),
+                          width: 35, height: 35, color: Colors.grey),
                     ),
                     IconButton(
                       onPressed: () => Navigator.push(

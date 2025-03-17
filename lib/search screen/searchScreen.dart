@@ -69,7 +69,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                   "Reset",
                                   style: TextStyle(
                                     color: Colors.black,
-                                    fontSize: 18,
+                                    fontSize: 20,
                                     fontWeight: FontWeight.bold,
                                     fontFamily: 'Poppins',
                                   ),
@@ -80,7 +80,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
                         Text("Rating",
                             style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold)),
+                                fontFamily: 'poppins',
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold)),
                         SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -97,7 +99,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                   });
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.all(8.0),
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 8.0, horizontal: 12),
                                   decoration: BoxDecoration(
                                     color: selectedRatings.contains(rating)
                                         ? AppColors.blue
@@ -117,6 +120,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                       Text(
                                         "$rating",
                                         style: TextStyle(
+                                          fontFamily: 'poppins',
                                           color:
                                               selectedRatings.contains(rating)
                                                   ? Colors.white
@@ -134,7 +138,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
                         Text("Sort By",
                             style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold)),
+                                fontFamily: 'poppins',
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold)),
                         SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -154,7 +160,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                       });
                                     },
                                     child: Container(
-                                      padding: const EdgeInsets.all(8.0),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 8.0, horizontal: 12),
                                       decoration: BoxDecoration(
                                         color:
                                             selectedSorts.contains(sortOption)
@@ -166,6 +173,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                       child: Text(
                                         sortOption,
                                         style: TextStyle(
+                                          fontFamily: 'poppins',
+                                          fontSize: 16,
                                           color:
                                               selectedSorts.contains(sortOption)
                                                   ? Colors.white
@@ -180,8 +189,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
                         Text("Budget",
                             style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold)),
-
+                                fontFamily: 'poppins',
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold)),
+                        SizedBox(height: 8),
                         // Budget Fields
                         Row(
                           children: [
@@ -191,6 +202,12 @@ class _SearchScreenState extends State<SearchScreen> {
                                 keyboardType: TextInputType.number,
                                 decoration: InputDecoration(
                                   labelText: "Min",
+                                  labelStyle: TextStyle(
+                                      color: Colors.black, fontSize: 16),
+                                  focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      borderSide:
+                                          BorderSide(color: Colors.black)),
                                   border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(20)),
                                 ),
@@ -208,6 +225,12 @@ class _SearchScreenState extends State<SearchScreen> {
                                 keyboardType: TextInputType.number,
                                 decoration: InputDecoration(
                                   labelText: "Max",
+                                  labelStyle: TextStyle(
+                                      color: Colors.black, fontSize: 16),
+                                  focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      borderSide:
+                                          BorderSide(color: Colors.black)),
                                   border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(20)),
                                 ),
@@ -225,7 +248,10 @@ class _SearchScreenState extends State<SearchScreen> {
                         // Location Filter
                         Text("Location",
                             style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold)),
+                                fontFamily: 'poppins',
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold)),
+                        SizedBox(height: 8),
                         DropdownButtonFormField<String>(
                           value: selectedLocation,
                           items: [
@@ -237,7 +263,13 @@ class _SearchScreenState extends State<SearchScreen> {
                           ].map((location) {
                             return DropdownMenuItem(
                               value: location,
-                              child: Text(location),
+                              child: Text(
+                                location,
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                ),
+                              ),
                             );
                           }).toList(),
                           onChanged: (value) {
@@ -247,10 +279,22 @@ class _SearchScreenState extends State<SearchScreen> {
                           },
                           decoration: InputDecoration(
                             labelText: "Location",
+                            labelStyle:
+                                TextStyle(color: Colors.black, fontSize: 16),
                             border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(20)),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: BorderSide(color: Colors.grey),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: BorderSide(color: Colors.black),
+                            ),
                           ),
                         ),
+
                         SizedBox(height: 16),
 
                         // Apply Button
@@ -262,14 +306,17 @@ class _SearchScreenState extends State<SearchScreen> {
                             },
                             child: Text(
                               "Apply",
-                              style: TextStyle(color: Colors.white),
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                  fontFamily: 'poppins'),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
+                              backgroundColor: AppColors.blue,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(30),
                               ),
-                              padding: EdgeInsets.symmetric(vertical: 16),
+                              padding: EdgeInsets.symmetric(vertical: 20),
                             ),
                           ),
                         )
@@ -350,7 +397,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: Colors.blue,
+                                  color: AppColors.blue,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(Icons.mic, color: Colors.white),
