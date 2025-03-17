@@ -32,6 +32,7 @@ class _MainScreenState extends State<MainScreen> {
   String selectedLocation = "Tripoli";
   String firstName = "";
   String lastName = "";
+  bool isProvider = true;
 
   @override
   void initState() {
@@ -164,9 +165,7 @@ class _MainScreenState extends State<MainScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              SizedBox(
-                                height: 24,
-                              ),
+                              SizedBox(height: 10.0),
                               Text(
                                 "Welcome back, \n$firstName !",
                                 style: TextStyle(
@@ -226,7 +225,7 @@ class _MainScreenState extends State<MainScreen> {
                         ),
                         // Icons
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
+                          padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
                           child: Row(
                             children: [
                               IconButton(
@@ -459,6 +458,76 @@ class _MainScreenState extends State<MainScreen> {
                 ],
               ),
             ),
+
+            // 🔵 TWO SQUARE BUTTONS ABOVE NAVBAR
+            Positioned(
+              bottom: 100, // Adjust depending on your nav bar height
+              right: 20,
+              child: Column(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      // Action for top button
+                    },
+                    child: Container(
+                      width: 55,
+                      height: 55,
+                      decoration: BoxDecoration(
+                        color: Color.fromRGBO(137, 69, 247, 1),
+                        borderRadius: BorderRadius.circular(50),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.8),
+                            blurRadius: 6,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Image.asset(
+                          'assets/Icons/qr-code.png',
+                          width: 30,
+                          height: 30,
+                          fit: BoxFit
+                              .contain, // ✅ Forces it to stay inside the 30x30 box
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () {
+                      // Action for bottom button
+                    },
+                    child: Container(
+                      width: 55,
+                      height: 55,
+                      decoration: BoxDecoration(
+                        color: AppColors.blue,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.8),
+                            blurRadius: 6,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Image.asset(
+                          'assets/Icons/add.png',
+                          width: 30,
+                          height: 30,
+                          fit: BoxFit
+                              .contain, // ✅ Forces it to stay inside the 30x30 box
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             // Bottom Navigation Bar stays fixed at the bottom
             Align(
               alignment: Alignment.bottomCenter,
