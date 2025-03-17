@@ -22,8 +22,8 @@ const app = express();
 // ✅ Middleware
 app.use(bodyParser.json());
 app.use(cors({
-    origin: "*", // Allow all origins
-    methods: ["GET", "POST"],
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
 app.use(helmet());

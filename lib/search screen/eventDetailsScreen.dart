@@ -415,7 +415,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
+              children: [ 
                 _buildPriceInfo(screenWidth),
                 _buildBookButton(screenWidth, screenHeight, images),
               ],

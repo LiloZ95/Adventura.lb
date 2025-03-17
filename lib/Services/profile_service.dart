@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-import 'package:path/path.dart'; // For filename extraction
-import 'package:hive/hive.dart'; // ✅ Replace SharedPreferences with Hive
-import 'package:adventura/config.dart'; // ✅ Import the global config file
+import 'package:path/path.dart';
+import 'package:hive/hive.dart';
+import 'package:adventura/config.dart';
 
 class ProfileService {
   /// ✅ Fetch Profile Picture
@@ -15,23 +16,31 @@ class ProfileService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+      if (data["image"] == null || data["image"].isEmpty) {
+        print("ℹ️ No profile picture found, using default.");
+        return "default";
+      }
       if (data["image"] != null && data["image"].isNotEmpty) {
-        print("✅ Profile picture updated: ${data["image"]}");
-
-        // ✅ Save in Hive
         Box storageBox = await Hive.openBox('authBox');
-        storageBox.put("profilePicture", data["image"]);
+
+        if (data["image"].startsWith("data:image")) {
+          // Cache base64 decoded bytes
+          String base64String = data["image"].split(",")[1];
+          Uint8List imageBytes = base64Decode(base64String);
+          await storageBox.put("profileImageBytes", imageBytes);
+          await storageBox.delete("profilePictureUrl");
+          print("✅ Base64 image cached in Hive as bytes.");
+        } else if (data["image"].startsWith("http")) {
+          await storageBox.put("profilePictureUrl", data["image"]);
+          await storageBox.delete("profileImageBytes");
+          print("✅ URL cached in Hive.");
+        }
 
         return data["image"];
-      } else {
-        print("❌ Response did not contain an image.");
-        return "";
       }
-    } else {
-      print(
-          "❌ Failed to fetch profile picture. Server responded with: ${response.statusCode}");
-      return "";
     }
+    print("❌ Failed to fetch or decode profile picture.");
+    return "";
   }
 
   /// ✅ Pick an Image from Gallery
@@ -41,19 +50,17 @@ class ProfileService {
     return pickedFile != null ? File(pickedFile.path) : null;
   }
 
-  /// ✅ Upload Profile Picture
+  /// ✅ Upload Image + Clear Old Cache
   static Future<bool> uploadProfilePicture(
       BuildContext context, String userId, File imageFile) async {
     if (userId.isEmpty) {
-      print("❌ No user ID found. Cannot upload profile picture.");
+      print("❌ No user ID found.");
       return false;
     }
 
     int imageSizeInBytes = await imageFile.length();
     double imageSizeInMB = imageSizeInBytes / (1024 * 1024);
     if (imageSizeInMB > 3) {
-      print(
-          "❌ Image is too large (${imageSizeInMB.toStringAsFixed(2)} MB). Max: 3MB");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text("❌ Image size must be less than 3MB."),
@@ -63,43 +70,28 @@ class ProfileService {
     }
 
     try {
-      String apiUrl = '$baseUrl/users/upload-profile-picture';
-      print(
-          "📤 Uploading image: ${imageFile.path} (${imageSizeInMB.toStringAsFixed(2)} MB)");
-      print("📡 Sending request to: $apiUrl");
-
-      var request = http.MultipartRequest('POST', Uri.parse(apiUrl));
+      var request = http.MultipartRequest(
+          'POST', Uri.parse('$baseUrl/users/upload-profile-picture'));
       request.fields['user_id'] = userId;
       request.files.add(await http.MultipartFile.fromPath(
-        'image',
-        imageFile.path,
-        filename: basename(imageFile.path),
-      ));
+          'image', imageFile.path,
+          filename: basename(imageFile.path)));
 
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
-
-      print("🔍 Server Response Code: ${response.statusCode}");
-      print("🔍 Response Body: ${response.body}");
+      var response = await http.Response.fromStream(await request.send());
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
         if (responseData["success"] == true) {
-          String? profileImageUrl = responseData["image"];
-          if (profileImageUrl != null && profileImageUrl.isNotEmpty) {
-            Box storageBox = await Hive.openBox('authBox');
-            storageBox.put("profilePicture", profileImageUrl);
-
-            print("✅ Profile picture updated successfully!");
-            return true;
-          }
+          Box storageBox = await Hive.openBox('authBox');
+          await storageBox.delete("profileImageBytes");
+          await storageBox.delete("profilePictureUrl");
+          print("✅ Cleared old image cache.");
+          return true;
         }
       }
-
-      print("❌ Failed to upload profile picture.");
       return false;
     } catch (e) {
-      print("❌ Error uploading profile picture: $e");
+      print("❌ Upload error: $e");
       return false;
     }
   }
