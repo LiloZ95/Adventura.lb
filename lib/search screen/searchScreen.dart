@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:adventura/Booking/MyBooking.dart';
 import 'package:adventura/Main%20screen%20components/Cards.dart';
+import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/colors.dart';
 import 'package:flutter/material.dart';
 
@@ -11,6 +12,8 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
+  List<Map<String, dynamic>> searchResults =
+      []; // or recommendedActivities if available
   void showEventDetails(BuildContext context, String title, String date,
       String location, String price) {}
 
@@ -20,12 +23,11 @@ class _SearchScreenState extends State<SearchScreen> {
   Set<int> selectedRatings = {};
   Set<String> selectedSorts = {};
   Set<int> selectedReviews = {};
-  double budgetMin=0;
-  double? budgetMax=0;
+  double budgetMin = 0;
+  double? budgetMax = 0;
   String? selectedLocation;
   TextEditingController budgetMinController = TextEditingController();
-    TextEditingController budgetMaxController = TextEditingController();
-
+  TextEditingController budgetMaxController = TextEditingController();
 
   // Show filter dialog
   void showFilterDialog() {
@@ -36,222 +38,292 @@ class _SearchScreenState extends State<SearchScreen> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
             return Container(
-              
-              decoration: BoxDecoration(borderRadius:BorderRadius.circular(32),color: Colors.white,),
-              child: Padding( 
-                padding: const EdgeInsets.all(16.0),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              selectedRatings.clear();
-                              selectedSorts.clear();
-                              selectedReviews.clear();
-                              budgetMin=0;
-                              budgetMax=0;
-                              selectedLocation = "all";
-                              selectedCategories.clear();
-                              budgetMinController.clear();
-                              budgetMaxController.clear();
-                            });
-                          },
-                          child: Text(
-                            "Reset",
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Poppins',
-                            ),
-                          ),
-                        )
-                      ]),
-                      SizedBox(height: 16),
-                      
-                      Text("Rating", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: List.generate(
-                          5,
-                          (index) {
-                            int rating = index + 1;
-                            return GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  selectedRatings.contains(rating)
-                                      ? selectedRatings.remove(rating)
-                                      : selectedRatings.add(rating);
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(8.0),
-                                decoration: BoxDecoration(
-                                  color: selectedRatings.contains(rating)
-                                      ? AppColors.blue
-                                      : Colors.white,
-                                  borderRadius: BorderRadius.circular(15),
-                                  border: Border.all(width: 0.3),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(32),
+                color: Colors.white,
+              ),
+              child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    selectedRatings.clear();
+                                    selectedSorts.clear();
+                                    selectedReviews.clear();
+                                    budgetMin = 0;
+                                    budgetMax = 0;
+                                    selectedLocation = "all";
+                                    selectedCategories.clear();
+                                    budgetMinController.clear();
+                                    budgetMaxController.clear();
+                                  });
+                                },
+                                child: Text(
+                                  "Reset",
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Poppins',
+                                  ),
                                 ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.star,
-                                      color: selectedRatings.contains(rating)
-                                          ? Colors.yellow
-                                          : Colors.grey,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      "$rating",
-                                      style: TextStyle(
+                              )
+                            ]),
+                        SizedBox(height: 16),
+
+                        Text("Rating",
+                            style: TextStyle(
+                                fontFamily: 'poppins',
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold)),
+                        SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: List.generate(
+                            5,
+                            (index) {
+                              int rating = index + 1;
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    selectedRatings.contains(rating)
+                                        ? selectedRatings.remove(rating)
+                                        : selectedRatings.add(rating);
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 8.0, horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    color: selectedRatings.contains(rating)
+                                        ? AppColors.blue
+                                        : Colors.white,
+                                    borderRadius: BorderRadius.circular(15),
+                                    border: Border.all(width: 0.3),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.star,
                                         color: selectedRatings.contains(rating)
-                                            ? Colors.white
-                                            : Colors.black,
+                                            ? Colors.yellow
+                                            : Colors.grey,
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        "$rating",
+                                        style: TextStyle(
+                                          fontFamily: 'poppins',
+                                          color:
+                                              selectedRatings.contains(rating)
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        SizedBox(height: 16),
+
+                        Text("Sort By",
+                            style: TextStyle(
+                                fontFamily: 'poppins',
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold)),
+                        SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            "All",
+                            "Limited",
+                            "New",
+                            "Popular",
+                            "Nearby"
+                          ]
+                              .map((sortOption) => GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedSorts.contains(sortOption)
+                                            ? selectedSorts.remove(sortOption)
+                                            : selectedSorts.add(sortOption);
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 8.0, horizontal: 12),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            selectedSorts.contains(sortOption)
+                                                ? AppColors.blue
+                                                : Colors.white,
+                                        borderRadius: BorderRadius.circular(15),
+                                        border: Border.all(width: 0.3),
+                                      ),
+                                      child: Text(
+                                        sortOption,
+                                        style: TextStyle(
+                                          fontFamily: 'poppins',
+                                          fontSize: 16,
+                                          color:
+                                              selectedSorts.contains(sortOption)
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                        ),
                                       ),
                                     ),
-                                  ],
+                                  ))
+                              .toList(),
+                        ),
+                        SizedBox(height: 16),
+
+                        Text("Budget",
+                            style: TextStyle(
+                                fontFamily: 'poppins',
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold)),
+                        SizedBox(height: 8),
+                        // Budget Fields
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: budgetMinController,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  labelText: "Min",
+                                  labelStyle: TextStyle(
+                                      color: Colors.black, fontSize: 16),
+                                  focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      borderSide:
+                                          BorderSide(color: Colors.black)),
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(20)),
+                                ),
+                                onChanged: (value) {
+                                  setState(() {
+                                    budgetMin = double.tryParse(value)!;
+                                  });
+                                },
+                              ),
+                            ),
+                            SizedBox(width: 16),
+                            Expanded(
+                              child: TextField(
+                                controller: budgetMaxController,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  labelText: "Max",
+                                  labelStyle: TextStyle(
+                                      color: Colors.black, fontSize: 16),
+                                  focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      borderSide:
+                                          BorderSide(color: Colors.black)),
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(20)),
+                                ),
+                                onChanged: (value) {
+                                  setState(() {
+                                    budgetMax = double.tryParse(value);
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16),
+
+                        // Location Filter
+                        Text("Location",
+                            style: TextStyle(
+                                fontFamily: 'poppins',
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold)),
+                        SizedBox(height: 8),
+                        DropdownButtonFormField<String>(
+                          value: selectedLocation,
+                          items: [
+                            "Tripoli",
+                            "Beirut",
+                            "Jbeil",
+                            "Jounieh",
+                            "all",
+                          ].map((location) {
+                            return DropdownMenuItem(
+                              value: location,
+                              child: Text(
+                                location,
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 16,
                                 ),
                               ),
                             );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedLocation = value;
+                            });
                           },
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      
-                      Text("Sort By", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: ["All", "Limited", "New", "Popular", "Nearby"]
-                            .map((sortOption) => GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      selectedSorts.contains(sortOption)
-                                          ? selectedSorts.remove(sortOption)
-                                          : selectedSorts.add(sortOption);
-                                    });
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8.0),
-                                    decoration: BoxDecoration(
-                                      color: selectedSorts.contains(sortOption)
-                                          ? AppColors.blue
-                                          : Colors.white,
-                                      borderRadius: BorderRadius.circular(15),
-                                       border: Border.all(width: 0.3),
-                                      
-                                    ),
-                                    child: Text(
-                                      sortOption,
-                                      style: TextStyle(
-                                        color: selectedSorts.contains(sortOption)
-                                            ? Colors.white
-                                            : Colors.black,
-                                      ),
-                                    ),
-                                  ),
-                                ))
-                            .toList(),
-                      ),
-                      SizedBox(height: 16),
-              
-                      Text("Budget", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              
-                    // Budget Fields
-                    Row(
-                      children: [
-                                              Expanded(
-                          child: TextField(
-                            controller: budgetMinController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: "Min",
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+                          decoration: InputDecoration(
+                            labelText: "Location",
+                            labelStyle:
+                                TextStyle(color: Colors.black, fontSize: 16),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                          
-                            onChanged: (value) {
-                              setState(() {
-                                budgetMin = double.tryParse(value)!;
-                              });
-                            },
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: BorderSide(color: Colors.grey),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: BorderSide(color: Colors.black),
+                            ),
                           ),
                         ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: TextField(
-                            controller: budgetMaxController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: "Max",
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
-                            ),
-                            onChanged: (value) {
-                              setState(() {
-                                budgetMax = double.tryParse(value);
-                              });
+
+                        SizedBox(height: 16),
+
+                        // Apply Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
                             },
+                            child: Text(
+                              "Apply",
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                  fontFamily: 'poppins'),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.blue,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              padding: EdgeInsets.symmetric(vertical: 20),
+                            ),
                           ),
-                        ),
+                        )
                       ],
                     ),
-                    SizedBox(height: 16),
-              
-                    // Location Filter
-                    Text("Location", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    DropdownButtonFormField<String>(
-                      value: selectedLocation,
-                      items: [
-                        "Tripoli",
-                        "Beirut",
-                        "Jbeil",
-                        "Jounieh",
-                        "all",
-                      ].map((location) {
-                        return DropdownMenuItem(
-                          value: location,
-                          child: Text(location),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          selectedLocation = value;
-                        });
-                      },
-                      decoration: InputDecoration(
-                        labelText: "Location",
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
-                      ),
-                    ),
-                    SizedBox(height: 16),
-              
-                    // Apply Button
-                 SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: Text("Apply",style: TextStyle(color: Colors.white),),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              )
-              
-                  ],
-                ),
-              )
-                        ),
+                  )),
             );
           },
         );
@@ -326,7 +398,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: Colors.blue,
+                                  color: AppColors.blue,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(Icons.mic, color: Colors.white),
@@ -374,52 +446,12 @@ class _SearchScreenState extends State<SearchScreen> {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
                     child: Column(
-                      children: [
-                        EventCard(
+                      children: searchResults.map((activity) {
+                        return EventCard(
                           context: context,
-                          imagePath: 'assets/Pictures/cars.webp',
-                          title: 'Aaqoura Night Hike',
-                          providerName: 'Lebanon Explorers',
-                          date: 'Saturday, 29th Sep',
-                          location: 'Aaqoura, Hadath',
-                          rating: 4.8,
-                          totalReviews: 125,
-                          price: '\$20',
-                        ),
-                        EventCard(
-                          context: context,
-                          imagePath: 'assets/Pictures/sea1.webp',
-                          title: 'Aaqoura Night Hike',
-                          providerName: 'Lebanon Explorers',
-                          date: 'Saturday, 29th Sep',
-                          location: 'Aaqoura, Hadath',
-                          rating: 4.8,
-                          totalReviews: 125,
-                          price: '\$20',
-                        ),
-                        EventCard(
-                          context: context,
-                          imagePath: 'assets/Pictures/picnic.webp',
-                          title: 'Aaqoura Night Hike',
-                          providerName: 'Lebanon Explorers',
-                          date: 'Saturday, 29th Sep',
-                          location: 'Aaqoura, Hadath',
-                          rating: 4.8,
-                          totalReviews: 125,
-                          price: '\$20',
-                        ),
-                        EventCard(
-                          context: context,
-                          imagePath: 'assets/Pictures/sea2.webp',
-                          title: 'Aaqoura Night Hike',
-                          providerName: 'Lebanon Explorers',
-                          date: 'Saturday, 29th Sep',
-                          location: 'Aaqoura, Hadath',
-                          rating: 4.8,
-                          totalReviews: 125,
-                          price: '\$20',
-                        ),
-                      ],
+                          activity: activity,
+                        );
+                      }).toList(),
                     ),
                   ),
                 ),
@@ -434,16 +466,26 @@ class _SearchScreenState extends State<SearchScreen> {
               width: screenWidth * 0.93,
               height: 65,
               decoration: BoxDecoration(
-                color: Color(0xFF1B1B1B),
-                borderRadius: BorderRadius.circular(10),
+                color: const Color(0xFF1B1B1B),
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.70),
+                    offset: Offset(0, 1),
+                    blurRadius: 5,
+                    spreadRadius: 0,
+                  ),
+                ],
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   IconButton(
                     onPressed: () {
-                      // Navigate to Main Screen
-                      Navigator.pop(context);
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => MainScreen()));
                     },
                     icon: Image.asset(
                       'assets/Icons/home.png',
