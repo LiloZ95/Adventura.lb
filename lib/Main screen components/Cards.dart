@@ -1,5 +1,5 @@
 import 'dart:ui';
-import 'package:adventura/search%20screen/modalActivityView.dart';
+import 'package:adventura/search%20screen/eventDetailsScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/utils.dart';
 

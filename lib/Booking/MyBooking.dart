@@ -1,5 +1,5 @@
 import 'package:adventura/Booking/CancelBooking.dart';
-import 'package:adventura/search%20screen/modalActivityView.dart';
+import 'package:adventura/search%20screen/eventDetailsScreen.dart';
 import 'package:flutter/material.dart';
 
 void main() {
