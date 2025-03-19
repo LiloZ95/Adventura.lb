@@ -1,5 +1,6 @@
 import 'package:adventura/Booking/CancelBooking.dart';
 import 'package:adventura/Booking/MyBooking.dart';
+import 'package:adventura/OrderDetail/ViewTicket.dart';
 import 'package:adventura/search%20screen/eventDetailsScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/Provider%20Only/ticketScanner.dart';
@@ -265,26 +266,110 @@ class BookingCard extends StatelessWidget {
                 )),
           ),
           Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: isUpcomingSelected ? onCancel : () => navigateToDetails(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        isUpcomingSelected ? Colors.red : Colors.blue,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: Text(
-                    isUpcomingSelected ? 'Cancel' : 'View Booking',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'Poppins',
-                        fontSize: 14),
-                  ),
-                ),
-              ),
-            ],
+            children: isUpcomingSelected
+                ? [
+                    // 🔴 Cancel Button
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: onCancel,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Poppins',
+                              fontSize: 14),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // 🟢 View Ticket Button
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ViewTicketPage(
+                                eventTitle: activity["name"] ?? "",
+                                clientName:
+                                    "John Doe", // You can pass actual clientName here
+                                eventTime: activity["date"] ?? "",
+                                numberOfAttendees:
+                                    int.tryParse(guests.split(' ')[0]) ?? 1,
+                                ticketId: bookingId,
+                                status: status,
+                              ),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: Text(
+                          'View Ticket',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Poppins',
+                              fontSize: 14),
+                        ),
+                      ),
+                    ),
+                  ]
+                : [
+                    // 🟠 Write a Review
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => showReviewModal(
+                          context,
+                          activity["name"] ?? "",
+                          activity["location"] ?? "",
+                          activity["activity_images"][0] ?? "",
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.blue, width: 2),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text(
+                          'Write a Review',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontFamily: 'Poppins',
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 10),
+                    // 🔵 View Booking Button
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => navigateToDetails(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: Text(
+                          'View Booking',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Poppins',
+                              fontSize: 14),
+                        ),
+                      ),
+                    ),
+                  ],
           ),
         ],
       ),
