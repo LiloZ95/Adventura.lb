@@ -1,8 +1,10 @@
 import 'package:adventura/OrderDetail/PurchaseConfiramtion.dart';
-import 'package:adventura/OrderDetail/ViewTicket.dart';
 import 'package:adventura/OrderDetail/countries.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:adventura/colors.dart';
+import 'package:intl/intl.dart';
+// import 'package:adventura/widgets/payment_modal.dart';
 
 /// Custom enforcer that rejects any new character if max length is exceeded.
 class MaxDigitsEnforcer extends TextInputFormatter {
@@ -104,34 +106,50 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Full-width image container.
+            // Image section with overlay
             Container(
               width: double.infinity,
               height: screenHeight * 0.3,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(widget.selectedImage),
-                  fit: BoxFit.cover,
-                ),
-              ),
-              child: Container(
-                alignment: Alignment.bottomLeft,
-                padding: EdgeInsets.all(screenWidth * 0.04),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.black54, Colors.black87],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+              child: Stack(
+                children: [
+                  // Background image (network or asset)
+                  Positioned.fill(
+                    child: widget.selectedImage.startsWith('http')
+                        ? Image.network(
+                            widget.selectedImage,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Image.asset('assets/Pictures/island.jpg',
+                                    fit: BoxFit.cover),
+                          )
+                        : Image.asset(
+                            widget.selectedImage,
+                            fit: BoxFit.cover,
+                          ),
                   ),
-                ),
-                child: Text(
-                  '${widget.eventTitle}\n${widget.eventDate}\n${widget.eventLocation}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontFamily: 'Poppins',
+                  // Gradient overlay + text
+                  Positioned.fill(
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.black54, Colors.black87],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                      ),
+                      padding: EdgeInsets.all(screenWidth * 0.04),
+                      alignment: Alignment.bottomLeft,
+                      child: Text(
+                        '${widget.eventTitle}\n${widget.eventDate}\n${widget.eventLocation}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
             // Content area
@@ -287,16 +305,23 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                     ),
                     child: SizedBox(
                       width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
+                      height: 55,
+                      child: ElevatedButton.icon(
+                        icon: Icon(
+                          Icons.lock, // Optional: security/pay icon
+                          color: Colors.white,
+                          size: screenWidth * 0.05,
+                        ),
+                        label: const Text(
+                          'Proceed to Purchase',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         onPressed: () {
-                          // Instead of showDialog, use showModalBottomSheet
                           showModalBottomSheet(
                             context: context,
                             isScrollControlled: true,
@@ -304,12 +329,11 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                             builder: (context) => const PaymentModal(),
                           );
                         },
-                        child: const Text(
-                          'Purchase',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            color: Colors.white,
-                            fontSize: 16,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.blue,
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
                           ),
                         ),
                       ),
@@ -472,9 +496,9 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
   }
 }
 
-//
+
 // PaymentModal BELOW
-//
+
 
 class PaymentModal extends StatefulWidget {
   const PaymentModal({Key? key}) : super(key: key);
@@ -490,10 +514,6 @@ class _PaymentModalState extends State<PaymentModal> {
   final TextEditingController _zipController = TextEditingController();
 
   String _selectedCountry = 'Lebanon';
-  final List<String> _countries = ['Lebanon', 'USA', 'Canada', 'UK'];
-
-  // We can keep isExpanded if you like the "expand" animation
-  bool isExpanded = false;
 
   @override
   void dispose() {
@@ -506,373 +526,200 @@ class _PaymentModalState extends State<PaymentModal> {
 
   @override
   Widget build(BuildContext context) {
-    //
-    // The key part is:
-    // We want a fractionally sized box with a top border radius
-    // so it slides up from the bottom like a bottom sheet.
-    //
     return FractionallySizedBox(
-        heightFactor: 0.65, // 90% of screen height
-        child: ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
+      heightFactor: 0.75,
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+        child: Material(
+          color: Colors.white,
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Add Card Details',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      const Icon(Icons.credit_card, color: Colors.blue),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Card Number
+                  _inputField(
+                    label: 'Card Number',
+                    hint: '1234 5678 9012 3456',
+                    controller: _cardNumberController,
+                    inputType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Expiration & CVV Row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _inputField(
+                          label: 'Expiration',
+                          hint: 'MM/YY',
+                          controller: _expirationController,
+                          inputType: TextInputType.datetime,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _inputField(
+                          label: 'CVV',
+                          hint: '123',
+                          controller: _cvvController,
+                          inputType: TextInputType.number,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Zip Code
+                  _inputField(
+                    label: 'Zip Code',
+                    hint: 'e.g. 10001',
+                    controller: _zipController,
+                    inputType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Country Dropdown
+                  _buildCountryDropdown(),
+
+                  const SizedBox(height: 24),
+
+                  // Action Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            color: Colors.black87,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PurchaseConfirmationPage(),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Continue',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            child: Material(
-              color: Colors.white,
-              child: SafeArea(
-                  top: false,
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.only(
-                      bottom: MediaQuery.of(context).viewInsets.bottom,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 20.0,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Header Row with a grey arrow and title.
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: Icon(
-                                  Icons.arrow_back,
-                                  color: const Color.fromARGB(255, 19, 19, 19),
-                                ),
-                                onPressed: () => Navigator.of(context).pop(),
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Add card details',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // NEW: Independent Card Number Field Container.
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey, width: 1),
-                              color: Colors.white,
-                            ),
-                            child: _buildFieldRow(
-                              child: TextField(
-                                controller: _cardNumberController,
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  LengthLimitingTextInputFormatter(16),
-                                ],
-                                decoration: const InputDecoration(
-                                  labelText: 'Card Number',
-                                  hintText: '---- ---- ---- ----',
-                                  labelStyle: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    color: Colors.black54,
-                                  ),
-                                  hintStyle: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    color: Colors.black45,
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 14,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Container for Card Number, Expiration, and CVV.
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey, width: 1),
-                              color: Colors.white,
-                            ),
-                            child: Column(
-                              children: [
-                                // Original Card Number field (hidden now).
-                                Visibility(
-                                  visible: false,
-                                  child: _buildFieldRow(
-                                    child: TextField(
-                                      controller: _expirationController,
-                                      keyboardType: TextInputType.datetime,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Card Number',
-                                        hintText: '---- ---- ---- ----',
-                                        labelStyle: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          color: Colors.black54,
-                                        ),
-                                        hintStyle: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          color: Colors.black45,
-                                        ),
-                                        border: InputBorder.none,
-                                        contentPadding: EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 14,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                _buildFieldRow(
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: TextField(
-                                          controller: _expirationController,
-                                          keyboardType: TextInputType.datetime,
-                                          decoration: const InputDecoration(
-                                            labelText: 'Expiration',
-                                            hintText: 'MM / YY',
-                                            labelStyle: TextStyle(
-                                              fontFamily: 'Poppins',
-                                              color: Colors.black54,
-                                            ),
-                                            hintStyle: TextStyle(
-                                              fontFamily: 'Poppins',
-                                              color: Colors.black45,
-                                            ),
-                                            border: InputBorder.none,
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                              vertical: 14,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        height: 40,
-                                        width: 1,
-                                        color: Colors.grey[200],
-                                      ),
-                                      Expanded(
-                                        child: TextField(
-                                          controller: _cvvController,
-                                          keyboardType: TextInputType.number,
-                                          inputFormatters: [
-                                            FilteringTextInputFormatter
-                                                .digitsOnly,
-                                            LengthLimitingTextInputFormatter(3),
-                                            MaxDigitsEnforcer(3),
-                                          ],
-                                          decoration: const InputDecoration(
-                                            labelText: 'CVV',
-                                            hintText: '555',
-                                            labelStyle: TextStyle(
-                                              fontFamily: 'Poppins',
-                                              color: Colors.black54,
-                                            ),
-                                            hintStyle: TextStyle(
-                                              fontFamily: 'Poppins',
-                                              color: Colors.black45,
-                                            ),
-                                            border: InputBorder.none,
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                              vertical: 14,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Container for Zip Code.
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey, width: 1),
-                              color: Colors.white,
-                            ),
-                            child: Column(
-                              children: [
-                                _buildFieldRow(
-                                  child: TextField(
-                                    controller: _zipController,
-                                    keyboardType: TextInputType.number,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Zip code',
-                                      labelStyle: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        color: Colors.black54,
-                                      ),
-                                      hintStyle: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        color: Colors.black45,
-                                      ),
-                                      border: InputBorder.none,
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 14,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Container for Country/region.
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey, width: 1),
-                              color: Colors.white,
-                            ),
-                            child: Column(
-                              children: [
-                                _buildFieldRow(
-                                    child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<Country>(
-                                    // ignore: unnecessary_cast
-                                    
-                                    isExpanded: true,
-                                    icon: const Icon(Icons.keyboard_arrow_down),
-                                    items: allCountries.map((Country country) {
-                                      return DropdownMenuItem<Country>(
-                                        value: country,
-                                        child: Center(
-                                          child: Text(
-                                            '${country.flag} ${country.name}',
-                                            textAlign: TextAlign.center,
-                                            style: const TextStyle(
-                                              fontFamily: 'Poppins',
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
-                                    onChanged: (Country? value) {
-                                      if (value != null) {
-                                        setState(() {
-                                          _selectedCountry = value as String ; 
-                                        });
-                                      }
-                                    },
-                                    style: const TextStyle(
-                                      fontFamily: 'Poppins',
-                                      color: Colors.grey,
-                                      fontSize: 16,
-                                    ),
-                                    dropdownColor: Colors.white,
-                                    hint: Center(
-                                      child: const Text(
-                                        'Country/region',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ),
-                                    selectedItemBuilder:
-                                        (BuildContext context) {
-                                      return allCountries
-                                          .map((Country country) {
-                                        return Center(
-                                          child: Text(
-                                            '${country.flag} ${country.name}',
-                                            textAlign: TextAlign.center,
-                                            style: const TextStyle(
-                                              fontFamily: 'Poppins',
-                                              color: Colors.grey,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                        );
-                                      }).toList();
-                                    },
-                                  ),
-                                ))
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Cancel / Done Row.
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              TextButton(
-                                onPressed: () => Navigator.of(context).pop(),
-                                child: const Text(
-                                  'Cancel',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    color: Colors.black87,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
-                                ),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          PurchaseConfirmationPage(),
-                                    ),
-                                  );
-                                  setState(() {
-                                    isExpanded = true;
-                                  });
-                                  // Then close after 300ms
-                                },
-                                child: const Text(
-                                  'Done',
-                                  style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  )),
-            )));
+          ),
+        ),
+      ),
+    );
   }
 
-  Widget _buildFieldRow({required Widget child}) {
-    return Container(
-      padding: EdgeInsets.zero,
-      child: child,
+  Widget _inputField({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    required TextInputType inputType,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: inputType,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        labelStyle: const TextStyle(
+          fontFamily: 'Poppins',
+          color: Colors.black87,
+          fontWeight: FontWeight.w500,
+        ),
+        filled: true,
+        fillColor: Colors.grey[100],
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Colors.blue),
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCountryDropdown() {
+    return DropdownButtonFormField<String>(
+      decoration: InputDecoration(
+        labelText: 'Country / Region',
+        filled: true,
+        fillColor: Colors.grey[100],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.transparent),
+        ),
+      ),
+      value: _selectedCountry,
+      items: ['Lebanon', 'USA', 'Canada', 'UK']
+          .map((country) => DropdownMenuItem(
+                value: country,
+                child: Text(
+                  country,
+                  style: const TextStyle(fontFamily: 'Poppins'),
+                ),
+              ))
+          .toList(),
+      onChanged: (value) {
+        setState(() {
+          _selectedCountry = value!;
+        });
+      },
     );
   }
 }
+

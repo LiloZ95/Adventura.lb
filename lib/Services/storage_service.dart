@@ -173,6 +173,8 @@ class StorageService {
   /// ✅ **Logout & Clear Data**
   static Future<void> logout(BuildContext context) async {
     Box box = await Hive.openBox('authBox');
+    String userId = box.get('userId');
+    bool hasSeenOnboarding = true;
 
     print("🚪 Logging out user...");
 
@@ -180,13 +182,15 @@ class StorageService {
     await box.delete("accessToken");
     await box.delete("refreshToken");
     await box.delete("userId");
+    await box.delete('profileImageBytes_$userId');
+    await box.delete('profilePictureUrl_$userId');
     await box.put("isLoggedIn", false);
 
     // Clear Shared Preferences
-    bool hasSeenOnboarding = box.get("hasSeenOnboarding") ?? false;
 
     await box.put(
         "hasSeenOnboarding", hasSeenOnboarding); // Restore onboarding status
+    print("hasSeenOnboarding: $hasSeenOnboarding");
 
     print("✅ User logged out. All data cleared.");
 

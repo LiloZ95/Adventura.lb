@@ -12,7 +12,8 @@ import 'package:adventura/Notification/NotificationPage.dart';
 import 'package:adventura/Services/activity_service.dart';
 import 'package:hive/hive.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-
+import 'package:adventura/Provider%20Only/ticketScanner.dart';
+import 'package:adventura/CreateListing/CreateList.dart';
 import '../widgets/bouncing_dots_loader.dart';
 
 class MainScreen extends StatefulWidget {
@@ -46,46 +47,38 @@ class _MainScreenState extends State<MainScreen> {
     firstName = box.get('firstName') ?? '';
     lastName = box.get('lastName') ?? '';
 
-    profilePicture = box.get('profilePicture') ?? "";
+    // Load profile bytes based on userId
+    Uint8List? cachedBytes = box.get('profileImageBytes_$userId');
+    profilePicture = cachedBytes != null ? 'cached' : ""; // placeholder check
 
     setState(() => isLoading = false);
   }
 
   void fetchUserData() async {
-    Box storageBox = await Hive.openBox('authBox');
-    String? userIdString = storageBox.get("userId");
-
-    if (userIdString == null) {
-      print("❌ User ID not found in Hive.");
-      return;
-    }
-
+    Box box = await Hive.openBox('authBox');
+    String? userIdString = box.get("userId");
+    if (userIdString == null) return;
     userId = userIdString;
 
-    // Load cached profile picture first
-    String cachedProfilePic = storageBox.get("profilePicture") ?? "";
-    if (cachedProfilePic.isNotEmpty && profilePicture == cachedProfilePic) {
-      return; // ❌ Don't update state if the image is already set
-    }
+    // Try to load cached bytes specific to this user
+    Uint8List? cachedBytes = box.get('profileImageBytes_$userId');
 
-    setState(() {
-      profilePicture = cachedProfilePic;
-      isLoading = false;
-    });
-
-    // Fetch from API if not in cache
-    String fetchedProfilePic = await ProfileService.fetchProfilePicture(userId);
-
-    if (fetchedProfilePic.isNotEmpty && fetchedProfilePic != profilePicture) {
+    if (cachedBytes != null) {
       setState(() {
-        profilePicture = fetchedProfilePic;
-        isLoading = false;
+        profilePicture = 'cached';
       });
     } else {
-      print("❌ No profile picture available.");
-      setState(() {
-        isLoading = false;
-      });
+      // Fetch from API as fallback
+      String fetchedProfilePic =
+          await ProfileService.fetchProfilePicture(userId);
+      if (fetchedProfilePic.isNotEmpty) {
+        // Cache by userId
+        await box.put(
+            'profileImageBytes_$userId', base64Decode(fetchedProfilePic));
+        setState(() {
+          profilePicture = 'cached';
+        });
+      }
     }
   }
 
@@ -268,22 +261,12 @@ class _MainScreenState extends State<MainScreen> {
                                     if (snapshot.connectionState ==
                                         ConnectionState.done) {
                                       Box box = Hive.box('authBox');
-                                      Uint8List? cachedBytes =
-                                          box.get('profileImageBytes');
-                                      String? cachedUrl =
-                                          box.get('profilePictureUrl');
-
+                                      Uint8List? userBytes =
+                                          box.get('profileImageBytes_$userId');
                                       ImageProvider<Object> imageProvider;
 
-                                      if (cachedBytes != null) {
-                                        imageProvider =
-                                            MemoryImage(cachedBytes);
-                                      } else if (cachedUrl != null &&
-                                          cachedUrl.isNotEmpty) {
-                                        imageProvider =
-                                            CachedNetworkImageProvider(
-                                                    cachedUrl)
-                                                as ImageProvider<Object>;
+                                      if (userBytes != null) {
+                                        imageProvider = MemoryImage(userBytes);
                                       } else {
                                         imageProvider = AssetImage(
                                             "assets/images/default_user.png");
@@ -484,7 +467,12 @@ class _MainScreenState extends State<MainScreen> {
                 children: [
                   GestureDetector(
                     onTap: () {
-                      // Action for top button
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TicketScanner(),
+                        ),
+                      );
                     },
                     child: Container(
                       width: 55,
@@ -514,7 +502,12 @@ class _MainScreenState extends State<MainScreen> {
                   SizedBox(height: 8),
                   GestureDetector(
                     onTap: () {
-                      // Action for bottom button
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CreateListingPage(),
+                        ),
+                      );
                     },
                     child: Container(
                       width: 55,

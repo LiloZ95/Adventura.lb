@@ -20,27 +20,30 @@ class ProfileService {
         print("ℹ️ No profile picture found, using default.");
         return "default";
       }
-      if (data["image"] != null && data["image"].isNotEmpty) {
-        Box storageBox = await Hive.openBox('authBox');
 
-        if (data["image"].startsWith("data:image")) {
-          // Cache base64 decoded bytes
-          String base64String = data["image"].split(",")[1];
-          Uint8List imageBytes = base64Decode(base64String);
-          await storageBox.put("profileImageBytes", imageBytes);
-          await storageBox.delete("profilePictureUrl");
-          print("✅ Base64 image cached in Hive as bytes.");
-        } else if (data["image"].startsWith("http")) {
-          await storageBox.put("profilePictureUrl", data["image"]);
-          await storageBox.delete("profileImageBytes");
-          print("✅ URL cached in Hive.");
-        }
-
-        return data["image"];
-      }
+      await _cacheProfileImage(userId, data["image"]);
+      return data["image"];
     }
     print("❌ Failed to fetch or decode profile picture.");
     return "";
+  }
+
+  /// ✅ Cache profile image (base64 or URL)
+  static Future<void> _cacheProfileImage(String userId, String imageData) async {
+    Box storageBox = await Hive.openBox('authBox');
+
+    if (imageData.startsWith("data:image")) {
+      // Cache base64 decoded bytes
+      String base64String = imageData.split(",")[1];
+      Uint8List imageBytes = base64Decode(base64String);
+      await storageBox.put("profileImageBytes_$userId", imageBytes);
+      await storageBox.delete("profilePictureUrl_$userId");
+      print("✅ Base64 image cached in Hive for user $userId.");
+    } else if (imageData.startsWith("http")) {
+      await storageBox.put("profilePictureUrl_$userId", imageData);
+      await storageBox.delete("profileImageBytes_$userId");
+      print("✅ URL cached in Hive for user $userId.");
+    }
   }
 
   /// ✅ Pick an Image from Gallery
@@ -82,10 +85,8 @@ class ProfileService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
         if (responseData["success"] == true) {
-          Box storageBox = await Hive.openBox('authBox');
-          await storageBox.delete("profileImageBytes");
-          await storageBox.delete("profilePictureUrl");
-          print("✅ Cleared old image cache.");
+          await clearUserProfileCache(userId);
+          print("✅ Cleared old image cache for user $userId.");
           return true;
         }
       }
@@ -94,5 +95,12 @@ class ProfileService {
       print("❌ Upload error: $e");
       return false;
     }
+  }
+
+  /// ✅ Clear profile image cache for a specific user
+  static Future<void> clearUserProfileCache(String userId) async {
+    Box storageBox = await Hive.openBox('authBox');
+    await storageBox.delete("profileImageBytes_$userId");
+    await storageBox.delete("profilePictureUrl_$userId");
   }
 }
