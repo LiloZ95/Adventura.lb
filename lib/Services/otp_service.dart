@@ -1,10 +1,10 @@
 import 'dart:convert';
+import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'storage_service.dart';
 import 'package:adventura/config.dart'; // ✅ Import the global config file
 
 class OtpService {
-
   /// ✅ **Send OTP for Signup or Password Reset**
   static Future<Map<String, dynamic>> sendOtp(String email,
       {required bool isForSignup}) async {
@@ -73,6 +73,14 @@ class OtpService {
     String? password,
   }) async {
     try {
+      var box = await Hive.openBox('authBox');
+      
+      // fallback to Hive if not passed
+      firstName ??= box.get('firstName', defaultValue: '');
+      lastName ??= box.get('lastName', defaultValue: '');
+      phoneNumber ??= box.get('phoneNumber', defaultValue: '');
+      password ??= box.get('password', defaultValue: '');
+
       final response = await http.post(
         Uri.parse('$baseUrl/users/verify-otp'),
         headers: {"Content-Type": "application/json"},
@@ -106,11 +114,18 @@ class OtpService {
         String accessToken = data["accessToken"];
         String refreshToken = data["refreshToken"];
 
-        await StorageService.saveAuthTokens(accessToken, refreshToken, userId);
-        await StorageService.saveUserData(userId, accessToken, refreshToken);
+        // ✅ Store in Hive
+        await box.put("accessToken", accessToken);
+        await box.put("refreshToken", refreshToken);
+        await box.put("isLoggedIn", true);
+        await box.put("userId", userId);
+        await box.put("firstName", data["user"]["first_name"] ?? "");
+        await box.put("lastName", data["user"]["last_name"] ?? "");
+        await box.put("profilePicture", data["user"]["profilePicture"] ?? "");
 
-        print("✅ Stored User Data: ID=$userId, Name=${data["user"]["first_name"]}");
-        return data;
+        print("✅ Stored User Data in Hive: $firstName $lastName");
+
+        return {"success": true, "user": data["user"]};
       } else {
         final errorData = jsonDecode(response.body);
         return {

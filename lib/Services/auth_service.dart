@@ -27,16 +27,48 @@ class AuthService {
         }),
       );
 
-      final responseData = jsonDecode(response.body);
-      if (response.statusCode == 200) {
-        print("✅ Signup Successful: ${responseData["message"]}");
-        return {"success": true, "message": responseData["message"]};
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data is Map) {
+        Box storageBox = await Hive.openBox('authBox');
+
+        String? accessToken = data["accessToken"];
+        String? refreshToken = data["refreshToken"];
+        Map<String, dynamic>? user = data["user"];
+
+        // ✅ Check if the API response is valid
+        if (accessToken == null || refreshToken == null || user == null) {
+          print("❌ API response missing required fields.");
+          return {
+            "success": false,
+            "error": "Invalid server response. Please try again."
+          };
+        }
+
+        // ✅ Store tokens & login state in Hive
+        await storageBox.put("accessToken", accessToken);
+        await storageBox.put("refreshToken", refreshToken);
+        await storageBox.put("isLoggedIn", true); // ✅ Store login state
+        await storageBox.put("userId", user["user_id"].toString());
+
+        try {
+          // ✅ Store user details
+          await storageBox.put("firstName", user["first_name"]);
+          await storageBox.put("lastName", user["last_name"]);
+          await storageBox.put("profilePicture", user["profilePicture"] ?? "");
+
+          print("✅ User details saved: ID=${user["user_id"]}");
+        } catch (e) {
+          print("❌ Error storing user data: $e");
+          return {"success": false, "error": "Failed to store user data."};
+        }
+
+        print("✅ Signup Successful: ${data["message"]}");
+
+        return {"success": true, "message": data["message"]};
       } else {
-        print("❌ Signup Failed: ${responseData["error"] ?? "Unknown error"}");
-        return {
-          "success": false,
-          "error": responseData["error"] ?? "Signup failed"
-        };
+        print("❌ Signup Failed: ${data["error"] ?? "Unknown error"}");
+        return {"success": false, "error": data["error"] ?? "Signup failed"};
       }
     } catch (e) {
       print("❌ Exception in Signup: $e");
