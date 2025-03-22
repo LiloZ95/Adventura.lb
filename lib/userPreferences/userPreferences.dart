@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'package:adventura/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../Main screen components/MainScreen.dart';
 import 'package:adventura/config.dart';
 import 'package:hive/hive.dart';
 import 'package:adventura/widgets/bouncing_dots_loader.dart';
+import 'package:adventura/config.dart'; // ✅ Import the global config file
 
 class Favorite extends StatelessWidget {
   @override
@@ -78,7 +80,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
     }
 
     final response = await http.post(
-      Uri.parse("http://localhost:3000/users/preferences"),
+      Uri.parse("$baseUrl/users/preferences"),
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer $accessToken"
@@ -103,30 +105,31 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double statusBarHeight = MediaQuery.of(context).padding.top;
     return Scaffold(
-      // Using SafeArea to automatically handle status bar and notches
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Title centered with Poppins font family
               Center(
                 child: Column(
                   children: [
                     SizedBox(height: 10),
                     Text(
-                      'Choose your favorite event',
+                      'Choose your Favorite Categories',
                       style: TextStyle(
-                        fontSize: 22,
+                        height: 1.2,
+                        fontSize: 32,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Poppins',
                       ),
                     ),
-                    SizedBox(height: 5),
+                    SizedBox(height: 8),
                     Text(
-                      'Get personalized activity recommendation.',
+                      'Get personalized activity recommendation from the selections you make.',
                       style: TextStyle(
                         color: Colors.grey,
                         fontFamily: 'Poppins',
@@ -136,7 +139,6 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
                 ),
               ),
               SizedBox(height: 20),
-              // Wrap widget for categories, which will wrap as screen size changes
               categories.isEmpty
                   ? Center(
                       child: Padding(
@@ -151,8 +153,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
                       spacing: 10,
                       runSpacing: 10,
                       children: categories.map((category) {
-                        String categoryName = category["name"] ??
-                            "Unknown"; // ✅ Prevent null values
+                        String categoryName = category["name"] ?? "Unknown";
                         bool isSelected = selectedPreferences
                             .any((p) => p['category_id'] == category['id']);
                         bool isDisabled =
@@ -171,8 +172,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
                                         maxSelections) {
                                       selectedPreferences.add({
                                         "category_id": category['id'],
-                                        "preference_level":
-                                            3, // Default preference level
+                                        "preference_level": 3,
                                       });
                                     }
                                   });
@@ -180,7 +180,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
                                 },
                           child: Container(
                             padding: EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 15),
+                                vertical: 10, horizontal: 18),
                             decoration: BoxDecoration(
                               border: Border.all(
                                 color: isSelected
@@ -188,7 +188,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
                                     : Colors.grey[300]!,
                                 width: 2,
                               ),
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(15),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -196,9 +196,9 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
                                 Text(
                                   category['name']!,
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.w500,
-                                    fontStyle: FontStyle.normal,
+                                    fontFamily: 'Poppins',
                                     color: isDisabled
                                         ? Colors.grey[500]
                                         : Colors.black,
@@ -217,36 +217,44 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
                   style:
                       TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                 ),
-              SizedBox(height: 10),
-              // Finish Button
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  gradient: LinearGradient(
-                    colors: [Color(0xff007AFF), Color(0xff00C6FF)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Colors.transparent, // Transparent background
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    padding: EdgeInsets.symmetric(vertical: 18),
-                  ),
-                  onPressed: _savePreferences,
-                  child: Text(
-                    'Finish',
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
-                ),
-              ),
-              SizedBox(height: 20), // Extra spacing at the bottom if needed
+              SizedBox(height: 80), // add space above the button area
             ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            color: AppColors.blue,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.4),
+                spreadRadius: 1,
+                blurRadius: 5,
+                offset: Offset(0, 3),
+              ),
+            ],
+          ),
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: EdgeInsets.symmetric(vertical: 18),
+            ),
+            onPressed: _savePreferences,
+            child: Text(
+              'Finish',
+              style: TextStyle(
+                fontSize: 20,
+                color: Colors.white,
+                fontFamily: 'Poppins',
+              ),
+            ),
           ),
         ),
       ),

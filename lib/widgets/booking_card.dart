@@ -333,7 +333,7 @@ class BookingCard extends StatelessWidget {
                           activity["activity_images"][0] ?? "",
                         ),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.blue, width: 2),
+                          side: const BorderSide(color: Colors.blue, width: 1),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
