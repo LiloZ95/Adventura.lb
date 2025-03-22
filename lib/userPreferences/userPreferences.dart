@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../Main screen components/MainScreen.dart';
 import 'package:hive/hive.dart';
 import 'package:adventura/widgets/bouncing_dots_loader.dart';
+import 'package:adventura/config.dart'; // ✅ Import the global config file
 
 class Favorite extends StatelessWidget {
   @override
@@ -35,8 +36,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
 
   Future<void> fetchCategories() async {
     try {
-      final response =
-          await http.get(Uri.parse("http://localhost:3000/categories"));
+      final response = await http.get(Uri.parse("$baseUrl/categories"));
 
       if (response.statusCode == 200) {
         List<dynamic> data = jsonDecode(response.body);
@@ -77,7 +77,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
     }
 
     final response = await http.post(
-      Uri.parse("http://localhost:3000/users/preferences"),
+      Uri.parse("$baseUrl/users/preferences"),
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer $accessToken"
