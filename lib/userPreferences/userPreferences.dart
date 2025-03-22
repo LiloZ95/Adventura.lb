@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../Main screen components/MainScreen.dart';
+import 'package:adventura/config.dart';
 import 'package:hive/hive.dart';
 import 'package:adventura/widgets/bouncing_dots_loader.dart';
 
@@ -36,7 +37,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
   Future<void> fetchCategories() async {
     try {
       final response =
-          await http.get(Uri.parse("http://localhost:3000/categories"));
+          await http.get(Uri.parse("$baseUrl/categories"));
 
       if (response.statusCode == 200) {
         List<dynamic> data = jsonDecode(response.body);
