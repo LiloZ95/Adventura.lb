@@ -303,9 +303,7 @@ final List<Map<String, String>> _tripSteps = [
       onTap: () async {
         final url = Uri.parse(
             "https://www.google.com/maps/search/?api=1&query=34.4381,35.8308");
-        if (await canLaunchUrl(url)) {
-          await launchUrl(url);
-        }
+        await launchUrl(url, mode: LaunchMode.externalApplication);
       },
       child: gmap.GoogleMap(
         initialCameraPosition: gmap.CameraPosition(
@@ -487,7 +485,7 @@ final List<Map<String, String>> _tripSteps = [
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.blue,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15)),
+                  borderRadius: BorderRadius.circular(12)),
             ),
             child: Text("Check Availability",
                 style: TextStyle(color: Colors.white)),
@@ -561,7 +559,7 @@ final List<Map<String, String>> _tripSteps = [
                   backgroundColor: AppColors.blue,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
-                  padding: EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                  padding: EdgeInsets.symmetric(horizontal: 25, vertical: 18),
                 ),
               )
             ],

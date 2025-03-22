@@ -1,4 +1,4 @@
-import 'dart:nativewrappers/_internal/vm/lib/ffi_patch.dart';
+// import 'dart:nativewrappers/_internal/vm/lib/ffi_patch.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -40,7 +40,7 @@ class _PaymentModalState extends State<PaymentModal> {
   @override
   Widget build(BuildContext context) {
     return FractionallySizedBox(
-      heightFactor: 1.25,
+      heightFactor: 0.5,
       child: ClipRRect(
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
@@ -127,7 +127,6 @@ class _PaymentModalState extends State<PaymentModal> {
 
                   // Action Buttons
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
@@ -140,6 +139,7 @@ class _PaymentModalState extends State<PaymentModal> {
                           ),
                         ),
                       ),
+                      Spacer(), // This will push the next button to the right
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
@@ -166,7 +166,6 @@ class _PaymentModalState extends State<PaymentModal> {
                           ),
                         ),
                       ),
-                      SizedBox(height: 10),
                     ],
                   ),
                 ],
