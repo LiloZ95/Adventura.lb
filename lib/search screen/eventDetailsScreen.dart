@@ -7,6 +7,7 @@ import 'package:adventura/widgets/availability_modal.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart' as leaflet;
 import 'package:url_launcher/url_launcher.dart';
 
@@ -187,47 +188,47 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Widget _buildTripPlan() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          Text("Trip plan",
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Poppins')),
-          SizedBox(width: 8),
-          Expanded(child: Divider(color: Colors.grey.shade400, thickness: 1)),
-        ],
-      ),
-      SizedBox(height: 12),
-      SizedBox(
-        height: 80,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemCount: _tripSteps.length * 2 - 1, // account for arrows
-          separatorBuilder: (context, index) => SizedBox(width: 4),
-          itemBuilder: (context, index) {
-            if (index.isOdd) {
-              return _arrowConnector();
-            } else {
-              final step = _tripSteps[index ~/ 2];
-              return _tripCard(step["time"]!, step["title"]!);
-            }
-          },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text("Trip plan",
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Poppins')),
+            SizedBox(width: 8),
+            Expanded(child: Divider(color: Colors.grey.shade400, thickness: 1)),
+          ],
         ),
-      ),
-    ],
-  );
-}
+        SizedBox(height: 12),
+        SizedBox(
+          height: 80,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _tripSteps.length * 2 - 1, // account for arrows
+            separatorBuilder: (context, index) => SizedBox(width: 4),
+            itemBuilder: (context, index) {
+              if (index.isOdd) {
+                return _arrowConnector();
+              } else {
+                final step = _tripSteps[index ~/ 2];
+                return _tripCard(step["time"]!, step["title"]!);
+              }
+            },
+          ),
+        ),
+      ],
+    );
+  }
 
-final List<Map<String, String>> _tripSteps = [
-  {"time": "8:30 AM", "title": "Meet up"},
-  {"time": "11:00 AM", "title": "Reaching destination"},
-  {"time": "1:00 PM", "title": "Lunch Break"},
-  {"time": "3:00 PM", "title": "Sunset view"},
-];
+  final List<Map<String, String>> _tripSteps = [
+    {"time": "8:30 AM", "title": "Meet up"},
+    {"time": "11:00 AM", "title": "Reaching destination"},
+    {"time": "1:00 PM", "title": "Lunch Break"},
+    {"time": "3:00 PM", "title": "Sunset view"},
+  ];
 
   Widget _tripCard(String time, String title) {
     return Container(
@@ -281,8 +282,9 @@ final List<Map<String, String>> _tripSteps = [
       ),
       children: [
         TileLayer(
-          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: ['a', 'b', 'c'],
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          tileProvider:
+              CancellableNetworkTileProvider(), 
         ),
         MarkerLayer(
           markers: [
