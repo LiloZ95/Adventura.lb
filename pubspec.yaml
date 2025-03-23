@@ -47,6 +47,10 @@ dependencies:
   intl: ^0.19.0
   cached_network_image: ^3.3.1
   mobile_scanner: ^4.0.1
+  google_maps_flutter: ^2.5.3
+  url_launcher: ^6.3.1
+  flutter_map: ^6.1.0 #for web testing
+  latlong2: ^0.9.1 #for web testing
 
   
 
