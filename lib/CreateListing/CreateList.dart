@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:adventura/config.dart';
+import 'package:adventura/widgets/bouncing_dots_loader.dart';
+import 'package:adventura/widgets/location_picker.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
@@ -45,8 +48,11 @@ class _CreateListingPageState extends State<CreateListingPage> {
   final ImagePicker _picker = ImagePicker();
   final List<XFile> _images = [];
   static const int _maxImages = 10;
-  gmap.LatLng? _mapLatLng;
-  final MAPBOX_ACCESS_TOKEN = dotenv.env['MAPBOX_TOKEN'];
+  gmap.LatLng? _mapLatLng =
+      gmap.LatLng(33.8547, 35.8623); // Defaults to Lebanon
+  Timer? _debounce;
+  String? _fallbackPlaceName;
+  // final MAPBOX_ACCESS_TOKEN = dotenv.env['MAPBOX_TOKEN'];
 
   int _currentPage = 0;
   final PageController _pageController = PageController();
@@ -144,23 +150,99 @@ class _CreateListingPageState extends State<CreateListingPage> {
       TextEditingController();
   final TextEditingController _locationController = TextEditingController();
 
-  void _parseGoogleMapsUrl() {
-    final url = _googleMapsUrlController.text.trim();
-    final regex = RegExp(r'@(-?\d+\.\d+),\s*(-?\d+\.\d+)');
-    final match = regex.firstMatch(url);
+  void _openLocationPicker() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LocationPicker(initialPosition: _mapLatLng),
+      ),
+    );
 
-    if (match != null) {
-      final lat = double.parse(match.group(1)!);
-      final lng = double.parse(match.group(2)!);
+    if (result != null && result is gmap.LatLng) {
       setState(() {
-        _mapLatLng = gmap.LatLng(lat, lng);
+        _mapLatLng = result;
+      });
+    }
+  }
+
+  void _parseGoogleMapsUrl() async {
+    final url = _googleMapsUrlController.text.trim();
+    String? resolvedUrl = url;
+
+    setState(() {
+      _mapLatLng = null;
+    });
+
+    if (url.contains('goo.gl') || url.contains('maps.app.goo.gl')) {
+      resolvedUrl = await _resolveShortLink(url);
+      if (resolvedUrl == null) {
+        _showSnackBar('❌ Could not resolve short link.');
+        return;
+      }
+    }
+
+    final coords = _extractLatLng(resolvedUrl!);
+
+    if (coords != null) {
+      setState(() {
+        _mapLatLng = gmap.LatLng(coords[0], coords[1]);
       });
     } else {
+      // Fallback: Extract place name
+      final placeName = _extractPlaceName(resolvedUrl!);
       setState(() {
-        _mapLatLng = null;
+        _fallbackPlaceName = placeName;
       });
-      _showSnackBar('Invalid Google Maps URL');
     }
+  }
+
+  String _extractPlaceName(String url) {
+    final uri = Uri.parse(url);
+    final segments = uri.pathSegments;
+
+    // Try to get the "place" or "location" name from URL
+    for (var i = 0; i < segments.length; i++) {
+      if (segments[i] == "place" && i + 1 < segments.length) {
+        return segments[i + 1].replaceAll('+', ' ').replaceAll('-', ' ');
+      }
+    }
+    return "Unknown Location";
+  }
+
+// Helper to follow redirects
+  Future<String?> _resolveShortLink(String shortUrl) async {
+    try {
+      final response = await http.get(Uri.parse(shortUrl));
+      if (response.statusCode == 200 || response.statusCode == 302) {
+        return response.request?.url.toString();
+      }
+    } catch (e) {
+      print("Failed to resolve short link: $e");
+    }
+    return null;
+  }
+
+// Helper to extract lat/lng from Google Maps URL
+  List<double>? _extractLatLng(String url) {
+    // Matches @lat,lng
+    final atRegex = RegExp(r'@(-?\d+\.\d+),\s*(-?\d+\.\d+)');
+    final matchAt = atRegex.firstMatch(url);
+    if (matchAt != null) {
+      final lat = double.parse(matchAt.group(1)!);
+      final lng = double.parse(matchAt.group(2)!);
+      return [lat, lng];
+    }
+
+    // Matches !3dlat!4dlng
+    final dRegex = RegExp(r'!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)');
+    final matchD = dRegex.firstMatch(url);
+    if (matchD != null) {
+      final lat = double.parse(matchD.group(1)!);
+      final lng = double.parse(matchD.group(2)!);
+      return [lat, lng];
+    }
+
+    return null;
   }
 
   // A reusable widget method for text fields
@@ -261,7 +343,10 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
     // Listen for changes in the Google Maps URL
     _googleMapsUrlController.addListener(() {
-      _parseGoogleMapsUrl();
+      if (_debounce?.isActive ?? false) _debounce!.cancel();
+      _debounce = Timer(const Duration(milliseconds: 1500), () {
+        _parseGoogleMapsUrl(); // This will now only trigger once after pause
+      });
     });
   }
 
@@ -1462,27 +1547,49 @@ class _CreateListingPageState extends State<CreateListingPage> {
                     icon: Icons.link_sharp,
                   ),
                   const SizedBox(height: 8),
-                  if (_mapLatLng != null)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: SizedBox(
-                        height: 180,
-                        child: kIsWeb ? _buildWebMap() : _buildNativeMap(),
+                  // Always show pick location button
+                  // LOCATION SECTION
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (_mapLatLng != null)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: SizedBox(
+                            height: 180,
+                            child: kIsWeb ? _buildWebMap() : _buildNativeMap(),
+                          ),
+                        )
+                      else
+                        Container(
+                          height: 180,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            "No coordinates selected yet.",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 40,
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.map_outlined),
+                          label: Text(_mapLatLng != null
+                              ? "Edit Location"
+                              : "Pick Location"),
+                          onPressed: _openLocationPicker,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
                       ),
-                    )
-                  else
-                    Container(
-                      height: 180,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        "Waiting for valid location...",
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ),
+                    ],
+                  ),
                 ],
               ),
               // End of scrollable content
@@ -1553,6 +1660,8 @@ class _CreateListingPageState extends State<CreateListingPage> {
   }
 
   Widget _buildWebMap() {
+    final mapboxToken = dotenv.env['MAPBOX_TOKEN'] ?? "fallback-token";
+
     return FlutterMap(
       options: MapOptions(
         center: latlong.LatLng(_mapLatLng!.latitude, _mapLatLng!.longitude),
@@ -1567,7 +1676,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
       children: [
         TileLayer(
           urlTemplate:
-              'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=$MAPBOX_ACCESS_TOKEN',
+              'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=$mapboxToken',
           tileProvider: CancellableNetworkTileProvider(),
         ),
         MarkerLayer(
@@ -1594,6 +1703,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
         await launchUrl(url, mode: LaunchMode.externalApplication);
       },
       child: gmap.GoogleMap(
+        key: ValueKey('${_mapLatLng?.latitude}-${_mapLatLng?.longitude}'),
         initialCameraPosition: gmap.CameraPosition(
           target: _mapLatLng!,
           zoom: 14,

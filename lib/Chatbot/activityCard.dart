@@ -32,10 +32,10 @@ class ActivityCard extends StatelessWidget {
             Text(name,
                 style: Theme.of(context)
                     .textTheme
-                    .headline6
+                    .titleLarge
                     ?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text(description, style: Theme.of(context).textTheme.bodyText2),
+            Text(description, style: Theme.of(context).textTheme.bodyMedium),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

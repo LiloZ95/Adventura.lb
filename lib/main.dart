@@ -7,7 +7,13 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
+
+  try {
+    await dotenv.load(fileName: ".env");
+    print("✅ .env file loaded successfully");
+  } catch (e) {
+    print("⚠️ Could not load .env file: $e");
+  }
 
   // ✅ Initialize Hive for both web & mobile
   await Hive.initFlutter();

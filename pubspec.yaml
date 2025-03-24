@@ -51,6 +51,9 @@ dependencies:
   url_launcher: ^6.3.1
   flutter_map: ^6.1.0 #for web testing
   latlong2: ^0.9.1 #for web testing
+  flutter_map_cancellable_tile_provider: ^2.0.0
+  flutter_dotenv: ^5.2.1
+  geolocator: ^11.1.0
 
   
 
@@ -76,6 +79,7 @@ flutter:
      - assets/Icons/
      - assets/Pictures/
      - assets/images/
+     - .env
 
   fonts:
     - family: Poppins
