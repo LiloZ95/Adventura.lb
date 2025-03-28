@@ -1,26 +1,22 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-import 'package:adventura/config.dart';
-import 'package:adventura/widgets/bouncing_dots_loader.dart';
+import 'package:adventura/utils/snackbars.dart';
+import 'package:adventura/CreateListing/widgets/category_selector.dart';
+import 'package:adventura/CreateListing/widgets/image_selector.dart';
 import 'package:adventura/widgets/location_picker.dart';
-import 'package:flutter/gestures.dart';
+import 'package:adventura/CreateListing/widgets/title_section.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter_map/flutter_map.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:latlong2/latlong.dart' as latlong;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-
-// Define an enum for listing type
-enum ListingType {
-  recurrent,
-  oneTime,
-}
+import 'package:adventura/services/activity_service.dart';
+import 'package:adventura/controllers/create_listing_controller.dart';
+import 'widgets/age_selector.dart';
+import 'widgets/date_selector.dart';
+import 'widgets/description_section.dart';
+import 'widgets/features_section.dart';
+import 'widgets/listing_type_selector.dart';
+import 'widgets/location_section.dart';
+import 'widgets/ticket_price_selector.dart';
+import 'widgets/trip_plan_section.dart';
+import 'package:adventura/CreateListing/preview_page.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -50,9 +46,8 @@ class _CreateListingPageState extends State<CreateListingPage> {
   static const int _maxImages = 10;
   gmap.LatLng? _mapLatLng =
       gmap.LatLng(33.8547, 35.8623); // Defaults to Lebanon
-  Timer? _debounce;
   String? _fallbackPlaceName;
-  // final MAPBOX_ACCESS_TOKEN = dotenv.env['MAPBOX_TOKEN'];
+  final controller = CreateListingController();
 
   int _currentPage = 0;
   final PageController _pageController = PageController();
@@ -65,30 +60,11 @@ class _CreateListingPageState extends State<CreateListingPage> {
   String? _selectedCategoryName;
   List<Map<String, dynamic>> categories = [];
 
-  Future<void> fetchCategories() async {
-    try {
-      final response = await http.get(Uri.parse("$baseUrl/categories"));
-
-      if (response.statusCode == 200) {
-        List<dynamic> data = jsonDecode(response.body);
-
-        if (data.isNotEmpty) {
-          setState(() {
-            categories = data.cast<Map<String, dynamic>>();
-          });
-        }
-      } else {
-        print("❌ Failed to fetch categories: ${response.body}");
-      }
-    } catch (e) {
-      print("❌ Error fetching categories: $e");
-    }
-  }
-
   // Listing Type selection
   ListingType? _selectedListingType;
 
   // Ticket Price selection dropdown variables
+  final TextEditingController _priceController = TextEditingController();
   String _selectedTicketPriceType = 'Person';
   final List<String> _ticketPriceTypes = ['Person', 'Per hour', 'Per day'];
 
@@ -123,7 +99,6 @@ class _CreateListingPageState extends State<CreateListingPage> {
   ];
 
   // Age Allowed
-  final List<String> _ageOptions = ['All Ages', '12+', '18+', '21+'];
   String? _selectedAge;
 
   final List<int> _years = List.generate(
@@ -140,15 +115,28 @@ class _CreateListingPageState extends State<CreateListingPage> {
   final TextEditingController _toController = TextEditingController();
 
   // Trip Plan
-  final TextEditingController _planTimeController = TextEditingController();
-  final TextEditingController _planDescController = TextEditingController();
+  List<bool> _isEditable = [true]; // only last one is editable
+  List<Map<String, String>> _tripPlan = [];
+  List<Map<String, TextEditingController>> _tripPlanControllers = [
+    {
+      'time': TextEditingController(),
+      'desc': TextEditingController(),
+    },
+  ];
+
+  // Seats
+  final TextEditingController _seatsController = TextEditingController();
+
+  // Features
+  List<String> _features = [];
+  List<TextEditingController> _featureControllers = [TextEditingController()];
+  List<bool> _isFeatureEditable = [true];
 
   // Location
   final TextEditingController _locationDisplayController =
       TextEditingController();
   final TextEditingController _googleMapsUrlController =
       TextEditingController();
-  final TextEditingController _locationController = TextEditingController();
 
   void _openLocationPicker() async {
     final result = await Navigator.push(
@@ -165,84 +153,62 @@ class _CreateListingPageState extends State<CreateListingPage> {
     }
   }
 
-  void _parseGoogleMapsUrl() async {
-    final url = _googleMapsUrlController.text.trim();
-    String? resolvedUrl = url;
+  void _submitActivity() async {
+    if (_titleController.text.trim().isEmpty ||
+        _descriptionController.text.trim().isEmpty ||
+        _locationDisplayController.text.trim().isEmpty ||
+        _priceController.text.trim().isEmpty ||
+        _fromController.text.trim().isEmpty ||
+        _toController.text.trim().isEmpty ||
+        _seatsController.text.trim().isEmpty ||
+        _selectedCategoryName == null ||
+        _selectedListingType == null) {
+      showAppSnackBar(context, "⚠️ Please fill in all required fields.");
+      return;
+    }
 
-    setState(() {
-      _mapLatLng = null;
+    final categoryId = categories.firstWhere(
+      (cat) => cat["name"] == _selectedCategoryName,
+      orElse: () => {'id': null},
+    )["id"];
+
+    final success = await ActivityService.createActivity({
+      'name': _titleController.text.trim(),
+      'description': _descriptionController.text.trim(),
+      'location': _locationDisplayController.text.trim(),
+      'price': int.tryParse(_priceController.text) ?? 0,
+      'duration': _calculateDurationInHours(),
+      'nb_seats': int.tryParse(_seatsController.text) ?? 10,
+      'category_id': categoryId,
+      'maps_url': _googleMapsUrlController.text.trim(),
+      'features': _features,
+      'trip_plan': _tripPlan,
     });
 
-    if (url.contains('goo.gl') || url.contains('maps.app.goo.gl')) {
-      resolvedUrl = await _resolveShortLink(url);
-      if (resolvedUrl == null) {
-        _showSnackBar('❌ Could not resolve short link.');
-        return;
-      }
-    }
-
-    final coords = _extractLatLng(resolvedUrl!);
-
-    if (coords != null) {
-      setState(() {
-        _mapLatLng = gmap.LatLng(coords[0], coords[1]);
-      });
-    } else {
-      // Fallback: Extract place name
-      final placeName = _extractPlaceName(resolvedUrl!);
-      setState(() {
-        _fallbackPlaceName = placeName;
-      });
-    }
+    showAppSnackBar(
+      context,
+      success
+          ? "✅ Activity created successfully!"
+          : "❌ Failed to create activity.",
+    );
   }
 
-  String _extractPlaceName(String url) {
-    final uri = Uri.parse(url);
-    final segments = uri.pathSegments;
-
-    // Try to get the "place" or "location" name from URL
-    for (var i = 0; i < segments.length; i++) {
-      if (segments[i] == "place" && i + 1 < segments.length) {
-        return segments[i + 1].replaceAll('+', ' ').replaceAll('-', ' ');
-      }
-    }
-    return "Unknown Location";
-  }
-
-// Helper to follow redirects
-  Future<String?> _resolveShortLink(String shortUrl) async {
+  int _calculateDurationInHours() {
     try {
-      final response = await http.get(Uri.parse(shortUrl));
-      if (response.statusCode == 200 || response.statusCode == 302) {
-        return response.request?.url.toString();
-      }
+      final fromParts = _fromController.text.split(":").map(int.parse).toList();
+      final toParts = _toController.text.split(":").map(int.parse).toList();
+
+      final fromTime = TimeOfDay(hour: fromParts[0], minute: fromParts[1]);
+      final toTime = TimeOfDay(hour: toParts[0], minute: toParts[1]);
+
+      final fromMinutes = fromTime.hour * 60 + fromTime.minute;
+      final toMinutes = toTime.hour * 60 + toTime.minute;
+
+      final diffMinutes = toMinutes - fromMinutes;
+      return (diffMinutes / 60).ceil(); // round up
     } catch (e) {
-      print("Failed to resolve short link: $e");
+      return 2; // fallback if user input is invalid
     }
-    return null;
-  }
-
-// Helper to extract lat/lng from Google Maps URL
-  List<double>? _extractLatLng(String url) {
-    // Matches @lat,lng
-    final atRegex = RegExp(r'@(-?\d+\.\d+),\s*(-?\d+\.\d+)');
-    final matchAt = atRegex.firstMatch(url);
-    if (matchAt != null) {
-      final lat = double.parse(matchAt.group(1)!);
-      final lng = double.parse(matchAt.group(2)!);
-      return [lat, lng];
-    }
-
-    // Matches !3dlat!4dlng
-    final dRegex = RegExp(r'!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)');
-    final matchD = dRegex.firstMatch(url);
-    if (matchD != null) {
-      final lat = double.parse(matchD.group(1)!);
-      final lng = double.parse(matchD.group(2)!);
-      return [lat, lng];
-    }
-
-    return null;
   }
 
   // A reusable widget method for text fields
@@ -287,90 +253,20 @@ class _CreateListingPageState extends State<CreateListingPage> {
     );
   }
 
-  // Reusable method for building age-allowed buttons
-  Widget _buildAgeButton(String label) {
-    final bool isSelected = (_selectedAge == label);
-
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _selectedAge = (isSelected) ? null : label;
-        });
-      },
-      child: Container(
-        margin: const EdgeInsets.all(8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: isSelected ? Colors.blue : const Color(0xFFCFCFCF),
-            width: 1,
-          ),
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.white,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'poppins',
-            fontSize: 14,
-            color: isSelected ? Colors.blue : Colors.grey[800],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   void initState() {
     super.initState();
 
-    // Fetch categories from your API when the widget loads
-    fetchCategories();
-
-    // Listen for text changes in the title
-    _titleController.addListener(() {
-      setState(() {
-        _currentTitleLength = _titleController.text.length;
-      });
-    });
-
-    // Listen for text changes in the description
-    _descriptionController.addListener(() {
-      setState(() {
-        _currentDescLength = _descriptionController.text.length;
-      });
-    });
-
-    // Listen for changes in the Google Maps URL
-    _googleMapsUrlController.addListener(() {
-      if (_debounce?.isActive ?? false) _debounce!.cancel();
-      _debounce = Timer(const Duration(milliseconds: 1500), () {
-        _parseGoogleMapsUrl(); // This will now only trigger once after pause
-      });
-    });
+    controller.init(() => setState(() {}));
   }
 
   @override
   void dispose() {
-    // Dispose all controllers
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _pageController.dispose();
-    _fromController.dispose();
-    _toController.dispose();
-    _planTimeController.dispose();
-    _planDescController.dispose();
-    _locationDisplayController.dispose();
-    _googleMapsUrlController.dispose();
+    controller.dispose();
     super.dispose();
   }
 
   // Helper to show a brief SnackBar
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
-    );
-  }
 
   // Picks multiple images from the gallery
   Future<void> _pickImages() async {
@@ -378,7 +274,8 @@ class _CreateListingPageState extends State<CreateListingPage> {
     if (pickedImages != null && pickedImages.isNotEmpty) {
       final int remainingSpace = _maxImages - _images.length;
       if (remainingSpace <= 0) {
-        _showSnackBar('You can only select up to $_maxImages images.');
+        showAppSnackBar(
+            context, 'You can only select up to $_maxImages images.');
         return;
       }
 
@@ -391,7 +288,8 @@ class _CreateListingPageState extends State<CreateListingPage> {
         if (_pageController.hasClients) {
           _pageController.jumpToPage(0);
         }
-        _showSnackBar(
+        showAppSnackBar(
+          context,
           'Only the first $remainingSpace images were added (max $_maxImages).',
         );
       } else {
@@ -415,143 +313,17 @@ class _CreateListingPageState extends State<CreateListingPage> {
     if (_pageController.hasClients) {
       _pageController.jumpToPage(0);
     }
-    _showSnackBar("All images cleared.");
-  }
-
-  // Shows a bottom sheet containing the list of categories
-  Future<void> _showCategorySheet() async {
-    final chosenName = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return FractionallySizedBox(
-          heightFactor: 0.6,
-          child: SafeArea(
-            child: Column(
-              children: [
-                // A small drag handle
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(top: 16, bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[400],
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                // Scrollable list of categories
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: categories.map((cat) {
-                        // Check if this cat is the currently selected one
-                        bool isSelected =
-                            (cat["name"] == _selectedCategoryName);
-
-                        return InkWell(
-                          onTap: () {
-                            // On tap, return the category name and close bottom sheet
-                            Navigator.pop(context, cat["name"]);
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(
-                                vertical: 6, horizontal: 16),
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 12, horizontal: 16),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: isSelected ? Colors.blue : Colors.grey,
-                                width: 2,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Center(
-                              child: Text(
-                                cat["name"] ?? "Unknown",
-                                style: TextStyle(
-                                  fontFamily: 'poppins',
-                                  fontSize: 16,
-                                  color:
-                                      isSelected ? Colors.blue : Colors.black,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    // If user tapped a category, chosenName is non-null
-    if (chosenName != null) {
-      setState(() {
-        _selectedCategoryName = chosenName;
-      });
-    }
-  }
-
-  /// Listing-type button
-  Widget _buildListingTypeOption({
-    required ListingType type,
-    required String text,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      splashColor: Colors.transparent,
-      highlightColor: Colors.transparent,
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        height: 45,
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected ? Colors.blue : Colors.grey,
-            width: 1,
-          ),
-          color: Colors.white,
-        ),
-        // Center icon + text
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.autorenew,
-              color: isSelected ? Colors.blue : Colors.grey,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              text,
-              style: TextStyle(
-                fontFamily: 'poppins',
-                fontSize: 15,
-                color: isSelected ? Colors.blue : Colors.black,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    showAppSnackBar(context, "All images cleared.");
   }
 
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final totalImages = _images.length;
     final screenWidth = MediaQuery.of(context).size.width;
     final TextEditingController _featuresController = TextEditingController();
 
-    return Scaffold(
+    return (Scaffold(
+      key: const Key('main_scaffold'),
       appBar: AppBar(
         title: const Text(
           'Create Listing',
@@ -584,102 +356,13 @@ class _CreateListingPageState extends State<CreateListingPage> {
               // ---------------------------------
               // Images (Add, Clear, Display)
               // ---------------------------------
-              Container(
-                width: double.infinity,
-                height: screenHeight * 0.25,
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey, width: 2),
-                ),
-                child: Stack(
-                  children: [
-                    // If no images, show "Add Photos"
-                    _images.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(
-                                      Icons.add_photo_alternate_outlined),
-                                  iconSize: 48,
-                                  color: Colors.grey[600],
-                                  onPressed: _pickImages,
-                                ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'Add Photos',
-                                  style: TextStyle(
-                                    fontFamily: 'poppins',
-                                    fontSize: 16,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: PageView.builder(
-                              controller: _pageController,
-                              itemCount: totalImages,
-                              onPageChanged: (index) {
-                                setState(() {
-                                  _currentPage = index;
-                                });
-                              },
-                              itemBuilder: (context, index) {
-                                return Image.file(
-                                  File(_images[index].path),
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                );
-                              },
-                            ),
-                          ),
-                    // "Clear All" button if images exist
-                    if (_images.isNotEmpty)
-                      Positioned(
-                        bottom: 8,
-                        left: 8,
-                        child: TextButton(
-                          onPressed: _clearImages,
-                          style: TextButton.styleFrom(
-                            backgroundColor: Colors.grey[300],
-                            foregroundColor: Colors.blue,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            textStyle: const TextStyle(
-                              fontFamily: 'poppins',
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          child: const Text("Clear All"),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Image info text
-              Text(
-                _images.isEmpty
-                    ? 'Photos: 0/$_maxImages - First photo will be shown in the listing\'s thumbnail'
-                    : 'Photos: ${_currentPage + 1}/$totalImages - First photo will be shown in the listing\'s thumbnail',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontFamily: "poppins",
-                  color: Colors.blue,
-                  fontSize: 14,
-                ),
+              ImageSelector(
+                images: _images,
+                currentPage: _currentPage,
+                maxImages: _maxImages,
+                pageController: _pageController,
+                onPickImages: _pickImages,
+                onClearImages: _clearImages,
               ),
 
               const SizedBox(height: 15),
@@ -687,556 +370,81 @@ class _CreateListingPageState extends State<CreateListingPage> {
               // ---------------------------------
               // Title
               // ---------------------------------
-              Row(
-                children: [
-                  const Text(
-                    'Title',
-                    style: TextStyle(
-                      fontFamily: "poppins",
-                      fontSize: 20,
-                      color: Colors.black87,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(child: Container(height: 1, color: Colors.grey)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Container(
-                height: 50,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: const Color.fromRGBO(167, 167, 167, 1),
-                    width: 1,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TextField(
-                  controller: _titleController,
-                  maxLength: 30,
-                  decoration: InputDecoration(
-                    counterText: '',
-                    hintText: 'Enter title',
-                    hintStyle: const TextStyle(
-                      color: Color.fromRGBO(190, 188, 188, 0.87),
-                      fontFamily: "poppins",
-                      fontSize: 15,
-                    ),
-                    suffixText: '$_currentTitleLength/30',
-                    suffixStyle: const TextStyle(
-                      color: Color.fromRGBO(190, 188, 188, 0.87),
-                      fontFamily: "poppins",
-                      fontSize: 15,
-                    ),
-                    border: InputBorder.none,
-                  ),
-                  textAlign: TextAlign.left,
-                ),
+              TitleSection(
+                controller: _titleController,
+                currentLength: _currentTitleLength,
               ),
               const SizedBox(height: 22),
 
               // ---------------------------------
               // Category
               // ---------------------------------
-              Row(
-                children: [
-                  const Text(
-                    'Category',
-                    style: TextStyle(
-                      fontFamily: "poppins",
-                      fontSize: 20,
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(child: Container(height: 1, color: Colors.grey)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              InkWell(
-                onTap: _showCategorySheet,
-                child: Container(
-                  height: 50,
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: const Color.fromRGBO(167, 167, 167, 1),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _selectedCategoryName ?? 'Select Category',
-                        // if it's null, we show 'Select Category'
-                        style: TextStyle(
-                          fontFamily: "poppins",
-                          fontSize: 15,
-                          color: _selectedCategoryName == null
-                              ? const Color.fromRGBO(190, 188, 188, 0.87)
-                              : Colors.black,
-                        ),
-                      ),
-                      const Icon(
-                        Icons.arrow_circle_up,
-                        color: Color.fromRGBO(190, 188, 188, 0.87),
-                      ),
-                    ],
-                  ),
-                ),
+              CategorySelector(
+                selectedCategoryName: _selectedCategoryName,
+                onCategorySelected: (newCat) {
+                  setState(() {
+                    _selectedCategoryName = newCat;
+                  });
+                },
               ),
               const SizedBox(height: 22),
 
               // ---------------------------------
               // Listing Type
               // ---------------------------------
-              Row(
-                children: [
-                  const Text(
-                    'Listing Type',
-                    style: TextStyle(
-                      fontFamily: "poppins",
-                      fontSize: 20,
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(child: Container(height: 1, color: Colors.grey)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Column(
-                children: [
-                  _buildListingTypeOption(
-                    type: ListingType.recurrent,
-                    text: "Recurrent Activity",
-                    isSelected: _selectedListingType == ListingType.recurrent,
-                    onTap: () {
-                      setState(() {
-                        _selectedListingType = ListingType.recurrent;
-                      });
-                    },
-                  ),
-                  _buildListingTypeOption(
-                    type: ListingType.oneTime,
-                    text: "One-time Event",
-                    isSelected: _selectedListingType == ListingType.oneTime,
-                    onTap: () {
-                      setState(() {
-                        _selectedListingType = ListingType.oneTime;
-                      });
-                    },
-                  ),
-
-                  // ---------------------------------
-                  // Ticket Price
-                  // ---------------------------------
-                  Row(
-                    children: [
-                      const Text(
-                        'Ticket Price',
-                        style: TextStyle(
-                          fontFamily: "poppins",
-                          fontSize: 20,
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(child: Container(height: 1, color: Colors.grey)),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey, width: 1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: '0',
-                                    hintStyle: TextStyle(
-                                      fontFamily: 'poppins',
-                                      fontSize: 15,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                  style: const TextStyle(
-                                    fontFamily: 'poppins',
-                                    fontSize: 15,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ),
-                              const Text(
-                                '\$',
-                                style: TextStyle(
-                                  fontFamily: 'poppins',
-                                  fontSize: 15,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        '/',
-                        style: TextStyle(
-                          fontFamily: 'poppins',
-                          fontSize: 18,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        height: 50,
-                        width: 100,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey, width: 1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _selectedTicketPriceType,
-                            icon: const Icon(Icons.arrow_drop_down,
-                                color: Colors.black),
-                            isExpanded: true,
-                            items: _ticketPriceTypes.map((String type) {
-                              return DropdownMenuItem<String>(
-                                value: type,
-                                child: Text(
-                                  type,
-                                  style: const TextStyle(
-                                    fontFamily: 'poppins',
-                                    fontSize: 15,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                _selectedTicketPriceType = newValue!;
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.info, color: Colors.blue, size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Putting 0 will make this ticket for Free.',
-                          style: const TextStyle(
-                            fontFamily: 'poppins',
-                            fontSize: 11,
-                            color: Colors.blue,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.info, color: Colors.blue, size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Select whether the ticket is per (Person, Hour, Day, etc..)',
-                          style: const TextStyle(
-                            fontFamily: 'poppins',
-                            fontSize: 11,
-                            color: Colors.blue,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              ListingTypeSelector(
+                selectedType: _selectedListingType,
+                onChanged: (newType) {
+                  setState(() {
+                    _selectedListingType = newType;
+                  });
+                },
               ),
 
+              // ---------------------------------
+              // Ticket Price
+              // ---------------------------------
+              TicketPriceSelector(
+                controller: _priceController,
+                selectedType: _selectedTicketPriceType,
+                types: _ticketPriceTypes,
+                onTypeChanged: (newValue) {
+                  setState(() {
+                    _selectedTicketPriceType = newValue!;
+                  });
+                },
+              ),
+              const SizedBox(height: 22),
               // ---------------------------------
               // Description
               // ---------------------------------
-              const SizedBox(height: 22),
-              Row(
-                children: [
-                  const Text(
-                    'Description',
-                    style: TextStyle(
-                      fontFamily: "poppins",
-                      fontSize: 20,
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(child: Container(height: 1, color: Colors.grey)),
-                ],
+              DescriptionSection(
+                controller: _descriptionController,
+                currentLength: _currentDescLength,
+                onChanged: (text) {
+                  setState(() {
+                    _currentDescLength = text.length;
+                  });
+                },
               ),
-              const SizedBox(height: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(
-                    width: screenWidth * 0.9,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: const Color.fromRGBO(167, 167, 167, 1),
-                        width: 1,
-                      ),
-                      borderRadius: BorderRadius.circular(screenWidth * 0.03),
-                    ),
-                    child: Stack(
-                      children: [
-                        TextField(
-                          controller: _descriptionController,
-                          maxLines: 6,
-                          maxLength: 250,
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: screenWidth * 0.04,
-                              vertical: screenHeight * 0.015,
-                            ),
-                            hintText: 'Enter your description...',
-                            hintStyle: TextStyle(
-                              color: const Color.fromRGBO(190, 188, 188, 0.87),
-                              fontFamily: "poppins",
-                              fontSize: screenWidth * 0.04,
-                            ),
-                            // Removing the default counter text
-                            counterText: '',
-                          ),
-                          style: TextStyle(
-                            fontFamily: 'poppins',
-                            fontSize: screenWidth * 0.04,
-                            color: Colors.black,
-                          ),
-                        ),
-                        Positioned(
-                          bottom: screenHeight * 0.005,
-                          right: screenWidth * 0.04,
-                          child: Text(
-                            '$_currentDescLength/250',
-                            style: TextStyle(
-                              fontFamily: 'poppins',
-                              fontSize: screenWidth * 0.03,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: screenHeight * 0.015),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.info, color: Colors.blue, size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Write an engaging description to attract participants',
-                          style: const TextStyle(
-                            fontFamily: 'poppins',
-                            fontSize: 10,
-                            color: Colors.blue,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
+              const SizedBox(height: 10),
 
-                  // ---------------------------------
-                  // Date Section
-                  // ---------------------------------
-                  Row(
-                    children: [
-                      const Text(
-                        'Date',
-                        style: TextStyle(
-                          fontFamily: "poppins",
-                          fontSize: 20,
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Container(height: 1, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      // Day dropdown
-                      Expanded(
-                        child: Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                                color: const Color(0xFFCFCFCF), width: 1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _selectedDay,
-                              icon: const Icon(Icons.arrow_drop_down,
-                                  color: Colors.grey),
-                              isExpanded: true,
-                              style: const TextStyle(
-                                fontSize: 9,
-                                fontFamily: 'poppins',
-                                color: Colors.black,
-                              ),
-                              onChanged: (String? newValue) {
-                                setState(() {
-                                  _selectedDay = newValue!;
-                                });
-                              },
-                              items: _daysOfWeek.map((day) {
-                                return DropdownMenuItem<String>(
-                                  value: day,
-                                  child: Text(day),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-
-                      // Month dropdown
-                      Expanded(
-                        child: Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                                color: const Color(0xFFCFCFCF), width: 1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _selectedMonth,
-                              icon: const Icon(Icons.arrow_drop_down,
-                                  color: Colors.grey),
-                              isExpanded: true,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontFamily: 'poppins',
-                                color: Colors.black,
-                              ),
-                              onChanged: (String? newValue) {
-                                setState(() {
-                                  _selectedMonth = newValue!;
-                                });
-                              },
-                              items: _months.map((month) {
-                                return DropdownMenuItem<String>(
-                                  value: month,
-                                  child: Text(
-                                    month,
-                                    style: const TextStyle(color: Colors.black),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-
-                      // Year dropdown
-                      Expanded(
-                        child: Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                                color: const Color(0xFFCFCFCF), width: 1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<int>(
-                              value: _selectedYear,
-                              icon: const Icon(Icons.arrow_drop_down,
-                                  color: Colors.grey),
-                              isExpanded: true,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontFamily: 'poppins',
-                                color: Colors.black,
-                              ),
-                              onChanged: (int? newValue) {
-                                setState(() {
-                                  _selectedYear = newValue!;
-                                });
-                              },
-                              items: _years.map((year) {
-                                return DropdownMenuItem<int>(
-                                  value: year,
-                                  child: Text(year.toString()),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // from / To text fields
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildTextFieldBox(
-                          controller: _fromController,
-                          hint: 'from',
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildTextFieldBox(
-                          controller: _toController,
-                          hint: 'To',
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              // ---------------------------------
+              // Date Section
+              // ---------------------------------
+              DateSelector(
+                daysOfWeek: _daysOfWeek,
+                months: _months,
+                years: _years,
+                selectedDay: _selectedDay,
+                selectedMonth: _selectedMonth,
+                selectedYear: _selectedYear,
+                onDayChanged: (day) => setState(() => _selectedDay = day),
+                onMonthChanged: (month) =>
+                    setState(() => _selectedMonth = month),
+                onYearChanged: (year) => setState(() => _selectedYear = year),
+                fromController: _fromController,
+                toController: _toController,
               ),
 
               const SizedBox(height: 20),
@@ -1244,355 +452,125 @@ class _CreateListingPageState extends State<CreateListingPage> {
               // ---------------------------------
               // Trip Plan Section
               // ---------------------------------
+              TripPlanSection(
+                controllers: _tripPlanControllers,
+                isEditable: _isEditable,
+                onAdd: (index) {
+                  final time = _tripPlanControllers[index]['time']!.text.trim();
+                  final desc = _tripPlanControllers[index]['desc']!.text.trim();
+
+                  if (time.isNotEmpty && desc.isNotEmpty) {
+                    setState(() {
+                      _isEditable[index] = false; // lock current
+                      _tripPlanControllers.add({
+                        'time': TextEditingController(),
+                        'desc': TextEditingController(),
+                      });
+                      _isEditable.add(true); // new one is editable
+                    });
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Please fill both fields first."),
+                      ),
+                    );
+                  }
+                },
+                onDelete: (index) {
+                  setState(() {
+                    _tripPlanControllers.removeAt(index);
+                    _isEditable.removeAt(index);
+                  });
+                },
+                onReorder: (oldIndex, newIndex) {
+                  setState(() {
+                    if (newIndex > oldIndex) newIndex -= 1;
+
+                    final item = _tripPlanControllers.removeAt(oldIndex);
+                    final editableFlag = _isEditable.removeAt(oldIndex);
+
+                    _tripPlanControllers.insert(newIndex, item);
+                    _isEditable.insert(newIndex, editableFlag);
+                  });
+                },
+              ),
+
+              const SizedBox(height: 20),
+
+              // ---------------------------------
+              // Features
+              // ---------------------------------
+              FeaturesSection(
+                controllers: _featureControllers,
+                isEditable: _isFeatureEditable,
+                onAdd: (index) {
+                  final text = _featureControllers[index].text.trim();
+                  if (text.isNotEmpty) {
+                    setState(() {
+                      _isFeatureEditable[index] = false;
+                      _featureControllers.add(TextEditingController());
+                      _isFeatureEditable.add(true);
+                    });
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text("Please enter a feature first.")),
+                    );
+                  }
+                },
+                onDelete: (index) {
+                  setState(() {
+                    _featureControllers.removeAt(index);
+                    _isFeatureEditable.removeAt(index);
+                  });
+                },
+              ),
+
+              const SizedBox(height: 20),
+
               Row(
-                children: [
-                  const Text(
-                    'Trip Plan',
+                children: const [
+                  Text(
+                    'Number of Seats',
                     style: TextStyle(
                       fontFamily: 'poppins',
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(child: Container(height: 1, color: Colors.grey)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Container with Time on top, divider, Description below
-                  Expanded(
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: const Color(0xFFCFCFCF),
-                              width: 1,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Time
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
-                                ),
-                                child: TextField(
-                                  controller: _planTimeController,
-                                  decoration: const InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: 'Time',
-                                    isDense: true,
-                                  ),
-                                  style: const TextStyle(
-                                    fontFamily: 'poppins',
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                              const Divider(
-                                height: 1,
-                                color: Color(0xFFCFCFCF),
-                              ),
-                              // Description
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
-                                ),
-                                child: TextField(
-                                  controller: _planDescController,
-                                  decoration: const InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: 'Description',
-                                    isDense: true,
-                                  ),
-                                  style: const TextStyle(
-                                    fontFamily: 'poppins',
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Gray handle (just a decorative bracket)
-                        Positioned(
-                          right: -10,
-                          top: 40,
-                          child: Container(
-                            width: 20,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            alignment: Alignment.center,
-                            child: const Text(
-                              ']',
-                              style: TextStyle(
-                                fontFamily: 'poppins',
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Black circular plus button
-                  Container(
-                    width: 30,
-                    height: 30,
-                    decoration: const BoxDecoration(
-                      color: Colors.black,
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon:
-                          const Icon(Icons.add, color: Colors.white, size: 16),
-                      onPressed: () {
-                        // TODO: Add logic to add more plan checkpoints
-                      },
-                    ),
-                  ),
+                  SizedBox(width: 8),
+                  Expanded(child: Divider(color: Colors.grey)),
                 ],
               ),
               const SizedBox(height: 8),
-              // Info row: "Add trip/activity plan checkpoints..."
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Icon(Icons.info, color: Colors.blue, size: 18),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Add trip/activity plan checkpoints at its specific time',
-                      style: TextStyle(
-                        fontFamily: 'poppins',
-                        fontSize: 12,
-                        color: Colors.blue,
-                      ),
-                    ),
-                  ),
-                ],
+              _buildTextFieldBox(
+                controller: _seatsController,
+                hint: 'Ex: 20',
+                icon: Icons.event_seat,
+              ),
+
+              // ---------------------------------
+              // Age Allowed
+              // ---------------------------------
+              AgeSelector(
+                selectedAge: _selectedAge,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedAge = value;
+                  });
+                },
               ),
               const SizedBox(height: 20),
 
               // ---------------------------------
-              // Features
+              // Location
               // ---------------------------------
-              Row(
-                children: [
-                  const Text(
-                    'Features',
-                    style: TextStyle(
-                      fontFamily: "poppins",
-                      fontSize: 20,
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Container(height: 1, color: Colors.grey),
-                  ),
-                ],
+              LocationSection(
+                locationController: _locationDisplayController,
+                latLng: _mapLatLng,
+                onPickLocation: _openLocationPicker,
               ),
-              const SizedBox(height: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Row for the text field container + black plus button
-                  Row(
-                    children: [
-                      Flexible(
-                        child: SizedBox(
-                          width: 150,
-                          child: Container(
-                            height: 50,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                  color: const Color(0xFFCFCFCF), width: 1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: TextField(
-                              controller: _featuresController,
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                hintText: 'Ex: Entertainment',
-                                hintStyle: TextStyle(
-                                  fontFamily: 'poppins',
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              style: const TextStyle(
-                                fontFamily: 'poppins',
-                                fontSize: 14,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 30,
-                        height: 30,
-                        decoration: const BoxDecoration(
-                          color: Colors.black,
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          iconSize: 16,
-                          icon: const Icon(Icons.add, color: Colors.white),
-                          onPressed: () {
-                            // TODO: Implement "Add" logic
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Icon(Icons.info, color: Colors.blue, size: 18),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          "Add what's featured in the activity/event.",
-                          style: TextStyle(
-                            fontFamily: 'poppins',
-                            fontSize: 12,
-                            color: Colors.blue,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
 
-                  // ---------------------------------
-                  // Age Allowed
-                  // ---------------------------------
-                  Row(
-                    children: [
-                      const Text(
-                        'Age Allowed',
-                        style: TextStyle(
-                          fontFamily: "poppins",
-                          fontSize: 20,
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Container(height: 1, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      _buildAgeButton('All Ages'),
-                      _buildAgeButton('12+'),
-                      _buildAgeButton('18+'),
-                      _buildAgeButton('21+'),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // ---------------------------------
-                  // Location
-                  // ---------------------------------
-                  Row(
-                    children: [
-                      const Text(
-                        'Location',
-                        style: TextStyle(
-                          fontFamily: "poppins",
-                          fontSize: 20,
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Container(height: 1, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _buildTextFieldBox(
-                    controller: _locationDisplayController,
-                    hint: 'Add Location to Display',
-                  ),
-                  const SizedBox(height: 8),
-                  _buildTextFieldBox(
-                    controller: _googleMapsUrlController,
-                    hint: 'Add Google Maps Url',
-                    icon: Icons.link_sharp,
-                  ),
-                  const SizedBox(height: 8),
-                  // Always show pick location button
-                  // LOCATION SECTION
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (_mapLatLng != null)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: SizedBox(
-                            height: 180,
-                            child: kIsWeb ? _buildWebMap() : _buildNativeMap(),
-                          ),
-                        )
-                      else
-                        Container(
-                          height: 180,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Text(
-                            "No coordinates selected yet.",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        height: 40,
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.map_outlined),
-                          label: Text(_mapLatLng != null
-                              ? "Edit Location"
-                              : "Pick Location"),
-                          onPressed: _openLocationPicker,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              // End of scrollable content
               const SizedBox(
                   height: 50), // Extra space so we can scroll under nav
             ],
@@ -1613,7 +591,18 @@ class _CreateListingPageState extends State<CreateListingPage> {
             // PREVIEW (Outlined) button
             OutlinedButton(
               onPressed: () {
-                // TODO: Handle "Preview" action
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PreviewPage(
+                      title: _titleController.text.trim(),
+                      description: _descriptionController.text.trim(),
+                      location: _locationDisplayController.text.trim(),
+                      features: _features,
+                      tripPlan: _tripPlan,
+                    ),
+                  ),
+                );
               },
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xFF007AFF), width: 1.5),
@@ -1635,7 +624,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
             // PUBLISH (Filled) button
             ElevatedButton(
               onPressed: () {
-                // TODO: Handle "Publish" action
+                _submitActivity();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF007AFF),
@@ -1656,68 +645,6 @@ class _CreateListingPageState extends State<CreateListingPage> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildWebMap() {
-    final mapboxToken = dotenv.env['MAPBOX_TOKEN'] ?? "fallback-token";
-
-    return FlutterMap(
-      options: MapOptions(
-        center: latlong.LatLng(_mapLatLng!.latitude, _mapLatLng!.longitude),
-        zoom: 14,
-        interactiveFlags: InteractiveFlag.all,
-        onTap: (_, __) async {
-          final url = Uri.parse(
-              "https://www.google.com/maps/search/?api=1&query=${_mapLatLng!.latitude},${_mapLatLng!.longitude}");
-          await launchUrl(url, mode: LaunchMode.externalApplication);
-        },
-      ),
-      children: [
-        TileLayer(
-          urlTemplate:
-              'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=$mapboxToken',
-          tileProvider: CancellableNetworkTileProvider(),
-        ),
-        MarkerLayer(
-          markers: [
-            Marker(
-              point:
-                  latlong.LatLng(_mapLatLng!.latitude, _mapLatLng!.longitude),
-              width: 40,
-              height: 40,
-              child:
-                  const Icon(Icons.location_pin, color: Colors.red, size: 32),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNativeMap() {
-    return GestureDetector(
-      onTap: () async {
-        final url = Uri.parse(
-            "https://www.google.com/maps/search/?api=1&query=${_mapLatLng!.latitude},${_mapLatLng!.longitude}");
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      },
-      child: gmap.GoogleMap(
-        key: ValueKey('${_mapLatLng?.latitude}-${_mapLatLng?.longitude}'),
-        initialCameraPosition: gmap.CameraPosition(
-          target: _mapLatLng!,
-          zoom: 14,
-        ),
-        markers: {
-          gmap.Marker(
-            markerId: const gmap.MarkerId('location'),
-            position: _mapLatLng!,
-            infoWindow: const gmap.InfoWindow(title: "Selected Location"),
-          ),
-        },
-        zoomControlsEnabled: false,
-        myLocationButtonEnabled: false,
-      ),
-    );
+    ));
   }
 }

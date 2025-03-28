@@ -4,8 +4,38 @@ import 'package:hive/hive.dart'; // ✅ Use Hive instead of StorageService
 import 'package:adventura/config.dart'; // ✅ Import the global config file
 
 class ActivityService {
-  // static const String baseUrl = 'http://localhost:3000';
-  // static const String recommendationsUrl = 'http://localhost:5001/recommend';
+  /// ✅ Create Activity
+  static Future<bool> createActivity(Map<String, dynamic> activityData) async {
+    final url = Uri.parse('$baseUrl/activities/create');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(activityData),
+    );
+
+    if (response.statusCode == 201) {
+      return true;
+    } else {
+      print('❌ Failed to create activity: ${response.body}');
+      return false;
+    }
+  }
+
+  /// ✅ Fetch Categories
+  static Future<List<Map<String, dynamic>>> fetchCategories() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/categories'));
+
+      if (response.statusCode == 200) {
+        return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+      }
+    } catch (e) {
+      print("❌ Error fetching categories: $e");
+    }
+
+    return [];
+  }
 
   /// ✅ Fetch Activities with Images
   static Future<List<Map<String, dynamic>>> fetchActivities() async {
