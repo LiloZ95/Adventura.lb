@@ -16,6 +16,7 @@ import 'package:adventura/Reels/ReelsPlayer.dart';
 import 'package:adventura/Provider%20Only/ticketScanner.dart';
 import 'package:adventura/CreateListing/CreateList.dart';
 import '../widgets/bouncing_dots_loader.dart';
+import 'package:adventura/Chatbot/chatBot.dart';
 
 class MainScreen extends StatefulWidget {
   @override
@@ -226,7 +227,14 @@ class _MainScreenState extends State<MainScreen> {
                           child: Row(
                             children: [
                               IconButton(
-                                onPressed: () {},
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => AdventuraChatPage(),
+                                    ),
+                                  );
+                                },
                                 icon: Image.asset(
                                   'assets/Icons/ai.png',
                                   width: 35,
