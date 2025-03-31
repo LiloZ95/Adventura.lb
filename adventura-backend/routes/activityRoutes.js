@@ -1,39 +1,53 @@
 const express = require("express");
 const router = express.Router();
+
+// Controller Imports
 const {
-  createActivity,
   getAllActivities,
   getActivityById,
+  createActivity,
   getActivitiesDetails,
   setPrimaryImage,
   getActivityImages,
 } = require("../controllers/activityController");
 
-const { getRecommendedActivities } = require("../controllers/recommendationController");
+const {
+  getRecommendedActivities,
+} = require("../controllers/recommendationController");
 
-// 📍 GET all activities with images
+// ==============================
+// 📍 MAIN ACTIVITY ROUTES
+// ==============================
+
+// ✅ GET all activities with images
 router.get("/", getAllActivities);
 
-// 📍 CREATE activity (with lat/lon extracted)
-router.post("/create", createActivity);
-
-// 📍 GET single activity by ID
+// ✅ GET single activity by ID
 router.get("/:id", getActivityById);
 
-// 📍 POST - fetch multiple activities by array of IDs
+// ✅ CREATE a new activity
+router.post("/create", createActivity);
+
+// ✅ POST: Get activity details by list of IDs
 router.post("/details", getActivitiesDetails);
 
-// 📍 PUT - set an image as primary
+// ✅ PUT: Set an image as primary
 router.put("/set-primary", setPrimaryImage);
 
-// 📍 GET - recommended activities
+// ✅ GET: All images for a specific activity
+router.get("/activity-images/:activity_id", getActivityImages);
+
+// ✅ GET: Recommended activities by user ID
 router.get("/recommendations/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const recommendedActivities = await getRecommendedActivities(id);
 
     if (!recommendedActivities || recommendedActivities.length === 0) {
-      return res.status(404).json({ success: false, message: "No recommendations found." });
+      return res.status(404).json({
+        success: false,
+        message: "No recommendations found.",
+      });
     }
 
     res.json({ success: true, recommendations: recommendedActivities });
@@ -42,8 +56,5 @@ router.get("/recommendations/:id", async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error." });
   }
 });
-
-// 📍 GET - images for a specific activity
-router.get("/activity-images/:activity_id", getActivityImages);
 
 module.exports = router;
