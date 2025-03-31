@@ -1,4 +1,6 @@
 import 'package:adventura/Chatbot/activityCard.dart';
+import 'package:adventura/colors.dart';
+import 'package:adventura/widgets/bouncing_dots_loader.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -19,13 +21,17 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
   void _sendMessage() async {
     if (_controller.text.trim().isEmpty) return;
 
+    final userMessage = _controller.text.trim();
+
+    _controller.clear();
+
     setState(() {
-      _messages.add({'text': _controller.text.trim(), 'isUser': true});
+      _messages.add({'text': userMessage, 'isUser': true});
       _isTyping = true;
     });
 
     try {
-      final botResponse = await sendMessageToBot(_controller.text.trim());
+      final botResponse = await sendMessageToBot(userMessage);
       setState(() {
         _messages.add({
           'text': botResponse['chatbot_reply'],
@@ -36,15 +42,20 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
       });
     } catch (e) {
       print("Bot API call failed: $e");
-      setState(() => _isTyping = false);
+      setState(() {
+        _messages.add({
+          'text': "⚠️ Something went wrong. Failed to fetch data.",
+          'isUser': false,
+          'isError': true
+        });
+        _isTyping = false;
+      });
     }
-
-    _controller.clear();
   }
 
   Future<Map<String, dynamic>> sendMessageToBot(String query) async {
     const apiUrl =
-        "https://ec0d-34-142-181-41.ngrok-free.app/chat"; // Replace with your ngrok URL
+        "https://e468-34-125-120-105.ngrok-free.app/chat"; // Replace with your ngrok URL
 
     final response = await http.post(
       Uri.parse(apiUrl),
@@ -52,7 +63,7 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
       body: jsonEncode({
         "query": query,
         "category_id": 1, // Optional, you can dynamically extract later
-        "location": "Tripoli"
+        "location": "Tripoli",
       }),
     );
 
@@ -68,7 +79,22 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        title: const Text("Adventura AI Assistant"),
+        backgroundColor: Colors.blue,
+        // centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context); // Pops the current screen
+          },
+        ),
+        title: const Text(
+          "EVA Adventure Chatbot",
+          style: TextStyle(
+            fontFamily: "poppins",
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -78,16 +104,21 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
               itemCount: _messages.length + (_isTyping ? 1 : 0),
               itemBuilder: (context, index) {
                 if (_isTyping && index == _messages.length) {
-                  // Typing indicator
                   return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Icon(Icons.circle, size: 10, color: Colors.grey),
-                        SizedBox(width: 8),
-                        Text("Adventura is typing...",
-                            style: TextStyle(color: Colors.grey)),
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const BouncingDotsLoader(
+                            size: 7,
+                          ),
+                        ),
                       ],
                     ),
                   );
@@ -95,6 +126,7 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
 
                 final msg = _messages[index];
                 final isUser = msg['isUser'] ?? false;
+                final isError = msg['isError'] ?? false;
 
                 return AnimatedOpacity(
                   opacity: 1.0,
@@ -108,19 +140,27 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
                         margin: const EdgeInsets.symmetric(vertical: 6),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isUser ? Colors.blue[400] : Colors.white,
+                          color: isError
+                              ? Colors.red[400]
+                              : (isUser ? Colors.blue[400] : Colors.white),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
                           msg['text'],
                           style: TextStyle(
-                            color: isUser ? Colors.white : Colors.black,
+                            color: isError
+                                ? Colors.white
+                                : (isUser ? Colors.white : Colors.black),
+                            fontFamily: "poppins",
                           ),
                         ),
                       ),
                       if (!isUser && msg['cards'] != null)
-                        ...msg['cards'].map<Widget>(
-                            (card) => SlideTransitionCard(card: card))
+                        ...msg['cards'].asMap().entries.map<Widget>((entry) {
+                          final i = entry.key;
+                          final card = entry.value;
+                          return SlideTransitionCard(card: card, index: i);
+                        }),
                     ],
                   ),
                 );
@@ -128,16 +168,39 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _controller,
                     decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16, horizontal: 16),
                       hintText: "Type your message...",
+                      hintStyle: const TextStyle(fontFamily: "poppins"),
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: AppColors.grey0, // Blue border color
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: AppColors
+                              .grey3, // Blue border color when not focused
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: Colors.blue, // Blue border color when focused
+                          width: 2,
+                        ),
+                      ),
                       fillColor: Colors.white,
                       filled: true,
                     ),
@@ -147,7 +210,7 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
                 IconButton(
                   onPressed: _sendMessage,
                   icon: const Icon(Icons.send),
-                  color: Colors.blue[400],
+                  color: Colors.blue,
                 )
               ],
             ),
@@ -160,8 +223,13 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
 
 class SlideTransitionCard extends StatefulWidget {
   final Map<String, dynamic> card;
+  final int index; // 🆕 used for staggering animation
 
-  const SlideTransitionCard({Key? key, required this.card}) : super(key: key);
+  const SlideTransitionCard({
+    Key? key,
+    required this.card,
+    required this.index,
+  }) : super(key: key);
 
   @override
   State<SlideTransitionCard> createState() => _SlideTransitionCardState();
@@ -171,17 +239,32 @@ class _SlideTransitionCardState extends State<SlideTransitionCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Offset> _offsetAnimation;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
+
     _controller = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 500));
-    _offsetAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _offsetAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.2),
+      end: Offset.zero,
+    ).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
-    _controller.forward();
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+
+    // Staggered delay based on index
+    Future.delayed(Duration(milliseconds: 100 * widget.index), () {
+      if (mounted) _controller.forward();
+    });
   }
 
   @override
@@ -193,15 +276,19 @@ class _SlideTransitionCardState extends State<SlideTransitionCard>
   @override
   Widget build(BuildContext context) {
     final card = widget.card;
+
     return SlideTransition(
       position: _offsetAnimation,
-      child: ActivityCard(
-        name: card['name'],
-        description: card['description'],
-        price: card['price'],
-        duration: card['duration'],
-        seats: card['seats'],
-        location: card['location'],
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: ActivityCard(
+          name: card['name'],
+          description: card['description'],
+          price: card['price'],
+          duration: card['duration'],
+          seats: card['seats'],
+          location: card['location'],
+        ),
       ),
     );
   }

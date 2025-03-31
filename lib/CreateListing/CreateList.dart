@@ -600,6 +600,10 @@ class _CreateListingPageState extends State<CreateListingPage> {
                       location: _locationDisplayController.text.trim(),
                       features: _features,
                       tripPlan: _tripPlan,
+                      images: _images.isNotEmpty
+                          ? _images.map((img) => img.path).toList()
+                          : ['assets/Pictures/island.jpg'],
+                      mapLatLng: _mapLatLng!,
                     ),
                   ),
                 );
