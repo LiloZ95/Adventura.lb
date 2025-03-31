@@ -87,21 +87,57 @@ const createActivity = async (req, res) => {
 
 // 🟢 Get all activities
 const getAllActivities = async (req, res) => {
-	try {
-		const activities = await Activity.findAll({
-			include: [
-				{ model: ActivityImage, as: "activity_images" },
-				{ model: TripPlan }, // 🧠 include trip plan data here
-			],
-		});
-
-		return res.status(200).json({ success: true, activities });
-	} catch (error) {
-		console.error("❌ Error fetching activities:", error);
-		return res.status(500).json({ success: false, message: "Server error." });
-	}
-};
-
+    try {
+      const { search, category, location, min_price, max_price, rating } = req.query;
+  
+      const where = {};
+  
+      if (category) {
+        where.category_id = parseInt(category);
+      }
+  
+      if (search) {
+        where.name = { [Op.iLike]: `%${search}%` };
+      }
+  
+      if (location) {
+        where.location = { [Op.iLike]: `%${location}%` };
+      }
+  
+      if (min_price) {
+        where.price = { [Op.gte]: parseFloat(min_price) };
+      }
+  
+      if (max_price) {
+        where.price = {
+          ...(where.price || {}),
+          [Op.lte]: parseFloat(max_price),
+        };
+      }
+  
+      if (rating) {
+        where.rating = { [Op.gte]: parseFloat(rating) }; // only if you have a rating column!
+      }
+  
+      const activities = await Activity.findAll({
+        where,
+        include: [
+          {
+            model: ActivityImage,
+            as: "activity_images",
+            attributes: ["image_url"],
+          },
+          { model: TripPlan },
+        ],
+      });
+  
+      return res.status(200).json({ success: true, activities });
+    } catch (error) {
+      console.error("❌ Error fetching activities:", error);
+      return res.status(500).json({ success: false, message: "Server error." });
+    }
+  };
+    
 // 🟢 Get activity by ID
 const getActivityById = async (req, res) => {
 	try {

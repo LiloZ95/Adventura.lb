@@ -109,48 +109,52 @@ class ActivityService {
   }
 
   /// ✅ Fetch Activities with Images
-  static Future<List<Map<String, dynamic>>> fetchActivities() async {
-    Box storageBox = await Hive.openBox('authBox'); // ✅ Open Hive
+  static Future<List<Map<String, dynamic>>> fetchActivities({
+    String? search,
+    String? category,
+    String? location,
+    double? minPrice,
+    double? maxPrice,
+    int? rating,
+  }) async {
+    Box storageBox = await Hive.openBox('authBox');
     String? accessToken = storageBox.get("accessToken");
 
-    print("🔍 Debugging Hive Storage...");
-    print("🔑 Stored Access Token: $accessToken");
+    if (accessToken == null) return [];
 
-    if (accessToken == null) {
-      print("❌ No access token found in Hive.");
-      return [];
-    }
+    final queryParams = <String, String>{};
+    if (search != null && search.isNotEmpty) queryParams['search'] = search;
+    if (category != null) queryParams['category'] = category;
+    if (location != null) queryParams['location'] = location;
+    if (minPrice != null) queryParams['min_price'] = minPrice.toString();
+    if (maxPrice != null) queryParams['max_price'] = maxPrice.toString();
+    if (rating != null) queryParams['rating'] = rating.toString();
 
+    final uri =
+        Uri.parse("$baseUrl/activities").replace(queryParameters: queryParams);
     try {
       final response = await http.get(
-        Uri.parse("$baseUrl/activities"),
+        uri,
         headers: {
           "Authorization": "Bearer $accessToken",
           "Content-Type": "application/json",
         },
       );
 
-      print("🔍 API Response Code: ${response.statusCode}");
-      print("🔍 API Response Body: ${response.body}");
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
 
         if (data is Map && data.containsKey("activities")) {
-          print("✅ Successfully fetched activities.");
           return List<Map<String, dynamic>>.from(data["activities"]);
         }
 
         if (data is List) {
-          print("✅ Successfully fetched activities (List format).");
           return data
               .map<Map<String, dynamic>>((activity) => parseActivity(activity))
               .toList();
         }
-
-        print("❌ Unexpected API response format.");
       } else {
-        print("❌ Failed to fetch activities. Error: ${response.body}");
+        print("❌ Failed to fetch activities: ${response.body}");
       }
     } catch (e) {
       print("❌ Error fetching activities: $e");
@@ -160,7 +164,10 @@ class ActivityService {
   }
 
   /// ✅ Fetch All Events from API
-  static Future<List<Map<String, dynamic>>> fetchEvents() async {
+  static Future<List<Map<String, dynamic>>> fetchEvents({
+    String? search,
+    String? category,
+  }) async {
     Box storageBox = await Hive.openBox('authBox');
     String? accessToken = storageBox.get("accessToken");
 
@@ -169,9 +176,17 @@ class ActivityService {
       return [];
     }
 
+    final queryParams = <String, String>{};
+    if (search != null && search.isNotEmpty) queryParams['search'] = search;
+    if (category != null && category.isNotEmpty)
+      queryParams['category'] = category;
+
+    final uri =
+        Uri.parse("$baseUrl/events").replace(queryParameters: queryParams);
+
     try {
       final response = await http.get(
-        Uri.parse("$baseUrl/events"),
+        uri,
         headers: {
           "Authorization": "Bearer $accessToken",
           "Content-Type": "application/json",
@@ -183,13 +198,14 @@ class ActivityService {
         if (data.containsKey("events")) {
           return List<Map<String, dynamic>>.from(data["events"]);
         }
+      } else {
+        print("❌ Failed to fetch events: ${response.body}");
       }
-
-      throw Exception("Failed to fetch events");
     } catch (e) {
       print("❌ Error fetching events: $e");
-      return [];
     }
+
+    return [];
   }
 
   /// ✅ Fetch Recommended Activities for a User

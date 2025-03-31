@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:adventura/Booking/MyBooking.dart';
 import 'package:adventura/Main%20screen%20components/Cards.dart';
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
+import 'package:adventura/Services/activity_service.dart';
 import 'package:adventura/colors.dart';
 import 'package:flutter/material.dart';
 
@@ -12,13 +13,26 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  List<Map<String, dynamic>> searchResults =
-      []; // or recommendedActivities if available
+  List<Map<String, dynamic>> searchResults = [];
+
   void showEventDetails(BuildContext context, String title, String date,
       String location, String price) {}
 
-  // Track the selected categories
-  List<String> categories = ["Hikes", "Boats", "Sunsets", "Tours", "More"];
+  List<String> categories = [
+    "Sea Trips",
+    "Picnic",
+    "Paragliding",
+    "Sunsets",
+    "Tours",
+    "Car Events",
+    "Festivals",
+    "Hikes",
+    "Snow Skiing",
+    "Boats",
+    "Jetski",
+    "Museums"
+  ];
+
   Set<String> selectedCategories = {};
   Set<int> selectedRatings = {};
   Set<String> selectedSorts = {};
@@ -28,6 +42,15 @@ class _SearchScreenState extends State<SearchScreen> {
   String? selectedLocation;
   TextEditingController budgetMinController = TextEditingController();
   TextEditingController budgetMaxController = TextEditingController();
+
+  // ✅ NEW additions:
+  TextEditingController searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchResults();
+  }
 
   // Show filter dialog
   void showFilterDialog() {
@@ -304,6 +327,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           child: ElevatedButton(
                             onPressed: () {
                               Navigator.pop(context);
+                              _fetchResults(); // Trigger search when filters are applied
                             },
                             child: Text(
                               "Apply",
@@ -329,6 +353,55 @@ class _SearchScreenState extends State<SearchScreen> {
         );
       },
     );
+  }
+
+  Future<void> _fetchResults() async {
+    String searchText = searchController.text.trim();
+
+    final Map<String, int> categoryMap = {
+      "Sea Trips": 1,
+      "Picnic": 2,
+      "Paragliding": 3,
+      "Sunsets": 4,
+      "Tours": 5,
+      "Car Events": 6,
+      "Festivals": 7,
+      "Hikes": 8,
+      "Snow Skiing": 9,
+      "Boats": 10,
+      "Jetski": 11,
+      "Museums": 12,
+    };
+
+    String? selectedLabel =
+        selectedCategories.isNotEmpty ? selectedCategories.first : null;
+    int? categoryId = selectedLabel != null ? categoryMap[selectedLabel] : null;
+
+    final activities = await ActivityService.fetchActivities(
+      search: searchText,
+      category: categoryId?.toString(),
+      location: selectedLocation == "all" ? null : selectedLocation,
+      minPrice: budgetMin > 0 ? budgetMin : null,
+      maxPrice: budgetMax != null && budgetMax! > 0 ? budgetMax : null,
+      rating: selectedRatings.isNotEmpty
+          ? selectedRatings.reduce((a, b) => a > b ? a : b)
+          : null,
+    );
+
+    // final events = await ActivityService.fetchEvents(
+    //   search: searchText,
+    //   category: categoryId?.toString(),
+    //   location: selectedLocation == "all" ? null : selectedLocation,
+    //   minPrice: budgetMin > 0 ? budgetMin : null,
+    //   maxPrice: budgetMax != null && budgetMax! > 0 ? budgetMax : null,
+    //   rating: selectedRatings.isNotEmpty
+    //       ? selectedRatings.reduce((a, b) => a > b ? a : b)
+    //       : null,
+    // );
+
+    setState(() {
+      searchResults = [...activities];
+    });
   }
 
   @override
@@ -383,6 +456,8 @@ class _SearchScreenState extends State<SearchScreen> {
                       // Search Bar
                       Expanded(
                         child: TextField(
+                          controller: searchController,
+                          onChanged: (value) => _fetchResults(),
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: Colors.grey.shade200,
@@ -555,9 +630,12 @@ class _SearchScreenState extends State<SearchScreen> {
             if (isSelected) {
               selectedCategories.remove(label);
             } else {
+              selectedCategories
+                  .clear(); // Make it single-selection for simplicity
               selectedCategories.add(label);
             }
           });
+          _fetchResults(); // Fetch results on chip tap
         },
         child: Chip(
           label: Row(

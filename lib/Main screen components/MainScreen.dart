@@ -12,6 +12,7 @@ import 'package:adventura/Notification/NotificationPage.dart';
 import 'package:adventura/Services/activity_service.dart';
 import 'package:hive/hive.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:adventura/Reels/ReelsPlayer.dart';
 import 'package:adventura/Provider%20Only/ticketScanner.dart';
 import 'package:adventura/CreateListing/CreateList.dart';
 import '../widgets/bouncing_dots_loader.dart';
@@ -595,7 +596,10 @@ class _MainScreenState extends State<MainScreen> {
                           width: 35, height: 35, color: Colors.grey),
                     ),
                     IconButton(
-                      onPressed: () {},
+                      onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => ReelsPlayer())),
                       icon: Image.asset('assets/Icons/paper-plane.png',
                           width: 35, height: 35, color: Colors.grey),
                     ),

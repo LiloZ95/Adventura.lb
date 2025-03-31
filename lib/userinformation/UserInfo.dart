@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:adventura/BecomeProvider/WelcomePage.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/login/login.dart';
 import 'package:adventura/Services/profile_service.dart';
@@ -32,23 +33,22 @@ class _UserInfoState extends State<UserInfo> {
 
   // ✅ Load user data from storage and fetch profile picture
   Future<void> _loadUserData() async {
-  Box box = await Hive.openBox('authBox');
+    Box box = await Hive.openBox('authBox');
 
-  userId = box.get("userId", defaultValue: "");
-  firstName = box.get("firstName", defaultValue: "");
-  lastName = box.get("lastName", defaultValue: "");
+    userId = box.get("userId", defaultValue: "");
+    firstName = box.get("firstName", defaultValue: "");
+    lastName = box.get("lastName", defaultValue: "");
 
-  // Fallback in case it's empty in Hive
-  if (firstName.isEmpty || lastName.isEmpty) {
-    firstName = await StorageService.getFirstName();
-    lastName = await StorageService.getLastName();
+    // Fallback in case it's empty in Hive
+    if (firstName.isEmpty || lastName.isEmpty) {
+      firstName = await StorageService.getFirstName();
+      lastName = await StorageService.getLastName();
+    }
+
+    profilePicture = await ProfileService.fetchProfilePicture(userId);
+
+    setState(() => isLoading = false);
   }
-
-  profilePicture = await ProfileService.fetchProfilePicture(userId);
-
-  setState(() => isLoading = false);
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -166,6 +166,38 @@ class _UserInfoState extends State<UserInfo> {
                   buildBusinessAccountButton(
                     screenWidth: screenWidth,
                     onPressed: () {
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder:
+                              (context, animation, secondaryAnimation) =>
+                                  const ProviderWelcomeScreen(),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                            final curved = CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeOutExpo,
+                            );
+
+                            return FadeTransition(
+                              opacity: curved,
+                              child: ScaleTransition(
+                                scale: Tween<double>(begin: 1.5, end: 1.0)
+                                    .animate(curved),
+                                child: SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: const Offset(0, 0.08),
+                                    end: Offset.zero,
+                                  ).animate(curved),
+                                  child: child,
+                                ),
+                              ),
+                            );
+                          },
+                          transitionDuration: const Duration(milliseconds: 650),
+                        ),
+                      );
+
                       print("Open Business Account Tapped");
                     },
                   ),
