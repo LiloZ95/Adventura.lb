@@ -46,7 +46,6 @@ class _CreateListingPageState extends State<CreateListingPage> {
   static const int _maxImages = 10;
   gmap.LatLng? _mapLatLng =
       gmap.LatLng(33.8547, 35.8623); // Defaults to Lebanon
-  String? _fallbackPlaceName;
   final controller = CreateListingController();
 
   int _currentPage = 0;
@@ -57,7 +56,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
   int _currentTitleLength = 0;
 
   // Category selection
-  String? _selectedCategoryName;
+  Map<String, dynamic>? _selectedCategory;
   List<Map<String, dynamic>> categories = [];
 
   // Listing Type selection
@@ -73,16 +72,6 @@ class _CreateListingPageState extends State<CreateListingPage> {
   int _currentDescLength = 0;
 
   // Day/Month/Year + Age Allowed
-  final List<String> _daysOfWeek = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday',
-  ];
-
   final List<String> _months = [
     'January',
     'February',
@@ -102,8 +91,8 @@ class _CreateListingPageState extends State<CreateListingPage> {
   String? _selectedAge;
 
   final List<int> _years = List.generate(
-    DateTime.now().year - 1900 + 1,
-    (index) => 1900 + index,
+    10, // or however many future years you want to include
+    (index) => DateTime.now().year + index,
   );
 
   String _selectedDay = 'Monday';
@@ -161,29 +150,43 @@ class _CreateListingPageState extends State<CreateListingPage> {
         _fromController.text.trim().isEmpty ||
         _toController.text.trim().isEmpty ||
         _seatsController.text.trim().isEmpty ||
-        _selectedCategoryName == null ||
-        _selectedListingType == null) {
+        _selectedCategory == null ||
+        _selectedListingType == null ||
+        _mapLatLng == null) {
       showAppSnackBar(context, "⚠️ Please fill in all required fields.");
       return;
     }
 
-    final categoryId = categories.firstWhere(
-      (cat) => cat["name"] == _selectedCategoryName,
-      orElse: () => {'id': null},
-    )["id"];
+    final tripPlans = _tripPlanControllers
+        .where((plan) =>
+            plan["time"]!.text.trim().isNotEmpty &&
+            plan["desc"]!.text.trim().isNotEmpty)
+        .map((plan) => {
+              "time": plan["time"]!.text.trim(),
+              "description": plan["desc"]!.text.trim(),
+            })
+        .toList();
 
-    final success = await ActivityService.createActivity({
-      'name': _titleController.text.trim(),
-      'description': _descriptionController.text.trim(),
-      'location': _locationDisplayController.text.trim(),
-      'price': int.tryParse(_priceController.text) ?? 0,
-      'duration': _calculateDurationInHours(),
-      'nb_seats': int.tryParse(_seatsController.text) ?? 10,
-      'category_id': categoryId,
-      'maps_url': _googleMapsUrlController.text.trim(),
-      'features': _features,
-      'trip_plan': _tripPlan,
-    });
+    final features = _featureControllers
+        .map((f) => f.text.trim())
+        .where((text) => text.isNotEmpty)
+        .toList();
+
+    final activityData = {
+      "name": _titleController.text.trim(),
+      "description": _descriptionController.text.trim(),
+      "location": _locationDisplayController.text.trim(),
+      "price": double.tryParse(_priceController.text) ?? 0.0,
+      "duration": _calculateDurationInHours(),
+      "nb_seats": int.tryParse(_seatsController.text.trim()) ?? 0,
+      "category_id": _selectedCategory?["id"],
+      "latitude": _mapLatLng!.latitude,
+      "longitude": _mapLatLng!.longitude,
+      "features": features,
+      "trip_plan": tripPlans,
+    };
+
+    final success = await ActivityService.createActivity(activityData);
 
     showAppSnackBar(
       context,
@@ -279,27 +282,22 @@ class _CreateListingPageState extends State<CreateListingPage> {
         return;
       }
 
+      final imagesToAdd = pickedImages.take(remainingSpace).toList();
+
+      setState(() {
+        _images.addAll(imagesToAdd);
+        _currentPage = _images.length - 1;
+      });
+
+      if (_pageController.hasClients) {
+        _pageController.jumpToPage(_currentPage);
+      }
+
       if (pickedImages.length > remainingSpace) {
-        final truncatedList = pickedImages.sublist(0, remainingSpace);
-        setState(() {
-          _images.addAll(truncatedList);
-          _currentPage = 0;
-        });
-        if (_pageController.hasClients) {
-          _pageController.jumpToPage(0);
-        }
         showAppSnackBar(
           context,
           'Only the first $remainingSpace images were added (max $_maxImages).',
         );
-      } else {
-        setState(() {
-          _images.addAll(pickedImages);
-          _currentPage = 0;
-        });
-        if (_pageController.hasClients) {
-          _pageController.jumpToPage(0);
-        }
       }
     }
   }
@@ -318,10 +316,6 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final TextEditingController _featuresController = TextEditingController();
-
     return (Scaffold(
       key: const Key('main_scaffold'),
       appBar: AppBar(
@@ -380,10 +374,10 @@ class _CreateListingPageState extends State<CreateListingPage> {
               // Category
               // ---------------------------------
               CategorySelector(
-                selectedCategoryName: _selectedCategoryName,
-                onCategorySelected: (newCat) {
+                selectedCategory: _selectedCategory,
+                onCategorySelected: (cat) {
                   setState(() {
-                    _selectedCategoryName = newCat;
+                    _selectedCategory = cat;
                   });
                 },
               ),
@@ -433,7 +427,6 @@ class _CreateListingPageState extends State<CreateListingPage> {
               // Date Section
               // ---------------------------------
               DateSelector(
-                daysOfWeek: _daysOfWeek,
                 months: _months,
                 years: _years,
                 selectedDay: _selectedDay,
@@ -591,6 +584,21 @@ class _CreateListingPageState extends State<CreateListingPage> {
             // PREVIEW (Outlined) button
             OutlinedButton(
               onPressed: () {
+                final builtTripPlan = _tripPlanControllers
+                    .where((map) =>
+                        map['time']!.text.trim().isNotEmpty &&
+                        map['desc']!.text.trim().isNotEmpty)
+                    .map((map) => {
+                          "time": map['time']!.text.trim(),
+                          "description": map['desc']!.text.trim(),
+                        })
+                    .toList();
+
+                final builtFeatures = _featureControllers
+                    .map((c) => c.text.trim())
+                    .where((text) => text.isNotEmpty)
+                    .toList();
+
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -598,12 +606,16 @@ class _CreateListingPageState extends State<CreateListingPage> {
                       title: _titleController.text.trim(),
                       description: _descriptionController.text.trim(),
                       location: _locationDisplayController.text.trim(),
-                      features: _features,
-                      tripPlan: _tripPlan,
+                      features: builtFeatures,
+                      tripPlan: builtTripPlan,
                       images: _images.isNotEmpty
                           ? _images.map((img) => img.path).toList()
                           : ['assets/Pictures/island.jpg'],
                       mapLatLng: _mapLatLng!,
+                      seats: int.tryParse(_seatsController.text.trim()) ?? 0,
+                      ageAllowed: _selectedAge,
+                      price: int.tryParse(_priceController.text.trim()) ?? 0,
+                      priceType: _selectedTicketPriceType,
                     ),
                   ),
                 );

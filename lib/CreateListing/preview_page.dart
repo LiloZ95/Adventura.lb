@@ -1,7 +1,9 @@
+import 'package:adventura/colors.dart';
+import 'package:adventura/widgets/availability_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
 
-class PreviewPage extends StatelessWidget {
+class PreviewPage extends StatefulWidget {
   final String title;
   final String description;
   final String location;
@@ -9,6 +11,10 @@ class PreviewPage extends StatelessWidget {
   final List<Map<String, String>> tripPlan;
   final List<String> images;
   final gmap.LatLng mapLatLng;
+  final int seats;
+  final String? ageAllowed;
+  final int price;
+  final String priceType;
 
   const PreviewPage({
     Key? key,
@@ -19,14 +25,47 @@ class PreviewPage extends StatelessWidget {
     required this.tripPlan,
     required this.images,
     required this.mapLatLng,
+    required this.seats,
+    required this.ageAllowed,
+    required this.price,
+    required this.priceType,
   }) : super(key: key);
 
   @override
+  State<PreviewPage> createState() => _PreviewPageState();
+}
+
+class _PreviewPageState extends State<PreviewPage> {
+  String? confirmedDate;
+  String? confirmedSlot;
+
+  void _openAvailabilityModal() async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return AvailabilityModal(
+          activityId: 0, // Dummy value for preview
+          onDateSlotSelected: (String date, String slot) {
+            setState(() {
+              confirmedDate = date;
+              confirmedSlot = slot;
+            });
+          },
+        );
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final List<String> previewImages =
-        images.isNotEmpty ? images : ["assets/Pictures/island.jpg"];
+    final List<String> previewImages = widget.images.isNotEmpty
+        ? widget.images
+        : ["assets/Pictures/island.jpg"];
     final PageController _pageController = PageController();
-    int _currentImageIndex = 0;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -40,7 +79,7 @@ class PreviewPage extends StatelessWidget {
             _buildImageCarousel(previewImages, _pageController),
             const SizedBox(height: 16),
             Text(
-              title,
+              widget.title,
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -48,38 +87,71 @@ class PreviewPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            _buildAvailabilityPlaceholder(),
+            confirmedDate != null && confirmedSlot != null
+                ? Row(
+                    children: [
+                      const Icon(Icons.calendar_today,
+                          size: 18, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        "$confirmedDate at $confirmedSlot",
+                        style:
+                            const TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                      const SizedBox(width: 6),
+                      TextButton(
+                        onPressed: _openAvailabilityModal,
+                        child: const Text("Change time",
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.blue,
+                                fontWeight: FontWeight.w500)),
+                      ),
+                    ],
+                  )
+                : ElevatedButton(
+                    onPressed: _openAvailabilityModal,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.blue,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text("Check Availability",
+                        style: TextStyle(color: Colors.white)),
+                  ),
             const SizedBox(height: 12),
             Row(
               children: [
                 const Icon(Icons.location_on, size: 18, color: Colors.grey),
                 const SizedBox(width: 4),
                 Text(
-                  location,
+                  widget.location,
                   style: const TextStyle(fontSize: 14, color: Colors.grey),
                 ),
               ],
             ),
             const SizedBox(height: 20),
-            _buildTripPlan(),
+            _buildTripPlan(widget.tripPlan),
             const SizedBox(height: 16),
             _sectionTitle("Description"),
             const SizedBox(height: 4),
-            Text(description,
+            Text(widget.description,
                 style: const TextStyle(fontSize: 14, color: Colors.black87)),
             const SizedBox(height: 12),
             _sectionTitle("Features"),
             const SizedBox(height: 6),
             Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: features.map((f) => Chip(label: Text(f))).toList(),
-            ),
+  spacing: 8,
+  runSpacing: 4,
+  children: [
+    if (widget.ageAllowed != null && widget.ageAllowed!.isNotEmpty)
+      _tag("Age: ${widget.ageAllowed}", gradient: [Colors.purple, Colors.deepPurple]),
+    ...widget.features.map((tag) => _tag(tag)).toList(),
+  ],
+),
+
             const SizedBox(height: 16),
             _sectionTitle("Location"),
-            const SizedBox(height: 4),
-            Text(location,
-                style: const TextStyle(fontSize: 14, color: Colors.black87)),
             const SizedBox(height: 8),
             _realGoogleMap(context),
             const SizedBox(height: 16),
@@ -126,7 +198,25 @@ class PreviewPage extends StatelessWidget {
     );
   }
 
-  Widget _buildTripPlan() {
+  Widget _tag(String text, {List<Color>? gradient}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: gradient != null ? LinearGradient(colors: gradient) : null,
+        color: gradient == null ? Colors.grey.shade300 : null,
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: gradient != null ? Colors.white : Colors.black,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTripPlan(List<Map<String, String>> tripPlan) {
     if (tripPlan.isEmpty) {
       return const Padding(
         padding: EdgeInsets.only(top: 8),
@@ -152,18 +242,12 @@ class PreviewPage extends StatelessWidget {
           height: 80,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: tripPlan.isEmpty ? 0 : tripPlan.length * 2 - 1,
+            itemCount: tripPlan.length * 2 - 1,
             separatorBuilder: (context, index) => const SizedBox(width: 4),
             itemBuilder: (context, index) {
-              if (index.isOdd) {
-                return _arrowConnector();
-              } else {
-                final step = tripPlan[index ~/ 2];
-                return _tripCard(
-                  step["time"] ?? '',
-                  step["description"] ?? '',
-                );
-              }
+              if (index.isOdd) return _arrowConnector();
+              final step = tripPlan[index ~/ 2];
+              return _tripCard(step["time"]!, step["description"]!);
             },
           ),
         ),
@@ -212,13 +296,13 @@ class PreviewPage extends StatelessWidget {
       height: 180,
       child: gmap.GoogleMap(
         initialCameraPosition: gmap.CameraPosition(
-          target: mapLatLng,
+          target: widget.mapLatLng,
           zoom: 14,
         ),
         markers: {
           gmap.Marker(
             markerId: const gmap.MarkerId('preview'),
-            position: mapLatLng,
+            position: widget.mapLatLng,
           ),
         },
         zoomControlsEnabled: false,
@@ -288,21 +372,22 @@ class PreviewPage extends StatelessWidget {
               Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text("Price", style: TextStyle(color: Colors.black54)),
-                  SizedBox(height: 2),
+                children: [
+                  const Text("Price", style: TextStyle(color: Colors.black54)),
+                  const SizedBox(height: 2),
                   Row(
                     children: [
                       Text(
-                        "\$100",
-                        style: TextStyle(
+                        "\$${widget.price}",
+                        style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Colors.blue),
                       ),
-                      SizedBox(width: 4),
-                      Text("/Person",
-                          style: TextStyle(color: Colors.black54, fontSize: 14))
+                      const SizedBox(width: 4),
+                      Text("/${widget.priceType}",
+                          style: const TextStyle(
+                              color: Colors.black54, fontSize: 14))
                     ],
                   ),
                 ],

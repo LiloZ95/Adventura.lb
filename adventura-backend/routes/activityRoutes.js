@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const upload = require("../middleware/upload");
 const {
   createActivity,
   getAllActivities,
@@ -7,6 +8,7 @@ const {
   getActivitiesDetails,
   setPrimaryImage,
   getActivityImages,
+  uploadImages,
 } = require("../controllers/activityController");
 
 const { getRecommendedActivities } = require("../controllers/recommendationController");
@@ -45,5 +47,7 @@ router.get("/recommendations/:id", async (req, res) => {
 
 // 📍 GET - images for a specific activity
 router.get("/activity-images/:activity_id", getActivityImages);
+
+router.post('/activity-images/upload/:activityId', upload.array('images'), uploadImages);
 
 module.exports = router;

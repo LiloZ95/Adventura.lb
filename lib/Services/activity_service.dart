@@ -1,28 +1,100 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart'; // ✅ Use Hive instead of StorageService
-import 'package:adventura/config.dart'; // ✅ Import the global config file
+import 'package:adventura/config.dart';
+import 'package:image_picker/image_picker.dart'; // ✅ Import the global config file
 
 class ActivityService {
   /// ✅ Create Activity
-  static Future<bool> createActivity(Map<String, dynamic> activityData) async {
-    final url = Uri.parse('$baseUrl/activities/create');
+  static Future<bool> createActivity(Map<String, dynamic> activityData,
+      {List<XFile>? images}) async {
+    try {
+      // 1. Create activity
+      final activityResponse = await http.post(
+        Uri.parse('$baseUrl/activities/create'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(activityData),
+      );
 
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(activityData),
-    );
+      if (activityResponse.statusCode != 201) {
+        print("Activity creation failed: ${activityResponse.body}");
+        return false;
+      }
 
-    if (response.statusCode == 201) {
+      final activityId = jsonDecode(activityResponse.body)['activity_id'];
+      if (activityId == null) return false;
+
+      // 2. Upload images if available
+      if (images != null && images.isNotEmpty) {
+        var request = http.MultipartRequest(
+          'POST',
+          Uri.parse('$baseUrl/activities/$activityId/images'),
+        );
+
+        for (var image in images) {
+          request.files.add(await http.MultipartFile.fromPath(
+            'images',
+            image.path,
+            filename: image.name,
+          ));
+        }
+
+        var response = await request.send();
+        if (response.statusCode != 200) {
+          print("Image upload failed");
+          return false;
+        }
+      }
+
       return true;
-    } else {
-      print('❌ Failed to create activity: ${response.body}');
+    } catch (e) {
+      print("Error creating activity: $e");
       return false;
     }
   }
 
-  /// ✅ Fetch Categories
+
+  static Future<bool> uploadActivityImages({
+    required int activityId,
+    required List<File> imageFiles,
+  }) async {
+    Box storageBox = await Hive.openBox('authBox');
+    String? accessToken = storageBox.get("accessToken");
+
+    if (accessToken == null) {
+      print("❌ No access token found.");
+      return false;
+    }
+
+    var uri = Uri.parse('$baseUrl/activity-images/upload/$activityId');
+    var request = http.MultipartRequest('POST', uri);
+
+    request.headers['Authorization'] = 'Bearer $accessToken';
+
+    try {
+      for (var file in imageFiles) {
+        var multipartFile =
+            await http.MultipartFile.fromPath('images', file.path);
+        request.files.add(multipartFile);
+      }
+
+      var response = await request.send();
+
+      if (response.statusCode == 200) {
+        print("✅ Images uploaded successfully.");
+        return true;
+      } else {
+        print("❌ Failed to upload images. Status: ${response.statusCode}");
+        return false;
+      }
+    } catch (e) {
+      print("❌ Exception during image upload: $e");
+      return false;
+    }
+  }
+
+  /// ✅ Fetch Categories (used in CategorySelector)
   static Future<List<Map<String, dynamic>>> fetchCategories() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/categories'));
@@ -33,7 +105,6 @@ class ActivityService {
     } catch (e) {
       print("❌ Error fetching categories: $e");
     }
-
     return [];
   }
 
@@ -193,19 +264,6 @@ class ActivityService {
 
           // 🔍 Debugging Print (Right After Receiving API Response)
           print("🔍 activitie Response: ${activities}");
-
-          // 🔍 Debugging image URLs for each activity
-          // for (var activity in activities) {
-          //   print("🔍 Checking activity: ${activity["name"]}");
-
-          //   if (activity.containsKey("activity_images")) {
-          //     print(
-          //         "🖼 Found images for '${activity["name"]}': ${activity["activity_images"]}");
-          //   } else {
-          //     print(
-          //         "❌ No 'activity_images' field found for '${activity["name"]}'");
-          //   }
-          // }
 
           // 🔍 Ensure the correct order of activities and proper image processing
           List<Map<String, dynamic>> orderedActivities = activityIds

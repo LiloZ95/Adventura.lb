@@ -12,7 +12,13 @@ class AgeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> ageOptions = ['All Ages', '12+', '18+', '21+'];
+    final List<String> ageOptions = [
+      "All Ages",
+      "5+",
+      "10+",
+      "18+",
+      "21+",
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -22,9 +28,8 @@ class AgeSelector extends StatelessWidget {
             Text(
               'Age Allowed',
               style: TextStyle(
-                fontFamily: "poppins",
+                fontFamily: 'poppins',
                 fontSize: 20,
-                color: Colors.black,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -32,38 +37,24 @@ class AgeSelector extends StatelessWidget {
             Expanded(child: Divider(color: Colors.grey)),
           ],
         ),
-        const SizedBox(height: 8),
-        Row(
-          children: ageOptions.map((label) {
-            final bool isSelected = selectedAge == label;
-
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: InkWell(
-                onTap: () => onChanged(isSelected ? null : label),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: isSelected
-                          ? const Color.fromARGB(255, 63, 161, 241)
-                          : const Color(0xFFCFCFCF),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    color: isSelected ? Colors.blue : Colors.white,
-                  ),
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      fontFamily: 'poppins',
-                      fontSize: 14,
-                      color: isSelected ? Colors.white : Colors.blue,
-                    ),
-                  ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: ageOptions.map((age) {
+            final bool isSelected = selectedAge == age;
+            return ChoiceChip(
+              label: Text(
+                age,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : Colors.black,
+                  fontFamily: 'poppins',
                 ),
               ),
+              selected: isSelected,
+              selectedColor: Colors.blue,
+              backgroundColor: const Color.fromARGB(255, 245, 245, 245),
+              onSelected: (_) => onChanged(age),
             );
           }).toList(),
         ),

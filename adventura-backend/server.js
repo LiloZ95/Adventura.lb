@@ -51,6 +51,7 @@ app.use("/recommendations", recommendationRoutes);
 
 // ✅ Serve static files from 'public/images'
 app.use("/images", express.static(path.join(__dirname, "public/images")));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use("/activities", activityRoutes);
 
 app.use("/events", eventRoutes);  // ✅ Add event routes

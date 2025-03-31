@@ -4,12 +4,12 @@ import 'package:http/http.dart' as http;
 import 'package:adventura/config.dart'; // adjust if needed
 
 class CategorySelector extends StatefulWidget {
-  final String? selectedCategoryName;
-  final Function(String) onCategorySelected;
+  final Map<String, dynamic>? selectedCategory;
+  final Function(Map<String, dynamic>?) onCategorySelected;
 
   const CategorySelector({
     Key? key,
-    required this.selectedCategoryName,
+    required this.selectedCategory,
     required this.onCategorySelected,
   }) : super(key: key);
 
@@ -56,7 +56,7 @@ class _CategorySelectorState extends State<CategorySelector> {
   Future<void> _showBottomSheet(BuildContext context) async {
     if (isLoading) return;
 
-    final chosenName = await showModalBottomSheet<String>(
+    final chosenCategory = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
       builder: (BuildContext context) {
@@ -80,10 +80,10 @@ class _CategorySelectorState extends State<CategorySelector> {
                     itemBuilder: (context, index) {
                       final cat = categories[index];
                       final isSelected =
-                          cat["name"] == widget.selectedCategoryName;
+                          cat["id"] == widget.selectedCategory?["id"];
 
                       return InkWell(
-                        onTap: () => Navigator.pop(context, cat["name"]),
+                        onTap: () => Navigator.pop(context, cat),
                         child: Container(
                           margin: const EdgeInsets.symmetric(
                               vertical: 6, horizontal: 16),
@@ -121,8 +121,9 @@ class _CategorySelectorState extends State<CategorySelector> {
       },
     );
 
-    if (chosenName != null) {
-      widget.onCategorySelected(chosenName);
+// ✅ Correctly handle selected category
+    if (chosenCategory != null) {
+      widget.onCategorySelected(chosenCategory);
     }
   }
 
@@ -169,11 +170,11 @@ class _CategorySelectorState extends State<CategorySelector> {
                             fontFamily: 'poppins', color: Colors.grey),
                       )
                     : Text(
-                        widget.selectedCategoryName ?? 'Select Category',
+                        widget.selectedCategory?['name'] ?? 'Select Category',
                         style: TextStyle(
                           fontFamily: "poppins",
                           fontSize: 15,
-                          color: widget.selectedCategoryName == null
+                          color: widget.selectedCategory == null
                               ? const Color.fromRGBO(190, 188, 188, 0.87)
                               : Colors.black,
                         ),

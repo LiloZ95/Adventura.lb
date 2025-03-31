@@ -1,13 +1,14 @@
+// ✅ FIXED: Avoid crash when no valid days — fallback to safe default
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
-class DateSelector extends StatelessWidget {
-  final List<String> daysOfWeek;
+class DateSelector extends StatefulWidget {
   final List<String> months;
   final List<int> years;
 
-  final String selectedDay;
   final String selectedMonth;
   final int selectedYear;
+  final String selectedDay;
 
   final Function(String) onDayChanged;
   final Function(String) onMonthChanged;
@@ -18,7 +19,6 @@ class DateSelector extends StatelessWidget {
 
   const DateSelector({
     Key? key,
-    required this.daysOfWeek,
     required this.months,
     required this.years,
     required this.selectedDay,
@@ -32,7 +32,63 @@ class DateSelector extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<DateSelector> createState() => _DateSelectorState();
+}
+
+class _DateSelectorState extends State<DateSelector> {
+  late List<String> validDays;
+  late String validSelectedDay;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initializeValidDate());
+  }
+
+  void _initializeValidDate() {
+    int monthIndex = widget.months.indexOf(widget.selectedMonth);
+    int year = widget.selectedYear;
+
+    List<String> days = getValidDays(widget.months[monthIndex], year);
+
+    while (days.isEmpty) {
+      monthIndex++;
+      if (monthIndex >= 12) {
+        monthIndex = 0;
+        year++;
+      }
+      if (!widget.years.contains(year)) break;
+      widget.onMonthChanged(widget.months[monthIndex]);
+      widget.onYearChanged(year);
+      days = getValidDays(widget.months[monthIndex], year);
+    }
+
+    validDays = days;
+    validSelectedDay = validDays.contains(widget.selectedDay)
+        ? widget.selectedDay
+        : (validDays.isNotEmpty ? validDays.first : '1');
+
+    widget.onDayChanged(validSelectedDay);
+  }
+
+  List<String> getValidDays(String month, int year) {
+    final monthIndex = widget.months.indexOf(month) + 1;
+    final lastDay = DateTime(year, monthIndex + 1, 0).day;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return List.generate(lastDay, (i) => (i + 1).toString())
+        .where((day) {
+          final selectedDate = DateTime(year, monthIndex, int.parse(day));
+          return selectedDate.isAfter(today);
+        })
+        .toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final days = getValidDays(widget.selectedMonth, widget.selectedYear);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -54,34 +110,31 @@ class DateSelector extends StatelessWidget {
         const SizedBox(height: 8),
         Row(
           children: [
-            // Day dropdown
             _buildDropdown<String>(
-              value: selectedDay,
-              items: daysOfWeek,
-              onChanged: onDayChanged,
+              value: days.contains(widget.selectedDay) ? widget.selectedDay : (days.isNotEmpty ? days.first : '1'),
+              items: days,
+              onChanged: widget.onDayChanged,
             ),
             const SizedBox(width: 8),
-            // Month dropdown
             _buildDropdown<String>(
-              value: selectedMonth,
-              items: months,
-              onChanged: onMonthChanged,
+              value: widget.selectedMonth,
+              items: widget.months,
+              onChanged: widget.onMonthChanged,
             ),
             const SizedBox(width: 8),
-            // Year dropdown
             _buildDropdown<int>(
-              value: selectedYear,
-              items: years,
-              onChanged: onYearChanged,
+              value: widget.selectedYear,
+              items: widget.years,
+              onChanged: widget.onYearChanged,
             ),
           ],
         ),
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(child: _buildTimeField(fromController, 'from')),
+            Expanded(child: _buildTimeField(widget.fromController, 'from')),
             const SizedBox(width: 8),
-            Expanded(child: _buildTimeField(toController, 'To')),
+            Expanded(child: _buildTimeField(widget.toController, 'To')),
           ],
         ),
       ],
@@ -103,12 +156,12 @@ class DateSelector extends StatelessWidget {
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<T>(
-            value: value,
+            value: items.isNotEmpty ? value : null,
             isExpanded: true,
             icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
             style: const TextStyle(
               fontFamily: 'poppins',
-              fontSize: 14,
+              fontSize: 15,
               color: Colors.black,
             ),
             onChanged: (T? newValue) {
@@ -140,14 +193,14 @@ class DateSelector extends StatelessWidget {
           hintText: hint,
           hintStyle: const TextStyle(
             fontFamily: 'poppins',
-            fontSize: 14,
+            fontSize: 15,
             color: Colors.grey,
           ),
           border: InputBorder.none,
         ),
         style: const TextStyle(
           fontFamily: 'poppins',
-          fontSize: 14,
+          fontSize: 15,
           color: Colors.black,
         ),
       ),

@@ -71,9 +71,7 @@ class LocationSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             child: SizedBox(
               height: 180,
-              child: kIsWeb
-                  ? _buildWebMap(latLng!)
-                  : _buildNativeMap(latLng!),
+              child: kIsWeb ? _buildWebMap(latLng!) : _buildNativeMap(latLng!),
             ),
           )
         else
@@ -90,15 +88,18 @@ class LocationSection extends StatelessWidget {
             ),
           ),
         const SizedBox(height: 8),
-        SizedBox(
-          height: 40,
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.map_outlined),
-            label: Text(latLng != null ? "Edit Location" : "Pick Location"),
-            onPressed: onPickLocation,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
+        Align(
+          alignment: Alignment.center,
+          child: SizedBox(
+            height: 40,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.map_outlined),
+              label: Text(latLng != null ? "Edit Location" : "Pick Location"),
+              onPressed: onPickLocation,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
             ),
           ),
         ),

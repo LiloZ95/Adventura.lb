@@ -70,9 +70,8 @@ class FeaturesSection extends StatelessWidget {
                                 readOnly: !editable,
                                 decoration: InputDecoration(
                                   border: InputBorder.none,
-                                  hintText: editable
-                                      ? 'Ex: Entertainment'
-                                      : null,
+                                  hintText:
+                                      editable ? 'Ex: Entertainment' : null,
                                   hintStyle: const TextStyle(
                                     fontFamily: 'poppins',
                                     fontSize: 14,
@@ -107,22 +106,26 @@ class FeaturesSection extends StatelessWidget {
                     ),
 
                     // ➕ Button on the last one
+                    // if (index == controllers.length - 1)
+                    const SizedBox(width: 8),
                     if (index == controllers.length - 1)
-                      const SizedBox(width: 8),
-                    if (index == controllers.length - 1)
-                      Container(
-                        width: 30,
-                        height: 30,
-                        decoration: const BoxDecoration(
-                          color: Colors.black,
-                          shape: BoxShape.circle,
+                      Padding(
+                        padding:
+                            const EdgeInsets.only(top: 3), // adjust visually
+                        child: GestureDetector(
+                          onTap: () => onAdd(index),
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: const BoxDecoration(
+                              color: Colors.black,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.add,
+                                color: Colors.white, size: 16),
+                          ),
                         ),
-                        child: IconButton(
-                          icon: const Icon(Icons.add,
-                              color: Colors.white, size: 16),
-                          onPressed: () => onAdd(index),
-                        ),
-                      ),
+                      )
                   ],
                 ),
               );
