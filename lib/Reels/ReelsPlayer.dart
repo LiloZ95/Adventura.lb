@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 
 class ReelsPlayer extends StatefulWidget {
   @override
@@ -14,6 +17,15 @@ class _ReelsPlayerState extends State<ReelsPlayer> {
     'assets/videos/Snapchat-125401604.mp4',
     'assets/videos/Snapchat-125401604.mp4',
   ];
+  void shareToWhatsApp(String message) async {
+  final url = Uri.parse("https://wa.me/?text=${Uri.encodeComponent(message)}");
+
+  if (await canLaunchUrl(url)) {
+    await launchUrl(url, mode: LaunchMode.externalApplication);
+  } else {
+    throw 'Could not launch WhatsApp';
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +55,7 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
   late VideoPlayerController _controller;
   bool isVisible = false;
   bool isLiked = false;
+  List<String> comments = []; 
 
   @override
   void initState() {
@@ -71,6 +84,62 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
       _controller.pause();
     }
   }
+  void _openCommentSheet() {
+    String tempComment = '';
+ showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom, top: 20, left: 20, right: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Write a comment",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+              SizedBox(height: 10),
+              TextField(
+                onChanged: (value) {
+                  tempComment = value;
+                },
+                style: TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: "Type your comment...",
+                  hintStyle: TextStyle(color: Colors.white70),
+                  filled: true,
+                  fillColor: Colors.grey[800],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () {
+                  if (tempComment.trim().isNotEmpty) {
+                    setState(() {
+                      comments.add(tempComment.trim());
+                    });
+                  }
+                  Navigator.pop(context);
+                },
+                child: Text("Post"),
+              ),
+              SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,22 +147,23 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
       key: Key(widget.videoUrl),
       onVisibilityChanged: _handleVisibilityChanged,
       child: Stack(
-        fit: StackFit.expand,
-        children: [
-          _controller.value.isInitialized
-              ? FittedBox(
-                  fit: BoxFit.cover,
-                  child: SizedBox(
-                    width: _controller.value.size.width,
-                    height: _controller.value.size.height,
-                    child: VideoPlayer(_controller),
-                  ),
-                )
-              : Center(child: CircularProgressIndicator()),
+  fit: StackFit.expand,
+  children: [
+    // Video playback
+    _controller.value.isInitialized
+        ? FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: _controller.value.size.width,
+              height: _controller.value.size.height,
+              child: VideoPlayer(_controller),
+            ),
+          )
+        : Center(child: CircularProgressIndicator()),
 
           // Right-side vertical actions
           Positioned(
-            bottom: 20,
+            bottom: 120,
             right: 16,
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -111,11 +181,19 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
   ),
 ),
                 SizedBox(height: 28),
-                Icon(Icons.comment, color: Colors.white, size: 32),
+               IconButton(
+                  onPressed: _openCommentSheet,
+                  icon: Icon(Icons.comment, color: Colors.white, size: 32),
+                ),
                 SizedBox(height: 28),
-                Icon(Icons.send, color: Colors.white, size: 32),
-                SizedBox(height: 100),
-              ],
+            IconButton(
+            onPressed: () {
+              Share.share(
+                'Check out this event! 🌍\nhttps://adventura.lb/events/123',
+                subject: 'Adventure Invitation',
+              );
+            },
+            icon: Icon(Icons.send, color: Colors.white, size: 30))],
             ),
           ),
 
@@ -123,7 +201,7 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
          Positioned(
   bottom: 20,
   left: 16,
-  right: 16,
+  right: 20,
   child: Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
