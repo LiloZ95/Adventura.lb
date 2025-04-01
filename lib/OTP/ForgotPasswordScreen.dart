@@ -2,7 +2,6 @@ import 'package:adventura/Services/otp_service.dart';
 import 'package:adventura/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/OTP/OTPVerification.dart';
-import '../login/login.dart'; // ✅ Import LoginPage
 import 'dart:ui' as ui; // For ImageFilter
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -13,11 +12,9 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController _emailController = TextEditingController();
   bool _isLoading = false;
+  // ignore: unused_field
   String _errorMessage = "";
 
-  void verifyOtp() {
-    // TODO: Implement OTP verification logic
-  }
 
   void _sendOtp() async {
     setState(() => _isLoading = true);

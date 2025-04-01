@@ -1,6 +1,5 @@
 // ✅ FIXED: Avoid crash when no valid days — fallback to safe default
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 class DateSelector extends StatefulWidget {
   final List<String> months;
@@ -82,104 +81,6 @@ class _DateSelectorState extends State<DateSelector> {
       final selectedDate = DateTime(year, monthIndex, int.parse(day));
       return selectedDate.isAfter(today);
     }).toList();
-  }
-
-  Widget _buildStyledTimeBox({
-    required String label,
-    required TextEditingController controller,
-    required BuildContext context,
-  }) {
-    return StatefulBuilder(
-      builder: (context, setState) {
-        String? lastSelectedTime;
-        bool isFocused = _focusedField == label;
-
-        return GestureDetector(
-          onTap: () async {
-            setState(() => _focusedField = label); // focus this box
-            final TimeOfDay? picked = await showTimePicker(
-              context: context,
-              initialTime: TimeOfDay.now(),
-              builder: (context, child) {
-                return Theme(
-                  data: Theme.of(context).copyWith(
-                    colorScheme: const ColorScheme.light(
-                      primary: Color(0xFF007AFF), // Main blue
-                      onSurface: Colors.black,
-                    ),
-                    timePickerTheme: TimePickerThemeData(
-                      backgroundColor: Colors.white,
-                      hourMinuteShape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                      ),
-                      hourMinuteColor: WidgetStateColor.resolveWith(
-                          (states) => states.contains(WidgetState.selected)
-                              ? const Color(0xFF007AFF)
-                              : Colors.transparent),
-                      dayPeriodColor: WidgetStateColor.resolveWith((states) =>
-                          states.contains(WidgetState.selected)
-                              ? const Color(0xFF007AFF)
-                              : Colors.transparent),
-                      dayPeriodTextColor: WidgetStateColor.resolveWith(
-                          (states) => states.contains(WidgetState.selected)
-                              ? Colors.white
-                              : Colors.black),
-                      entryModeIconColor: const Color(0xFF007AFF),
-                    ),
-                  ),
-                  child: child!,
-                );
-              },
-            );
-
-            if (picked != null) {
-              final formatted = picked.format(context);
-              setState(() {
-                lastSelectedTime = formatted;
-                controller.text = formatted;
-              });
-            }
-          },
-          child: Container(
-            height: 50,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: isFocused
-                    ? const Color(0xFF007AFF)
-                    : const Color(0xFFCFCFCF),
-                width: 1.3,
-              ),
-              borderRadius: BorderRadius.circular(12),
-              color: Colors.white,
-            ),
-            alignment: Alignment.centerLeft,
-            child: Row(
-              children: [
-                const Icon(Icons.access_time,
-                    size: 18, color: Color(0xFF007AFF)),
-                const SizedBox(width: 8),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 250),
-                  transitionBuilder: (child, animation) =>
-                      FadeTransition(opacity: animation, child: child),
-                  child: Text(
-                    controller.text.isEmpty ? label : controller.text,
-                    key: ValueKey(controller.text),
-                    style: TextStyle(
-                      color:
-                          controller.text.isEmpty ? Colors.grey : Colors.black,
-                      fontFamily: 'poppins',
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 
   @override
@@ -312,68 +213,102 @@ class _DateSelectorState extends State<DateSelector> {
     );
   }
 
-  Widget _buildTimeField(TextEditingController controller, String label) {
-    return GestureDetector(
-      onTap: () async {
-        final TimeOfDay? picked = await showTimePicker(
-          context: context,
-          initialTime: TimeOfDay.now(),
-          builder: (context, child) {
-            return Theme(
-              data: Theme.of(context).copyWith(
-                timePickerTheme: TimePickerThemeData(
-                  backgroundColor: Colors.white,
-                  hourMinuteShape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                  ),
-                  dayPeriodTextStyle: const TextStyle(
-                    fontFamily: 'poppins',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                  hourMinuteTextStyle: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  helpTextStyle: const TextStyle(
-                    fontSize: 14,
-                    fontFamily: 'poppins',
-                  ),
-                  dialHandColor: Colors.blueAccent,
-                  entryModeIconColor: Colors.blue,
-                ),
-                colorScheme: const ColorScheme.light(
-                  primary: Colors.blueAccent,
-                  onSurface: Colors.black,
-                ),
-              ),
-              child: child!,
-            );
-          },
-        );
+  Widget _buildStyledTimeBox({
+    required String label,
+    required TextEditingController controller,
+    required BuildContext context,
+  }) {
+    return StatefulBuilder(
+      builder: (context, setState) {
+        // ignore: unused_local_variable
+        String? lastSelectedTime;
+        bool isFocused = _focusedField == label;
 
-        if (picked != null) {
-          final formattedTime = picked.format(context); // e.g., 08:00 AM
-          controller.text = formattedTime;
-        }
-      },
-      child: Container(
-        height: 50,
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFFCFCFCF), width: 1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          controller.text.isEmpty ? label : controller.text,
-          style: TextStyle(
-            fontFamily: 'poppins',
-            fontSize: 15,
-            color: controller.text.isEmpty ? Colors.grey : Colors.black,
+        return GestureDetector(
+          onTap: () async {
+            setState(() => _focusedField = label); // focus this box
+            final TimeOfDay? picked = await showTimePicker(
+              context: context,
+              initialTime: TimeOfDay.now(),
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: const ColorScheme.light(
+                      primary: Color(0xFF007AFF), // Main blue
+                      onSurface: Colors.black,
+                    ),
+                    timePickerTheme: TimePickerThemeData(
+                      backgroundColor: Colors.white,
+                      hourMinuteShape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                      ),
+                      hourMinuteColor: WidgetStateColor.resolveWith((states) =>
+                          states.contains(WidgetState.selected)
+                              ? const Color(0xFF007AFF)
+                              : Colors.transparent),
+                      dayPeriodColor: WidgetStateColor.resolveWith((states) =>
+                          states.contains(WidgetState.selected)
+                              ? const Color(0xFF007AFF)
+                              : Colors.transparent),
+                      dayPeriodTextColor: WidgetStateColor.resolveWith(
+                          (states) => states.contains(WidgetState.selected)
+                              ? Colors.white
+                              : Colors.black),
+                      entryModeIconColor: const Color(0xFF007AFF),
+                    ),
+                  ),
+                  child: child!,
+                );
+              },
+            );
+
+            if (picked != null) {
+              final formatted = picked.format(context);
+              setState(() {
+                lastSelectedTime = formatted;
+                controller.text = formatted;
+              });
+            }
+          },
+          child: Container(
+            height: 50,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: isFocused
+                    ? const Color(0xFF007AFF)
+                    : const Color(0xFFCFCFCF),
+                width: 1.3,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              color: Colors.white,
+            ),
+            alignment: Alignment.centerLeft,
+            child: Row(
+              children: [
+                const Icon(Icons.access_time,
+                    size: 18, color: Color(0xFF007AFF)),
+                const SizedBox(width: 8),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  transitionBuilder: (child, animation) =>
+                      FadeTransition(opacity: animation, child: child),
+                  child: Text(
+                    controller.text.isEmpty ? label : controller.text,
+                    key: ValueKey(controller.text),
+                    style: TextStyle(
+                      color:
+                          controller.text.isEmpty ? Colors.grey : Colors.black,
+                      fontFamily: 'poppins',
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

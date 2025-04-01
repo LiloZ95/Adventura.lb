@@ -151,7 +151,7 @@ class ActivityCard extends StatelessWidget {
   }
 
   // Helper widget for rounded tags
-  Widget _infoTag(IconData? icon, String text, {Color? color}) {
+  Widget _infoTag(IconData? icon, String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(

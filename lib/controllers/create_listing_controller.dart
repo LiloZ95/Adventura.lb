@@ -82,7 +82,7 @@ class CreateListingController {
       if (resolvedUrl == null) return;
     }
 
-    final coords = extractLatLng(resolvedUrl!);
+    final coords = extractLatLng(resolvedUrl);
     if (coords != null) {
       selectedLatLng = gmap.LatLng(coords[0], coords[1]);
     } else {

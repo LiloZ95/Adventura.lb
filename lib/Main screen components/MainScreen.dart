@@ -11,7 +11,6 @@ import 'package:adventura/userinformation/UserInfo.dart';
 import 'package:adventura/Notification/NotificationPage.dart';
 import 'package:adventura/Services/activity_service.dart';
 import 'package:hive/hive.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:adventura/Reels/ReelsPlayer.dart';
 import 'package:adventura/Provider%20Only/ticketScanner.dart';
 import 'package:adventura/CreateListing/CreateList.dart';
