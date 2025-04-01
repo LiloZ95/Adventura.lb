@@ -268,7 +268,7 @@ class _TripPlanSectionState extends State<TripPlanSection>
                           // ➕ Add Button
                           if (isLast)
                             Positioned(
-                              top: 32,
+                              top: 34,
                               right: -5,
                               child: GestureDetector(
                                 onTap: () => animateAdd(index),
