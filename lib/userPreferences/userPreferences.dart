@@ -6,7 +6,6 @@ import '../Main screen components/MainScreen.dart';
 import 'package:adventura/config.dart';
 import 'package:hive/hive.dart';
 import 'package:adventura/widgets/bouncing_dots_loader.dart';
-import 'package:adventura/config.dart'; // ✅ Import the global config file
 
 class Favorite extends StatelessWidget {
   @override
@@ -105,8 +104,6 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double statusBarHeight = MediaQuery.of(context).padding.top;
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(

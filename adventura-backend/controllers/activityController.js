@@ -2,6 +2,7 @@ const { Activity, ActivityImage } = require("../models");
 const { Op, Sequelize, QueryTypes } = require("sequelize");
 const { sequelize } = require("../db/db");
 const TripPlan = require("../models/TripPlan");
+const Feature = require("../models/Feature");
 
 // Utility to extract latitude & longitude from Google Maps URL
 function extractLatLonFromUrl(googleMapsUrl) {
@@ -11,6 +12,10 @@ function extractLatLonFromUrl(googleMapsUrl) {
 		return { latitude: parseFloat(match[1]), longitude: parseFloat(match[2]) };
 	}
 	return null;
+}
+
+function isValid12HourTime(time) {
+	return /^(0?[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$/i.test(time);
 }
 
 // 🟢 Create new activity
@@ -24,14 +29,20 @@ const createActivity = async (req, res) => {
 			description,
 			location,
 			price,
-			duration,
 			availability_status,
 			nb_seats,
 			category_id,
 			latitude,
 			longitude,
 			trip_plan,
+			features,
+			from_time,
+			to_time,
 		} = req.body;
+
+		if (!isValid12HourTime(from_time) || !isValid12HourTime(to_time)) {
+			throw new Error("Invalid time format. Use HH:00 AM/PM");
+		}
 
 		const newActivity = await Activity.create(
 			{
@@ -39,12 +50,13 @@ const createActivity = async (req, res) => {
 				description,
 				location,
 				price,
-				duration,
 				availability_status: availability_status ?? true,
 				nb_seats,
 				category_id,
 				latitude,
 				longitude,
+				from_time,
+				to_time,
 			},
 			{ transaction: t }
 		);
@@ -61,10 +73,25 @@ const createActivity = async (req, res) => {
 					time: plan.time,
 					description: plan.description,
 				}));
-                console.log("🧪 tripPlanData:", tripPlanData);
+				console.log("🧪 tripPlanData:", tripPlanData);
 				await TripPlan.bulkCreate(tripPlanData, { transaction: t });
 			} else {
 				throw new Error("Trip plans are missing time or description.");
+			}
+		}
+
+		// ✅ Save Features
+		if (features && Array.isArray(features)) {
+			const cleanFeatures = features
+				.map((f) => f?.toString()?.trim())
+				.filter((f) => f && f.length > 0);
+
+			if (cleanFeatures.length > 0) {
+				const featureData = cleanFeatures.map((name) => ({
+					activity_id: newActivity.activity_id,
+					name,
+				}));
+				await Feature.bulkCreate(featureData, { transaction: t });
 			}
 		}
 
@@ -87,57 +114,59 @@ const createActivity = async (req, res) => {
 
 // 🟢 Get all activities
 const getAllActivities = async (req, res) => {
-    try {
-      const { search, category, location, min_price, max_price, rating } = req.query;
-  
-      const where = {};
-  
-      if (category) {
-        where.category_id = parseInt(category);
-      }
-  
-      if (search) {
-        where.name = { [Op.iLike]: `%${search}%` };
-      }
-  
-      if (location) {
-        where.location = { [Op.iLike]: `%${location}%` };
-      }
-  
-      if (min_price) {
-        where.price = { [Op.gte]: parseFloat(min_price) };
-      }
-  
-      if (max_price) {
-        where.price = {
-          ...(where.price || {}),
-          [Op.lte]: parseFloat(max_price),
-        };
-      }
-  
-      if (rating) {
-        where.rating = { [Op.gte]: parseFloat(rating) }; // only if you have a rating column!
-      }
-  
-      const activities = await Activity.findAll({
-        where,
-        include: [
-          {
-            model: ActivityImage,
-            as: "activity_images",
-            attributes: ["image_url"],
-          },
-          { model: TripPlan },
-        ],
-      });
-  
-      return res.status(200).json({ success: true, activities });
-    } catch (error) {
-      console.error("❌ Error fetching activities:", error);
-      return res.status(500).json({ success: false, message: "Server error." });
-    }
-  };
-    
+	try {
+		const { search, category, location, min_price, max_price, rating } =
+			req.query;
+
+		const where = {};
+
+		if (category) {
+			where.category_id = parseInt(category);
+		}
+
+		if (search) {
+			where.name = { [Op.iLike]: `%${search}%` };
+		}
+
+		if (location) {
+			where.location = { [Op.iLike]: `%${location}%` };
+		}
+
+		if (min_price) {
+			where.price = { [Op.gte]: parseFloat(min_price) };
+		}
+
+		if (max_price) {
+			where.price = {
+				...(where.price || {}),
+				[Op.lte]: parseFloat(max_price),
+			};
+		}
+
+		if (rating) {
+			where.rating = { [Op.gte]: parseFloat(rating) }; // only if you have a rating column!
+		}
+
+		const activities = await Activity.findAll({
+			where,
+			include: [
+				{
+					model: ActivityImage,
+					as: "activity_images",
+					attributes: ["image_url"],
+				},
+				{ model: TripPlan, as: "trip_plans" },
+				{ model: Feature, as: "features" },
+			],
+		});
+
+		return res.status(200).json({ success: true, activities });
+	} catch (error) {
+		console.error("❌ Error fetching activities:", error);
+		return res.status(500).json({ success: false, message: "Server error." });
+	}
+};
+
 // 🟢 Get activity by ID
 const getActivityById = async (req, res) => {
 	try {
@@ -146,7 +175,8 @@ const getActivityById = async (req, res) => {
 		const activity = await Activity.findByPk(id, {
 			include: [
 				{ model: ActivityImage, as: "activity_images" },
-				{ model: TripPlan }, // 🧠 include trip plan data here
+				{ model: TripPlan, as: "trip_plans" }, // 🧠 include trip plan data here
+				{ model: Feature, as: "features" },
 			],
 		});
 
@@ -182,6 +212,8 @@ const getActivitiesDetails = async (req, res) => {
 					as: "activity_images",
 					attributes: ["image_url", "is_primary"],
 				},
+				{ model: TripPlan, as: "trip_plans" }, // 🧠 include trip plan data here
+				{ model: Feature, as: "features" },
 			],
 			order: [
 				Sequelize.literal(

@@ -1,6 +1,5 @@
 // ✅ FIXED: Avoid crash when no valid days — fallback to safe default
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 class DateSelector extends StatefulWidget {
   final List<String> months;
@@ -38,6 +37,7 @@ class DateSelector extends StatefulWidget {
 class _DateSelectorState extends State<DateSelector> {
   late List<String> validDays;
   late String validSelectedDay;
+  String? _focusedField;
 
   @override
   void initState() {
@@ -77,12 +77,10 @@ class _DateSelectorState extends State<DateSelector> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    return List.generate(lastDay, (i) => (i + 1).toString())
-        .where((day) {
-          final selectedDate = DateTime(year, monthIndex, int.parse(day));
-          return selectedDate.isAfter(today);
-        })
-        .toList();
+    return List.generate(lastDay, (i) => (i + 1).toString()).where((day) {
+      final selectedDate = DateTime(year, monthIndex, int.parse(day));
+      return selectedDate.isAfter(today);
+    }).toList();
   }
 
   @override
@@ -107,34 +105,55 @@ class _DateSelectorState extends State<DateSelector> {
             Expanded(child: Divider(color: Colors.grey)),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
+
+        // ⏳ Date Pickers Row
         Row(
           children: [
             _buildDropdown<String>(
-              value: days.contains(widget.selectedDay) ? widget.selectedDay : (days.isNotEmpty ? days.first : '1'),
+              value: days.contains(widget.selectedDay)
+                  ? widget.selectedDay
+                  : (days.isNotEmpty ? days.first : '1'),
               items: days,
               onChanged: widget.onDayChanged,
+              fieldKey: 'day',
             ),
             const SizedBox(width: 8),
             _buildDropdown<String>(
               value: widget.selectedMonth,
               items: widget.months,
               onChanged: widget.onMonthChanged,
+              fieldKey: 'month',
             ),
             const SizedBox(width: 8),
             _buildDropdown<int>(
               value: widget.selectedYear,
               items: widget.years,
               onChanged: widget.onYearChanged,
+              fieldKey: 'year',
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
+
+        // 🕓 Time Pickers (Styled Like Image Picker Boxes)
         Row(
           children: [
-            Expanded(child: _buildTimeField(widget.fromController, 'from')),
-            const SizedBox(width: 8),
-            Expanded(child: _buildTimeField(widget.toController, 'To')),
+            Expanded(
+              child: _buildStyledTimeBox(
+                label: 'Start Time',
+                controller: widget.fromController,
+                context: context,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStyledTimeBox(
+                label: 'End Time',
+                controller: widget.toController,
+                context: context,
+              ),
+            ),
           ],
         ),
       ],
@@ -145,65 +164,151 @@ class _DateSelectorState extends State<DateSelector> {
     required T value,
     required List<T> items,
     required Function(T) onChanged,
+    required String fieldKey, // 👈 add unique key
   }) {
+    final isFocused = _focusedField == fieldKey;
+
     return Expanded(
-      child: Container(
-        height: 50,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFFCFCFCF), width: 1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<T>(
-            value: items.isNotEmpty ? value : null,
-            isExpanded: true,
-            icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
-            style: const TextStyle(
-              fontFamily: 'poppins',
-              fontSize: 15,
-              color: Colors.black,
+      child: GestureDetector(
+        onTap: () => setState(() => _focusedField = fieldKey),
+        child: Container(
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color:
+                  isFocused ? const Color(0xFF007AFF) : const Color(0xFFCFCFCF),
+              width: 1.3,
             ),
-            onChanged: (T? newValue) {
-              if (newValue != null) onChanged(newValue);
-            },
-            items: items.map((T item) {
-              return DropdownMenuItem<T>(
-                value: item,
-                child: Text(item.toString()),
-              );
-            }).toList(),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<T>(
+              value: items.isNotEmpty ? value : null,
+              isExpanded: true,
+              icon: Icon(Icons.arrow_drop_down,
+                  color: isFocused ? const Color(0xFF007AFF) : Colors.grey),
+              style: const TextStyle(
+                fontFamily: 'poppins',
+                fontSize: 15,
+                color: Colors.black,
+              ),
+              onChanged: (T? newValue) {
+                if (newValue != null) {
+                  onChanged(newValue);
+                  setState(
+                      () => _focusedField = null); // unfocus after selection
+                }
+              },
+              items: items.map((T item) {
+                return DropdownMenuItem<T>(
+                  value: item,
+                  child: Text(item.toString()),
+                );
+              }).toList(),
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTimeField(TextEditingController controller, String hint) {
-    return Container(
-      height: 50,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFCFCFCF), width: 1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(
-            fontFamily: 'poppins',
-            fontSize: 15,
-            color: Colors.grey,
+  Widget _buildStyledTimeBox({
+    required String label,
+    required TextEditingController controller,
+    required BuildContext context,
+  }) {
+    return StatefulBuilder(
+      builder: (context, setState) {
+        // ignore: unused_local_variable
+        String? lastSelectedTime;
+        bool isFocused = _focusedField == label;
+
+        return GestureDetector(
+          onTap: () async {
+            setState(() => _focusedField = label); // focus this box
+            final TimeOfDay? picked = await showTimePicker(
+              context: context,
+              initialTime: TimeOfDay.now(),
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: const ColorScheme.light(
+                      primary: Color(0xFF007AFF), // Main blue
+                      onSurface: Colors.black,
+                    ),
+                    timePickerTheme: TimePickerThemeData(
+                      backgroundColor: Colors.white,
+                      hourMinuteShape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                      ),
+                      hourMinuteColor: WidgetStateColor.resolveWith((states) =>
+                          states.contains(WidgetState.selected)
+                              ? const Color(0xFF007AFF)
+                              : Colors.transparent),
+                      dayPeriodColor: WidgetStateColor.resolveWith((states) =>
+                          states.contains(WidgetState.selected)
+                              ? const Color(0xFF007AFF)
+                              : Colors.transparent),
+                      dayPeriodTextColor: WidgetStateColor.resolveWith(
+                          (states) => states.contains(WidgetState.selected)
+                              ? Colors.white
+                              : Colors.black),
+                      entryModeIconColor: const Color(0xFF007AFF),
+                    ),
+                  ),
+                  child: child!,
+                );
+              },
+            );
+
+            if (picked != null) {
+              final formatted = picked.format(context);
+              setState(() {
+                lastSelectedTime = formatted;
+                controller.text = formatted;
+              });
+            }
+          },
+          child: Container(
+            height: 50,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: isFocused
+                    ? const Color(0xFF007AFF)
+                    : const Color(0xFFCFCFCF),
+                width: 1.3,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              color: Colors.white,
+            ),
+            alignment: Alignment.centerLeft,
+            child: Row(
+              children: [
+                const Icon(Icons.access_time,
+                    size: 18, color: Color(0xFF007AFF)),
+                const SizedBox(width: 8),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  transitionBuilder: (child, animation) =>
+                      FadeTransition(opacity: animation, child: child),
+                  child: Text(
+                    controller.text.isEmpty ? label : controller.text,
+                    key: ValueKey(controller.text),
+                    style: TextStyle(
+                      color:
+                          controller.text.isEmpty ? Colors.grey : Colors.black,
+                      fontFamily: 'poppins',
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          border: InputBorder.none,
-        ),
-        style: const TextStyle(
-          fontFamily: 'poppins',
-          fontSize: 15,
-          color: Colors.black,
-        ),
-      ),
+        );
+      },
     );
   }
 }

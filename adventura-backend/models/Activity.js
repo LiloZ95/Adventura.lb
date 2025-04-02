@@ -1,13 +1,13 @@
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../db/db");
-const TripPlan = require('./TripPlan');
+const TripPlan = require("./TripPlan");
 
 const Activity = sequelize.define("activities", {
 	activity_id: {
 		type: DataTypes.INTEGER,
 		primaryKey: true,
 		autoIncrement: true,
-	  },
+	},
 	name: {
 		type: DataTypes.STRING,
 		allowNull: false,
@@ -20,9 +20,6 @@ const Activity = sequelize.define("activities", {
 	},
 	price: {
 		type: DataTypes.DECIMAL(10, 2),
-	},
-	duration: {
-		type: DataTypes.INTEGER,
 	},
 	availability_status: {
 		type: DataTypes.BOOLEAN,
@@ -42,6 +39,12 @@ const Activity = sequelize.define("activities", {
 	longitude: {
 		type: DataTypes.DOUBLE,
 		allowNull: true,
+	},
+	from_time: {
+		type: DataTypes.STRING, // or DataTypes.TEXT
+	},
+	to_time: {
+		type: DataTypes.STRING,
 	},
 });
 

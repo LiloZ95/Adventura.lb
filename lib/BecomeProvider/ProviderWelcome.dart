@@ -1,6 +1,5 @@
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:flutter/material.dart';
-import 'dart:math';
 
 class ProviderWelcomeScreen extends StatefulWidget {
   const ProviderWelcomeScreen({super.key});

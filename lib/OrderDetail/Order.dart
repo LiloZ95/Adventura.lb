@@ -1,11 +1,7 @@
-import 'package:adventura/OrderDetail/PurchaseConfiramtion.dart';
-import 'package:adventura/OrderDetail/countries.dart';
 import 'package:adventura/widgets/payment_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:adventura/colors.dart';
-import 'package:intl/intl.dart';
-// import 'package:adventura/widgets/payment_modal.dart';
 
 /// Custom enforcer that rejects any new character if max length is exceeded.
 class MaxDigitsEnforcer extends TextInputFormatter {
