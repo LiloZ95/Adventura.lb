@@ -2,6 +2,7 @@ const { Activity, ActivityImage } = require("../models");
 const { Op, Sequelize, QueryTypes } = require("sequelize");
 const { sequelize } = require("../db/db");
 const TripPlan = require("../models/TripPlan");
+const Feature = require("../models/Feature");
 
 // Utility to extract latitude & longitude from Google Maps URL
 function extractLatLonFromUrl(googleMapsUrl) {
@@ -14,7 +15,7 @@ function extractLatLonFromUrl(googleMapsUrl) {
 }
 
 function isValid12HourTime(time) {
-	return /^(0?[1-9]|1[0-2]):00 (AM|PM)$/i.test(time);
+	return /^(0?[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$/i.test(time);
 }
 
 // 🟢 Create new activity
@@ -34,6 +35,7 @@ const createActivity = async (req, res) => {
 			latitude,
 			longitude,
 			trip_plan,
+			features,
 			from_time,
 			to_time,
 		} = req.body;
@@ -75,6 +77,21 @@ const createActivity = async (req, res) => {
 				await TripPlan.bulkCreate(tripPlanData, { transaction: t });
 			} else {
 				throw new Error("Trip plans are missing time or description.");
+			}
+		}
+
+		// ✅ Save Features
+		if (features && Array.isArray(features)) {
+			const cleanFeatures = features
+				.map((f) => f?.toString()?.trim())
+				.filter((f) => f && f.length > 0);
+
+			if (cleanFeatures.length > 0) {
+				const featureData = cleanFeatures.map((name) => ({
+					activity_id: newActivity.activity_id,
+					name,
+				}));
+				await Feature.bulkCreate(featureData, { transaction: t });
 			}
 		}
 
@@ -138,7 +155,8 @@ const getAllActivities = async (req, res) => {
 					as: "activity_images",
 					attributes: ["image_url"],
 				},
-				{ model: TripPlan },
+				{ model: TripPlan, as: "trip_plans" },
+				{ model: Feature, as: "features" },
 			],
 		});
 
@@ -157,7 +175,8 @@ const getActivityById = async (req, res) => {
 		const activity = await Activity.findByPk(id, {
 			include: [
 				{ model: ActivityImage, as: "activity_images" },
-				{ model: TripPlan }, // 🧠 include trip plan data here
+				{ model: TripPlan, as: "trip_plans" }, // 🧠 include trip plan data here
+				{ model: Feature, as: "features" },
 			],
 		});
 
@@ -193,6 +212,8 @@ const getActivitiesDetails = async (req, res) => {
 					as: "activity_images",
 					attributes: ["image_url", "is_primary"],
 				},
+				{ model: TripPlan, as: "trip_plans" }, // 🧠 include trip plan data here
+				{ model: Feature, as: "features" },
 			],
 			order: [
 				Sequelize.literal(

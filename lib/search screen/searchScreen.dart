@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:adventura/Booking/MyBooking.dart';
-import 'package:adventura/Main%20screen%20components/Cards.dart';
+import 'package:adventura/event_cards/Cards.dart';
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/Services/activity_service.dart';
 import 'package:adventura/colors.dart';

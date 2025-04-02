@@ -1,15 +1,12 @@
 // Final version matching Figma layout exactly + polished bottom nav
+import 'dart:math';
+
 import 'package:adventura/colors.dart';
 import 'package:adventura/config.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/OrderDetail/Order.dart';
 import 'package:adventura/widgets/availability_modal.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
-import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
-import 'package:latlong2/latlong.dart' as leaflet;
-import 'package:url_launcher/url_launcher.dart';
+import 'package:adventura/event_cards/widgets/readonly_location_map.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> activity;
@@ -28,6 +25,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   final PageController _pageController = PageController();
   String? confirmedDate;
   String? confirmedSlot;
+  List<Map<String, String>> tripSteps = [];
+  String? activityDuration;
 
   void _openAvailabilityModal() async {
     await showModalBottomSheet(
@@ -50,10 +49,87 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     );
   }
 
+  String _calculateDuration(String from, String to) {
+    try {
+      TimeOfDay fromTime = _parseTime(from);
+      TimeOfDay toTime = _parseTime(to);
+
+      final now = DateTime.now();
+      final fromDateTime = DateTime(
+          now.year, now.month, now.day, fromTime.hour, fromTime.minute);
+      final toDateTime =
+          DateTime(now.year, now.month, now.day, toTime.hour, toTime.minute);
+
+      Duration difference = toDateTime.difference(fromDateTime);
+
+      if (difference.inMinutes <= 0) {
+        return "Invalid duration";
+      }
+
+      int hours = difference.inHours;
+      int minutes = difference.inMinutes % 60;
+
+      if (hours > 0 && minutes > 0) return "$hours h $minutes min";
+      if (hours > 0) return "$hours hour${hours == 1 ? '' : 's'}";
+      return "$minutes min";
+    } catch (e) {
+      return "Invalid time format";
+    }
+  }
+
+  TimeOfDay _parseTime(String timeStr) {
+    final regex = RegExp(r'^(\d{1,2}):(\d{2}) (AM|PM)$');
+    final match = regex.firstMatch(timeStr.trim());
+
+    if (match == null) throw FormatException("Invalid time format");
+
+    int hour = int.parse(match.group(1)!);
+    int minute = int.parse(match.group(2)!);
+    final meridian = match.group(3);
+
+    if (meridian == "PM" && hour < 12) hour += 12;
+    if (meridian == "AM" && hour == 12) hour = 0;
+
+    return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    final rawTripPlan = widget.activity["trip_plans"];
+
+    if (rawTripPlan != null && rawTripPlan is List) {
+      tripSteps = rawTripPlan
+          .where((step) =>
+              step["time"] != null &&
+              step["description"] != null &&
+              step["time"].toString().isNotEmpty &&
+              step["description"].toString().isNotEmpty)
+          .map<Map<String, String>>((step) => {
+                "time": step["time"].toString(),
+                "title": step["description"].toString(),
+              })
+          .toList();
+    }
+
+    final String? from = widget.activity["from_time"];
+    final String? to = widget.activity["to_time"];
+
+    if (from != null && to != null) {
+      final duration = _calculateDuration(from, to);
+      setState(() {
+        activityDuration = duration;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
+    final double lat = widget.activity["latitude"] ?? 34.4381;
+    final double lng = widget.activity["longitude"] ?? 35.8308;
 
     List<dynamic> rawImages = widget.activity["activity_images"] ?? [];
     List<String> images = rawImages
@@ -86,6 +162,31 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   fontFamily: 'Poppins',
                 ),
               ),
+              if (activityDuration != null) ...[
+                SizedBox(height: 6),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.schedule, size: 16, color: Colors.blue),
+                      SizedBox(width: 6),
+                      Text(
+                        activityDuration!,
+                        style: TextStyle(
+                          color: Colors.blue.shade800,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               SizedBox(height: 8),
               _buildAvailabilitySection(),
               SizedBox(height: 8),
@@ -94,13 +195,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   Icon(Icons.location_on, size: 18, color: Colors.grey),
                   SizedBox(width: 4),
                   Text(
-                    widget.activity["location"] ?? "Location not available",
+                    widget.activity["location"] ?? "Unknown Location",
                     style: TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                 ],
               ),
               SizedBox(height: 20),
-              _buildTripPlan(),
+              _buildTripPlan(tripSteps),
               SizedBox(height: 16),
               _buildSectionTitle("Description"),
               SizedBox(height: 4),
@@ -113,16 +214,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               SizedBox(height: 16),
               _buildSectionTitle("Location"),
               SizedBox(height: 4),
-              Text(widget.activity["map_location"] ?? "Seht El-Nour, Tripoli",
+              Text(widget.activity["location"] ?? "Unknown Location",
                   style: TextStyle(fontSize: 14, color: Colors.black87)),
               SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  height: 180,
-                  child: kIsWeb ? _buildWebMap() : _buildNativeMap(),
-                ),
-              ),
+              ReadOnlyLocationMap(latitude: lat, longitude: lng),
               SizedBox(height: 16),
               _buildSectionTitle("Organizer"),
               ListTile(
@@ -187,7 +282,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     );
   }
 
-  Widget _buildTripPlan() {
+  Widget _buildTripPlan(List<Map<String, String>> tripSteps) {
+    if (tripSteps.isEmpty) {
+      return SizedBox(); // or Text("No trip plan available")
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -207,13 +306,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           height: 80,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: _tripSteps.length * 2 - 1, // account for arrows
+            itemCount: max(0, tripSteps.length * 2 - 1),
             separatorBuilder: (context, index) => SizedBox(width: 4),
             itemBuilder: (context, index) {
               if (index.isOdd) {
                 return _arrowConnector();
               } else {
-                final step = _tripSteps[index ~/ 2];
+                final step = tripSteps[index ~/ 2];
                 return _tripCard(step["time"]!, step["title"]!);
               }
             },
@@ -222,13 +321,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       ],
     );
   }
-
-  final List<Map<String, String>> _tripSteps = [
-    {"time": "8:30 AM", "title": "Meet up"},
-    {"time": "11:00 AM", "title": "Reaching destination"},
-    {"time": "1:00 PM", "title": "Lunch Break"},
-    {"time": "3:00 PM", "title": "Sunset view"},
-  ];
 
   Widget _tripCard(String time, String title) {
     return Container(
@@ -268,63 +360,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     );
   }
 
-  Widget _buildWebMap() {
-    return FlutterMap(
-      options: MapOptions(
-        center: leaflet.LatLng(34.4381, 35.8308),
-        zoom: 14,
-        interactiveFlags: InteractiveFlag.all,
-        onTap: (_, __) async {
-          final url = Uri.parse(
-              "https://www.google.com/maps/search/?api=1&query=34.4381,35.8308");
-          await launchUrl(url, mode: LaunchMode.externalApplication);
-        },
-      ),
-      children: [
-        TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          tileProvider:
-              CancellableNetworkTileProvider(), 
-        ),
-        MarkerLayer(
-          markers: [
-            Marker(
-              point: leaflet.LatLng(34.4381, 35.8308),
-              width: 40,
-              height: 40,
-              child: Icon(Icons.location_pin, color: Colors.red, size: 32),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNativeMap() {
-    return GestureDetector(
-      onTap: () async {
-        final url = Uri.parse(
-            "https://www.google.com/maps/search/?api=1&query=34.4381,35.8308");
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      },
-      child: gmap.GoogleMap(
-        initialCameraPosition: gmap.CameraPosition(
-          target: gmap.LatLng(34.4381, 35.8308),
-          zoom: 14,
-        ),
-        markers: {
-          gmap.Marker(
-            markerId: gmap.MarkerId('location'),
-            position: gmap.LatLng(34.4381, 35.8308),
-            infoWindow: gmap.InfoWindow(title: "Seht El-Nour, Tripoli"),
-          ),
-        },
-        zoomControlsEnabled: false,
-        myLocationButtonEnabled: false,
-      ),
-    );
-  }
-
   Widget _buildSectionTitle(String text) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,18 +380,25 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Widget _buildTagsSection() {
+    final rawFeatures = widget.activity["features"];
+    if (rawFeatures == null || rawFeatures is! List) return SizedBox();
+
+    List<String> tags = rawFeatures
+        .map((f) => f["name"]?.toString())
+        .where((f) => f != null && f.isNotEmpty)
+        .cast<String>()
+        .toList();
+
     return Wrap(
       spacing: 8,
       runSpacing: 4,
-      children: [
-        _tag("Trending", gradient: [Colors.orange, Colors.red]),
-        _tag("+16"),
-        _tag("Medium"),
-        _tag("Entertainment"),
-        _tag("BBQ"),
-        _tag("Scenery"),
-        _tag("Sun Set"),
-      ],
+      children: tags.map((tag) {
+        if (tag.toLowerCase() == "trending") {
+          return _tag(tag, gradient: [Colors.orange, Colors.red]);
+        } else {
+          return _tag(tag);
+        }
+      }).toList(),
     );
   }
 

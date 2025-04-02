@@ -1,6 +1,6 @@
 import 'package:adventura/Booking/MyBooking.dart';
 import 'package:adventura/OrderDetail/ViewTicket.dart';
-import 'package:adventura/search%20screen/eventDetailsScreen.dart';
+import 'package:adventura/event_cards/eventDetailsScreen.dart';
 import 'package:flutter/material.dart';
 
 /// The BookingCard widget displays booking details with options to cancel or view.
