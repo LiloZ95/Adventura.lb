@@ -155,7 +155,12 @@ const getAllActivities = async (req, res) => {
 					as: "activity_images",
 					attributes: ["image_url"],
 				},
-				{ model: TripPlan, as: "trip_plans" },
+				{
+					model: TripPlan,
+					as: "trip_plans",
+					separate: true,
+					order: [["time", "ASC"]],
+				},
 				{ model: Feature, as: "features" },
 			],
 		});
@@ -175,7 +180,12 @@ const getActivityById = async (req, res) => {
 		const activity = await Activity.findByPk(id, {
 			include: [
 				{ model: ActivityImage, as: "activity_images" },
-				{ model: TripPlan, as: "trip_plans" }, // 🧠 include trip plan data here
+				{
+					model: TripPlan,
+					as: "trip_plans",
+					separate: true,
+					order: [["time", "ASC"]],
+				},
 				{ model: Feature, as: "features" },
 			],
 		});
@@ -212,7 +222,12 @@ const getActivitiesDetails = async (req, res) => {
 					as: "activity_images",
 					attributes: ["image_url", "is_primary"],
 				},
-				{ model: TripPlan, as: "trip_plans" }, // 🧠 include trip plan data here
+				{
+					model: TripPlan,
+					as: "trip_plans",
+					separate: true,
+					order: [["time", "ASC"]],
+				},
 				{ model: Feature, as: "features" },
 			],
 			order: [
