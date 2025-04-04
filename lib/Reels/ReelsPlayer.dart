@@ -15,7 +15,7 @@ class _ReelsPlayerState extends State<ReelsPlayer> {
     'assets/videos/Snapchat-75340133.mp4',
     'assets/videos/Snapchat-91757244.mp4',
     'assets/videos/Snapchat-125401604.mp4',
-    'assets/videos/Snapchat-125401604.mp4',
+    'assets/videos/Snapchat-142994796.mp4',
   ];
   void shareToWhatsApp(String message) async {
   final url = Uri.parse("https://wa.me/?text=${Uri.encodeComponent(message)}");
@@ -53,6 +53,7 @@ class ReelVideoItem extends StatefulWidget {
 
 class _ReelVideoItemState extends State<ReelVideoItem> {
   late VideoPlayerController _controller;
+  TextEditingController commentController = TextEditingController();
   bool isVisible = false;
   bool isLiked = false;
   List<String> comments = []; 
@@ -84,62 +85,7 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
       _controller.pause();
     }
   }
-  void _openCommentSheet() {
-    String tempComment = '';
- showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.grey[900],
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      isScrollControlled: true,
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom, top: 20, left: 20, right: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "Write a comment",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-              SizedBox(height: 10),
-              TextField(
-                onChanged: (value) {
-                  tempComment = value;
-                },
-                style: TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: "Type your comment...",
-                  hintStyle: TextStyle(color: Colors.white70),
-                  filled: true,
-                  fillColor: Colors.grey[800],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: () {
-                  if (tempComment.trim().isNotEmpty) {
-                    setState(() {
-                      comments.add(tempComment.trim());
-                    });
-                  }
-                  Navigator.pop(context);
-                },
-                child: Text("Post"),
-              ),
-              SizedBox(height: 10),
-            ],
-          ),
-        );
-      },
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -182,9 +128,70 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
 ),
                 SizedBox(height: 28),
                IconButton(
-                  onPressed: _openCommentSheet,
-                  icon: Icon(Icons.comment, color: Colors.white, size: 32),
+  onPressed: () {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.grey[900],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: MediaQuery.of(context).viewInsets,
+        child: Container(
+          padding: EdgeInsets.all(16),
+          height: 300,
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  children: comments.map((comment) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.person, color: Colors.white),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(comment, style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  )).toList(),
                 ),
+              ),
+              TextField(
+                controller: commentController,
+                style: TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'Write a comment...',
+                  hintStyle: TextStyle(color: Colors.white70),
+                  filled: true,
+                  fillColor: Colors.grey[800],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(Icons.send, color: Colors.white),
+                    onPressed: () {
+                      if (commentController.text.trim().isNotEmpty) {
+                        setState(() {
+                          comments.add(commentController.text.trim());
+                        });
+                        commentController.clear();
+                      }
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  },
+  icon: Icon(Icons.comment, color: Colors.white, size: 32),
+),
                 SizedBox(height: 28),
             IconButton(
             onPressed: () {
@@ -236,6 +243,46 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
     ],
   ),
 ),
+// Top Gradient Fade
+Positioned(
+  top: 0,
+  left: 0,
+  right: 0,
+  height: 100,
+  child: Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.black.withOpacity(0.8),
+          Colors.transparent,
+        ],
+      ),
+    ),
+  ),
+),
+
+// Bottom Gradient Fade
+Positioned(
+  bottom: 0,
+  left: 0,
+  right: 0,
+  height: 120,
+  child: Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.bottomCenter,
+        end: Alignment.topCenter,
+        colors: [
+          Colors.black.withOpacity(0.8),
+          Colors.transparent,
+        ],
+      ),
+    ),
+  ),
+),
+
         ],
       ),
     );

@@ -252,7 +252,9 @@ Widget EventCard({
               bottom: 12,
               right: 16,
               child: Text(
-                activity["price"] != null ? "\$${activity["price"]}" : "Free",
+                activity["price"] != null
+                    ? "\$${activity["price"]} / ${activity["price_type"] ?? 'Person'}"
+                    : "Free",
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
