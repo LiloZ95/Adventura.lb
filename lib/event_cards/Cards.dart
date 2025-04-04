@@ -268,32 +268,109 @@ Widget EventCard({
   );
 }
 
-Widget card(String imagePath) {
-  return Padding(
-    padding: const EdgeInsets.only(left: 16),
-    child: Container(
-      width: 240,
-      height: 320,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        image: DecorationImage(
-          image: AssetImage('assets/Pictures/$imagePath'),
-          fit: BoxFit.cover, // Ensures the image covers the container
+Widget LimitedEventCard({
+  required BuildContext context,
+  required Map<String, dynamic> activity,
+  required String imageUrl,
+  required String name,
+  required String date,
+  required String location,
+  required String price,
+}) {
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EventDetailsScreen(activity: activity),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.70),
-            offset: Offset(0, 1),
-            blurRadius: 5,
-            spreadRadius: 0,
+      );
+    },
+    child: Padding(
+      padding: const EdgeInsets.only(left: 16),
+      child: Container(
+        width: 240,
+        height: 320,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          image: DecorationImage(
+            image: NetworkImage(imageUrl),
+            fit: BoxFit.cover,
           ),
-        ],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.70),
+              offset: Offset(0, 1),
+              blurRadius: 5,
+              spreadRadius: 0,
+            ),
+          ],
+        ),
+        child: Align(
+          alignment: Alignment.bottomLeft,
+          child: Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.55),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(15),
+                bottomRight: Radius.circular(15),
+              ),
+            ),
+            width: double.infinity,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  name,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontFamily: 'Poppins',
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 4),
+                Text(
+                  date,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  location,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                  ),
+                ),
+                Row(
+                  children: [
+                    Spacer(),
+                    Text(
+                      price,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     ),
   );
 }
 
-Widget card2(String imagePath, String categoryName, String description,
+Widget CategoryCard(String imagePath, String categoryName, String description,
     int listings, double align) {
   return Padding(
     padding: const EdgeInsets.only(left: 16),

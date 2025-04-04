@@ -54,7 +54,6 @@ class ActivityService {
     }
   }
 
-
   static Future<bool> uploadActivityImages({
     required int activityId,
     required List<File> imageFiles,
@@ -163,10 +162,14 @@ class ActivityService {
     return [];
   }
 
-  /// ✅ Fetch All Events from API
+  /// ✅ Fetch Events with Filtering Support
   static Future<List<Map<String, dynamic>>> fetchEvents({
     String? search,
     String? category,
+    String? location,
+    double? minPrice,
+    double? maxPrice,
+    int? rating,
   }) async {
     Box storageBox = await Hive.openBox('authBox');
     String? accessToken = storageBox.get("accessToken");
@@ -178,8 +181,11 @@ class ActivityService {
 
     final queryParams = <String, String>{};
     if (search != null && search.isNotEmpty) queryParams['search'] = search;
-    if (category != null && category.isNotEmpty)
-      queryParams['category'] = category;
+    if (category != null) queryParams['category'] = category;
+    if (location != null) queryParams['location'] = location;
+    if (minPrice != null) queryParams['min_price'] = minPrice.toString();
+    if (maxPrice != null) queryParams['max_price'] = maxPrice.toString();
+    if (rating != null) queryParams['rating'] = rating.toString();
 
     final uri =
         Uri.parse("$baseUrl/events").replace(queryParameters: queryParams);
