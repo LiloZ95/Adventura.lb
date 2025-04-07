@@ -241,7 +241,10 @@ class _MainScreenState extends State<MainScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => AdventuraChatPage(),
+                                      builder: (context) => AdventuraChatPage(
+                                        userName:
+                                            firstName, // 👈 pass from Hive
+                                      ),
                                     ),
                                   );
                                 },
