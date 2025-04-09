@@ -52,7 +52,7 @@ Event.hasMany(EventImage, {
 	as: "event_images",
 	onDelete: "CASCADE",
 });
-EventImage.belongsTo(Event, { foreignKey: "event_id", as: "event_images" });
+EventImage.belongsTo(Event, { foreignKey: "event_id" });
 
 UserActivityInteraction.belongsTo(Activity, {
 	foreignKey: "activity_id",

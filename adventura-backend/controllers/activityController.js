@@ -1,4 +1,7 @@
-const { Activity, ActivityImage } = require("../models");
+const {
+  Activity,
+  ActivityImage,
+} = require("../models");
 const { Op, Sequelize, QueryTypes } = require("sequelize");
 const { sequelize } = require("../db/db");
 const TripPlan = require("../models/TripPlan");
@@ -6,12 +9,12 @@ const Feature = require("../models/Feature");
 
 // Utility to extract latitude & longitude from Google Maps URL
 function extractLatLonFromUrl(googleMapsUrl) {
-	const regex = /@?(-?\d+\.\d+),\s*(-?\d+\.\d+)/;
-	const match = googleMapsUrl.match(regex);
-	if (match) {
-		return { latitude: parseFloat(match[1]), longitude: parseFloat(match[2]) };
-	}
-	return null;
+  const regex = /@?(-?\d+\.\d+),\s*(-?\d+\.\d+)/;
+  const match = googleMapsUrl.match(regex);
+  if (match) {
+    return { latitude: parseFloat(match[1]), longitude: parseFloat(match[2]) };
+  }
+  return null;
 }
 
 function isValid12HourTime(time) {
@@ -21,7 +24,7 @@ function isValid12HourTime(time) {
 // 🟢 Create new activity
 // POST /activities/create
 const createActivity = async (req, res) => {
-	const t = await Activity.sequelize.transaction();
+  const t = await Activity.sequelize.transaction();
 
 	try {
 		const {
@@ -61,11 +64,11 @@ const createActivity = async (req, res) => {
 			{ transaction: t }
 		);
 
-		// 🧠 Save trip plans (MUST BE valid array)
-		if (trip_plan && Array.isArray(trip_plan)) {
-			const validPlans = trip_plan.filter(
-				(plan) => plan.time && plan.description
-			);
+    // 🧠 Save trip plans (MUST BE valid array)
+    if (trip_plan && Array.isArray(trip_plan)) {
+      const validPlans = trip_plan.filter(
+        (plan) => plan.time && plan.description
+      );
 
 			if (validPlans.length > 0) {
 				const tripPlanData = validPlans.map((plan) => ({
@@ -95,21 +98,21 @@ const createActivity = async (req, res) => {
 			}
 		}
 
-		await t.commit();
+    await t.commit();
 
-		res.status(201).json({
-			success: true,
-			message: "Activity created successfully",
-			activity: newActivity,
-		});
-	} catch (error) {
-		await t.rollback();
-		console.error("❌ Error creating activity with trip plans:", error);
-		res.status(500).json({
-			success: false,
-			message: error.message || "Failed to create activity.",
-		});
-	}
+    res.status(201).json({
+      success: true,
+      message: "Activity created successfully",
+      activity: newActivity,
+    });
+  } catch (error) {
+    await t.rollback();
+    console.error("❌ Error creating activity with trip plans:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to create activity.",
+    });
+  }
 };
 
 // 🟢 Get all activities
@@ -174,8 +177,8 @@ const getAllActivities = async (req, res) => {
 
 // 🟢 Get activity by ID
 const getActivityById = async (req, res) => {
-	try {
-		const { id } = req.params;
+  try {
+    const { id } = req.params;
 
 		const activity = await Activity.findByPk(id, {
 			include: [
@@ -190,29 +193,29 @@ const getActivityById = async (req, res) => {
 			],
 		});
 
-		if (!activity) {
-			return res
-				.status(404)
-				.json({ success: false, message: "Activity not found." });
-		}
+    if (!activity) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Activity not found." });
+    }
 
-		return res.json({ success: true, activity });
-	} catch (error) {
-		console.error("❌ Error fetching activity:", error);
-		return res.status(500).json({ success: false, message: "Server error." });
-	}
+    return res.json({ success: true, activity });
+  } catch (error) {
+    console.error("❌ Error fetching activity:", error);
+    return res.status(500).json({ success: false, message: "Server error." });
+  }
 };
 
 // 🟢 Get details of multiple activities (by array of IDs)
 const getActivitiesDetails = async (req, res) => {
-	try {
-		const { activity_ids } = req.body;
+  try {
+    const { activity_ids } = req.body;
 
-		if (!Array.isArray(activity_ids) || activity_ids.length === 0) {
-			return res
-				.status(400)
-				.json({ success: false, message: "Invalid activity ID list." });
-		}
+    if (!Array.isArray(activity_ids) || activity_ids.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid activity ID list." });
+    }
 
 		const activities = await Activity.findAll({
 			where: { activity_id: activity_ids },
@@ -239,99 +242,132 @@ const getActivitiesDetails = async (req, res) => {
 			],
 		});
 
-		return res.json({ success: true, activities });
-	} catch (error) {
-		console.error("❌ Error fetching activity details:", error);
-		return res.status(500).json({ success: false, message: "Server error." });
-	}
+    return res.json({ success: true, activities });
+  } catch (error) {
+    console.error("❌ Error fetching activity details:", error);
+    return res.status(500).json({ success: false, message: "Server error." });
+  }
 };
 
 const uploadImages = async (req, res) => {
-	const { activityId } = req.params;
-	const files = req.files;
+  const { activityId } = req.params;
+  const files = req.files;
 
-	if (!files || files.length === 0) {
-		return res.status(400).json({ message: "No images uploaded" });
-	}
+  if (!files || files.length === 0) {
+    return res.status(400).json({ message: "No images uploaded" });
+  }
 
-	try {
-		const createdImages = await Promise.all(
-			files.map((file) =>
-				ActivityImage.create({
-					activity_id: activityId,
-					image_url: `/uploads/${file.filename}`,
-					createdAt: new Date(),
-					updatedAt: new Date(),
-					is_primary: false,
-				})
-			)
-		);
-		res.status(200).json(createdImages);
-	} catch (error) {
-		console.error(error);
-		res.status(500).json({ message: "Error uploading images" });
-	}
+  try {
+    const createdImages = await Promise.all(
+      files.map((file) =>
+        ActivityImage.create({
+          activity_id: activityId,
+          image_url: `/uploads/${file.filename}`,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          is_primary: false,
+        })
+      )
+    );
+    res.status(200).json(createdImages);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error uploading images" });
+  }
 };
 
 // 🟢 Set primary image for an activity
 const setPrimaryImage = async (req, res) => {
-	try {
-		const { activity_id, image_id } = req.body;
+  try {
+    const { activity_id, image_id } = req.body;
 
-		if (!activity_id || !image_id) {
-			return res
-				.status(400)
-				.json({ success: false, message: "Missing activity_id or image_id." });
-		}
+    if (!activity_id || !image_id) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing activity_id or image_id." });
+    }
 
-		// Remove is_primary from current
-		await ActivityImage.update(
-			{ is_primary: false },
-			{ where: { activity_id } }
-		);
+    // Remove is_primary from current
+    await ActivityImage.update(
+      { is_primary: false },
+      { where: { activity_id } }
+    );
 
-		// Set new primary image
-		const updatedImage = await ActivityImage.update(
-			{ is_primary: true },
-			{ where: { image_id } }
-		);
+    // Set new primary image
+    const updatedImage = await ActivityImage.update(
+      { is_primary: true },
+      { where: { image_id } }
+    );
 
-		if (updatedImage[0] === 0) {
-			return res
-				.status(404)
-				.json({ success: false, message: "Image not found." });
-		}
+    if (updatedImage[0] === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Image not found." });
+    }
 
-		return res.json({ success: true, message: "Primary image updated." });
-	} catch (error) {
-		console.error("❌ Error setting primary image:", error);
-		return res.status(500).json({ success: false, message: "Server error." });
-	}
+    return res.json({ success: true, message: "Primary image updated." });
+  } catch (error) {
+    console.error("❌ Error setting primary image:", error);
+    return res.status(500).json({ success: false, message: "Server error." });
+  }
 };
 
 // 🟢 Get activity images only
 const getActivityImages = async (req, res) => {
-	try {
-		const { activity_id } = req.params;
+  try {
+    const { activity_id } = req.params;
 
-		const images = await sequelize.query(
-			`SELECT image_url FROM activity_images WHERE activity_id = :activity_id`,
-			{ replacements: { activity_id }, type: QueryTypes.SELECT }
-		);
+    const images = await sequelize.query(
+      `SELECT image_url FROM activity_images WHERE activity_id = :activity_id`,
+      { replacements: { activity_id }, type: QueryTypes.SELECT }
+    );
 
-		return res.status(200).json({ success: true, images });
-	} catch (error) {
-		console.error("❌ Error fetching activity images:", error);
-		return res.status(500).json({ success: false, message: "Server error." });
-	}
+    return res.status(200).json({ success: true, images });
+  } catch (error) {
+    console.error("❌ Error fetching activity images:", error);
+    return res.status(500).json({ success: false, message: "Server error." });
+  }
 };
 
+// 🟢 Get all activities by provider_id
+const getActivitiesByProvider = async (req, res) => {
+  try {
+    const { provider_id } = req.params;
+
+    if (!provider_id) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing provider_id." });
+    }
+
+    const activities = await Activity.findAll({
+      where: { provider_id },
+      include: [
+        {
+          model: ActivityImage,
+          as: "activity_images",
+          attributes: ["image_url", "is_primary"],
+        },
+        { model: TripPlan, as: "trip_plans" },
+      ],
+      order: [["createdAt", "DESC"]], // Optional: order newest first
+    });
+
+    return res.status(200).json({ success: true, activities });
+  } catch (error) {
+    console.error("❌ Error fetching provider activities:", error);
+    return res.status(500).json({ success: false, message: "Server error." });
+  }
+};
+
+
 module.exports = {
-	createActivity,
-	getAllActivities,
-	getActivityById,
-	getActivitiesDetails,
-	setPrimaryImage,
-	getActivityImages,
-	uploadImages,
+  createActivity,
+  getAllActivities,
+  getActivityById,
+  getActivitiesDetails,
+  setPrimaryImage,
+  getActivityImages,
+  uploadImages,
+  getActivitiesByProvider,
 };

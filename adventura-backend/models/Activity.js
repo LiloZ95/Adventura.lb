@@ -46,6 +46,10 @@ const Activity = sequelize.define("activities", {
 	to_time: {
 		type: DataTypes.STRING,
 	},
+	provider_id: {
+		type: DataTypes.INTEGER,
+		allowNull: false,
+	  },
 });
 
 module.exports = Activity;
