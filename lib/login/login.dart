@@ -6,7 +6,6 @@ import 'package:adventura/signUp%20page/Signup.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import '';
 import 'dart:ui'; // For ImageFilter
 import '../colors.dart';
 

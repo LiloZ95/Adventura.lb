@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'package:adventura/Booking/MyBooking.dart';
 import 'package:adventura/Services/profile_service.dart';
-import 'package:adventura/config.dart';
 import 'package:adventura/event_cards/Cards.dart';
 import 'package:adventura/colors.dart';
 import 'package:adventura/search%20screen/searchScreen.dart';
