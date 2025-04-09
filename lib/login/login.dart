@@ -1,7 +1,6 @@
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/Services/auth_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:adventura/OTP/OTPVerification.dart';
 import 'package:adventura/OTP/ForgotPasswordScreen.dart';
 import 'package:adventura/signUp%20page/Signup.dart';
 import 'package:flutter/gestures.dart';

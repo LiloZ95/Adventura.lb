@@ -13,7 +13,6 @@ import 'dart:convert';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:adventura/userinformation/profileOptionTile.dart';
 import 'package:hive/hive.dart';
-import 'package:http/http.dart';
 
 class UserInfo extends StatefulWidget {
   @override
@@ -510,89 +509,6 @@ class _UserInfoState extends State<UserInfo> {
 
   Widget _defaultProfileImage() {
     return Image.asset("assets/images/default_user.png", fit: BoxFit.cover);
-  }
-
-// ✅ Original _profileOption (3 parameters)
-// Widget _profileOption(IconData icon, String title, BuildContext context) {
-//   return ListTile(
-//     leading: Icon(icon, color: Colors.black87),
-//     title: Text(
-//       title,
-//       style:
-//           TextStyle(fontSize: 16, color: Colors.black, fontFamily: "Poppins"),
-//     ),
-//     trailing: Icon(Icons.arrow_forward_ios, color: Colors.black),
-//     onTap: () {},
-//   );
-// }
-
-// ✅ OPTIONAL: The new function with subtitles, renamed to avoid conflicts
-//    Use this if you want a bold title + grey subtitle. No lines removed, just placed at the end.
-  Widget _profileOptionWithSubtitle(
-    IconData icon,
-    String title,
-    String subtitle,
-    BuildContext context,
-  ) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.black87),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Colors.black,
-          fontFamily: "Poppins",
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(
-          fontSize: 12,
-          color: Colors.grey[200],
-          fontFamily: "Poppins",
-        ),
-      ),
-      trailing: Icon(Icons.arrow_forward_ios, color: Colors.black),
-      onTap: () {
-        // Handle onTap
-      },
-    );
-  }
-
-  // ✅ Logout Button
-  Widget _logoutOption(BuildContext context) {
-    return ListTile(
-      leading: Icon(Icons.logout, color: Colors.red),
-      title: Text(
-        "Logout",
-        style:
-            TextStyle(fontSize: 16, color: Colors.red, fontFamily: "Poppins"),
-      ),
-      onTap: () async {
-        print("🚀 Logout button pressed!");
-        await StorageService.logout(context);
-        print("✅ Logout function finished!");
-      },
-    );
-  }
-
-  // ✅ Delete Account Button
-  Widget _deleteAccountOption(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        print("🚨 Delete Account button tapped!");
-        _showDeleteConfirmationDialog(context);
-      },
-      child: ListTile(
-        leading: Icon(Icons.delete_forever, color: Colors.red),
-        title: Text(
-          "Delete Account",
-          style:
-              TextStyle(fontSize: 16, color: Colors.red, fontFamily: "Poppins"),
-        ),
-      ),
-    );
   }
 
   // ✅ Delete Account Confirmation Dialog

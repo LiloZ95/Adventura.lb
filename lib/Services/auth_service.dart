@@ -1,7 +1,5 @@
 import 'dart:convert';
-import 'package:adventura/Services/storage_service.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive/hive.dart'; // ✅ Use Hive for local storage
 import 'package:adventura/config.dart'; // ✅ Import the global config file
 

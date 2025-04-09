@@ -105,7 +105,6 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
   // Trip Plan
   List<bool> _isEditable = [true]; // only last one is editable
-  List<Map<String, String>> _tripPlan = [];
   List<Map<String, TextEditingController>> _tripPlanControllers = [
     {
       'time': TextEditingController(),
@@ -117,14 +116,11 @@ class _CreateListingPageState extends State<CreateListingPage> {
   final TextEditingController _seatsController = TextEditingController();
 
   // Features
-  List<String> _features = [];
   List<TextEditingController> _featureControllers = [TextEditingController()];
   List<bool> _isFeatureEditable = [true];
 
   // Location
   final TextEditingController _locationDisplayController =
-      TextEditingController();
-  final TextEditingController _googleMapsUrlController =
       TextEditingController();
 
   void _openLocationPicker() async {
@@ -177,13 +173,15 @@ class _CreateListingPageState extends State<CreateListingPage> {
       "description": _descriptionController.text.trim(),
       "location": _locationDisplayController.text.trim(),
       "price": double.tryParse(_priceController.text) ?? 0.0,
-      "duration": _calculateDurationInHours(),
+      "price_type": _selectedTicketPriceType,
       "nb_seats": int.tryParse(_seatsController.text.trim()) ?? 0,
       "category_id": _selectedCategory?["id"],
       "latitude": _mapLatLng!.latitude,
       "longitude": _mapLatLng!.longitude,
       "features": features,
       "trip_plan": tripPlans,
+      "from_time": _fromController.text.trim(),
+      "to_time": _toController.text.trim(),
     };
 
     final success = await ActivityService.createActivity(activityData);
@@ -194,24 +192,6 @@ class _CreateListingPageState extends State<CreateListingPage> {
           ? "✅ Activity created successfully!"
           : "❌ Failed to create activity.",
     );
-  }
-
-  int _calculateDurationInHours() {
-    try {
-      final fromParts = _fromController.text.split(":").map(int.parse).toList();
-      final toParts = _toController.text.split(":").map(int.parse).toList();
-
-      final fromTime = TimeOfDay(hour: fromParts[0], minute: fromParts[1]);
-      final toTime = TimeOfDay(hour: toParts[0], minute: toParts[1]);
-
-      final fromMinutes = fromTime.hour * 60 + fromTime.minute;
-      final toMinutes = toTime.hour * 60 + toTime.minute;
-
-      final diffMinutes = toMinutes - fromMinutes;
-      return (diffMinutes / 60).ceil(); // round up
-    } catch (e) {
-      return 2; // fallback if user input is invalid
-    }
   }
 
   // A reusable widget method for text fields

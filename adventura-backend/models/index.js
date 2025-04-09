@@ -8,6 +8,7 @@ const EventImage = require("./EventImage"); // ✅ Add EventImage model
 const UserPreferences = require("./UserPreferences");
 const UserActivityInteraction = require("./UserActivityInteraction");
 const Booking = require("./Booking");
+const Feature = require("./Feature");
 
 // ✅ Define Relationships
 Activity.hasMany(ActivityImage, {
@@ -19,6 +20,11 @@ Activity.hasMany(Booking, {
 	foreignKey: "activity_id",
 	as: "activity_bookings",
 });
+Activity.hasMany(Feature, {
+	foreignKey: "activity_id",
+	as: "features",
+});
+
 Activity.hasMany(TripPlan, { foreignKey: "activity_id", onDelete: "CASCADE" });
 TripPlan.belongsTo(Activity, { foreignKey: "activity_id" });
 
@@ -46,7 +52,7 @@ Event.hasMany(EventImage, {
 	as: "event_images",
 	onDelete: "CASCADE",
 });
-EventImage.belongsTo(Event, { foreignKey: "event_id", as: "event_images" });
+EventImage.belongsTo(Event, { foreignKey: "event_id" });
 
 UserActivityInteraction.belongsTo(Activity, {
 	foreignKey: "activity_id",
@@ -73,4 +79,5 @@ module.exports = {
 	sequelize,
 	UserActivityInteraction,
 	TripPlan,
+	Feature,
 };

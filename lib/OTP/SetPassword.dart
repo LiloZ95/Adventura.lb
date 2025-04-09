@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'dart:ui';
 import 'package:http/http.dart' as http;
 import '../login/login.dart';
-import '../Main screen components/MainScreen.dart';
 import 'package:adventura/config.dart';
 
 class SetPassword extends StatefulWidget {

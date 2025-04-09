@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
-import 'storage_service.dart';
 import 'package:adventura/config.dart'; // ✅ Import the global config file
 
 class OtpService {

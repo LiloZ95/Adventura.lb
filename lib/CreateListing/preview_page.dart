@@ -185,19 +185,6 @@ class _PreviewPageState extends State<PreviewPage> {
     );
   }
 
-  Widget _buildAvailabilityPlaceholder() {
-    return Row(
-      children: const [
-        Icon(Icons.calendar_today, size: 18, color: Colors.grey),
-        SizedBox(width: 4),
-        Text(
-          "No date selected",
-          style: TextStyle(fontSize: 14, color: Colors.grey),
-        ),
-      ],
-    );
-  }
-
   Widget _tag(String text, {List<Color>? gradient}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

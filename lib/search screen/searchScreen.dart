@@ -1,13 +1,16 @@
 import 'dart:ui';
 
 import 'package:adventura/Booking/MyBooking.dart';
-import 'package:adventura/Main%20screen%20components/Cards.dart';
+import 'package:adventura/event_cards/Cards.dart';
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/Services/activity_service.dart';
 import 'package:adventura/colors.dart';
 import 'package:flutter/material.dart';
 
 class SearchScreen extends StatefulWidget {
+  final String? filterMode; // can be "limited_events_only", etc.
+
+  SearchScreen({this.filterMode});
   @override
   _SearchScreenState createState() => _SearchScreenState();
 }
@@ -376,7 +379,13 @@ class _SearchScreenState extends State<SearchScreen> {
     String? selectedLabel =
         selectedCategories.isNotEmpty ? selectedCategories.first : null;
     int? categoryId = selectedLabel != null ? categoryMap[selectedLabel] : null;
-
+    if (widget.filterMode == "limited_events_only") {
+      final events = await ActivityService.fetchEvents();
+      setState(() {
+        searchResults = [...events];
+      });
+      return;
+    }
     final activities = await ActivityService.fetchActivities(
       search: searchText,
       category: categoryId?.toString(),
@@ -388,19 +397,22 @@ class _SearchScreenState extends State<SearchScreen> {
           : null,
     );
 
-    // final events = await ActivityService.fetchEvents(
-    //   search: searchText,
-    //   category: categoryId?.toString(),
-    //   location: selectedLocation == "all" ? null : selectedLocation,
-    //   minPrice: budgetMin > 0 ? budgetMin : null,
-    //   maxPrice: budgetMax != null && budgetMax! > 0 ? budgetMax : null,
-    //   rating: selectedRatings.isNotEmpty
-    //       ? selectedRatings.reduce((a, b) => a > b ? a : b)
-    //       : null,
-    // );
+    final events = await ActivityService.fetchEvents(
+      search: searchText,
+      category: categoryId?.toString(),
+      location: selectedLocation == "all" ? null : selectedLocation,
+      minPrice: budgetMin > 0 ? budgetMin : null,
+      maxPrice: budgetMax != null && budgetMax! > 0 ? budgetMax : null,
+      rating: selectedRatings.isNotEmpty
+          ? selectedRatings.reduce((a, b) => a > b ? a : b)
+          : null,
+    );
+
+    final combinedResults = [...activities, ...events];
+    combinedResults.shuffle(); // 🔀 Randomize order
 
     setState(() {
-      searchResults = [...activities];
+      searchResults = combinedResults;
     });
   }
 

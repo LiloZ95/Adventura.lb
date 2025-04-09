@@ -5,7 +5,6 @@ import 'dart:ui';
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/colors.dart';
 import '../login/login.dart';
-import 'package:adventura/Services/auth_service.dart';
 import 'package:adventura/OTP/OTPVerification.dart';
 
 class SignUpPage extends StatefulWidget {

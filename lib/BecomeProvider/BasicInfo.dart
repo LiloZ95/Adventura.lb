@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:adventura/BecomeProvider/widgets/dots.dart';
 import 'package:adventura/BecomeProvider/widgets/TextFieldWidget.dart';
 
 class BasicInfoScreen extends StatelessWidget {
