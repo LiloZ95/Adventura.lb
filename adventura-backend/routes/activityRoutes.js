@@ -9,6 +9,7 @@ const {
   setPrimaryImage,
   getActivityImages,
   uploadImages,
+  getActivitiesByProvider,
 } = require("../controllers/activityController");
 
 const {
@@ -57,9 +58,8 @@ router.get("/recommendations/:id", async (req, res) => {
   }
 });
 
-// 📍 GET - images for a specific activity
-router.get("/activity-images/:activity_id", getActivityImages);
-
 router.post('/activity-images/upload/:activityId', upload.array('images'), uploadImages);
+
+router.get('/by-provider/:provider_id', getActivitiesByProvider);
 
 module.exports = router;

@@ -6,6 +6,7 @@ import 'package:adventura/OTP/ForgotPasswordScreen.dart';
 import 'package:adventura/signUp%20page/Signup.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import '';
 import 'dart:ui'; // For ImageFilter
 import '../colors.dart';
@@ -79,6 +80,12 @@ class _LoginPageState extends State<LoginPage> {
 
         // ✅ Ensure 'user' exists before accessing it
         if (response.containsKey("user") && response["user"] is Map) {
+          final user = response["user"];
+          final box = await Hive.openBox('authBox');
+          box.put(
+              "userId", user["id"].toString()); // ✅ Save as string for safety
+          print("✅ Saved userId to Hive: ${user["id"]}");
+
           setState(() =>
               _isLoading = false); // ✅ Reset loading state before navigation
 

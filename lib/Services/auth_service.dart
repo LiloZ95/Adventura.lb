@@ -89,6 +89,7 @@ class AuthService {
       print("🔍 Login API Response: $data");
 
       if (response.statusCode == 200 && data is Map) {
+        bool isProvider = false;
         Box storageBox = await Hive.openBox('authBox'); // ✅ Use Hive
 
         String? accessToken = data["accessToken"];
@@ -121,13 +122,27 @@ class AuthService {
           await storageBox.put("lastName", user["last_name"]);
           await storageBox.put("profilePicture", user["profilePicture"] ?? "");
 
+          // ✅ Store the user type
+          String userType = user["user_type"] ?? "client";
+          await storageBox.put("userType", userType);
+
+          isProvider = userType == "provider";
+          if (isProvider && user.containsKey("provider_id")) {
+            await storageBox.put("providerId", user["provider_id"]);
+            print("🏢 Stored providerId: ${user["provider_id"]}");
+          }
+
           print("✅ User details saved: ID=${user["user_id"]}");
         } catch (e) {
           print("❌ Error storing user data: $e");
           return {"success": false, "error": "Failed to store user data."};
         }
 
-        return {"success": true, "user": user};
+        return {
+          "success": true,
+          "user": user,
+          "isProvider": isProvider, // ⬅️ return this info for convenience
+        };
       } else {
         print("❌ Login failed. API Error: ${data["error"] ?? "Unknown error"}");
         return {

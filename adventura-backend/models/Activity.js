@@ -43,6 +43,10 @@ const Activity = sequelize.define("activities", {
 		type: DataTypes.DOUBLE,
 		allowNull: true,
 	},
+	provider_id: {
+		type: DataTypes.INTEGER,
+		allowNull: false,
+	  },
 });
 
 module.exports = Activity;

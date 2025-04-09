@@ -54,6 +54,57 @@ class ActivityService {
     }
   }
 
+  static Future<void> deleteActivity(String activityId) async {
+    final box = await Hive.openBox('authBox');
+    String? accessToken = box.get("accessToken");
+
+    if (accessToken == null) {
+      throw Exception("No access token found.");
+    }
+
+    final url = Uri.parse('$baseUrl/activities/$activityId');
+
+    final response = await http.delete(
+      url,
+      headers: {
+        "Authorization": "Bearer $accessToken",
+        "Content-Type": "application/json",
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete activity: ${response.body}');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchProviderListings(
+      int providerId) async {
+    Box storageBox = await Hive.openBox('authBox');
+    String? accessToken = storageBox.get("accessToken");
+
+    if (accessToken == null) return [];
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/activities/by-provider/$providerId'),
+        headers: {
+          "Authorization": "Bearer $accessToken",
+          "Content-Type": "application/json",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return List<Map<String, dynamic>>.from(data["activities"]);
+      } else {
+        print("❌ Failed to fetch listings: ${response.body}");
+      }
+    } catch (e) {
+      print("❌ Error fetching listings: $e");
+    }
+
+    return [];
+  }
 
   static Future<bool> uploadActivityImages({
     required int activityId,
