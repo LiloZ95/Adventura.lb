@@ -40,6 +40,7 @@ String? _calculateDuration(String? from, String? to) {
   }
 }
 
+// ignore: non_constant_identifier_names
 Widget EventCard({
   required BuildContext context,
   required Map<String, dynamic> activity,
@@ -64,10 +65,27 @@ Widget EventCard({
 
   return GestureDetector(
     onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => EventDetailsScreen(activity: activity),
+      Navigator.of(context).push(
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 800),
+          reverseTransitionDuration: const Duration(milliseconds: 300),
+          pageBuilder: (_, __, ___) => EventDetailsScreen(activity: activity),
+          transitionsBuilder: (_, animation, __, child) {
+            final curvedAnimation = CurvedAnimation(
+              parent: animation,
+              curve: Curves
+                  .easeOutExpo, // Feel free to try easeInOutCubic or easeInOutBack
+            );
+
+            return FadeTransition(
+              opacity: curvedAnimation,
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.92, end: 1.0)
+                    .animate(curvedAnimation),
+                child: child,
+              ),
+            );
+          },
         ),
       );
     },
@@ -75,7 +93,6 @@ Widget EventCard({
       padding: const EdgeInsets.only(left: 16, right: 16, bottom: 10),
       child: Container(
         width: 380,
-        height: 300,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(15),
           color: Colors.white,
@@ -88,84 +105,101 @@ Widget EventCard({
             ),
           ],
         ),
-        child: Stack(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 📷 Image
-            ClipRRect(
-              borderRadius: BorderRadius.circular(15),
-              child: imagePath.isNotEmpty
-                  ? Image.network(
-                      imagePath,
-                      width: 380,
-                      height: 208,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Image.asset(
+            // 📷 Image with bottom gradient fade + duration badge
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+                  child: imagePath.isNotEmpty
+                      ? Image.network(
+                          imagePath,
+                          width: 380,
+                          height: 208,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Image.asset(
+                              "assets/Pictures/island.jpg",
+                              width: 380,
+                              height: 208,
+                              fit: BoxFit.cover,
+                            );
+                          },
+                        )
+                      : Image.asset(
                           "assets/Pictures/island.jpg",
                           width: 380,
                           height: 208,
                           fit: BoxFit.cover,
-                        );
-                      },
-                    )
-                  : Image.asset(
-                      "assets/Pictures/island.jpg",
-                      width: 380,
-                      height: 208,
-                      fit: BoxFit.cover,
-                    ),
-            ),
+                        ),
+                ),
 
-            // 🕒 Duration Badge (Top Right)
-            if (duration != null)
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.schedule, size: 14, color: Colors.white),
-                      SizedBox(width: 4),
-                      Text(
-                        duration,
-                        style: TextStyle(color: Colors.white, fontSize: 12),
+                // 🌅 Subtle Bottom Gradient (image overlay)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: 60,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.white.withOpacity(0.8),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
 
-            // 🌅 Gradient Overlay at Bottom
-            Positioned(
-              bottom: 72,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: 120,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.white.withOpacity(0),
-                      Colors.white,
-                      Colors.white,
-                    ],
+                // 🕒 Duration Badge
+                if (duration != null)
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.schedule, size: 14, color: Colors.white),
+                          SizedBox(width: 4),
+                          Text(
+                            duration,
+                            style: TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
+              ],
             ),
 
-            // 📋 Info + Tags
-            Positioned(
-              bottom: 12,
-              left: 16,
-              right: 16,
+            // ⬇️ Content below the image with soft white gradient background
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white.withOpacity(0.0),
+                    Colors.white.withOpacity(0.7),
+                    Colors.white,
+                  ],
+                ),
+                borderRadius:
+                    BorderRadius.vertical(bottom: Radius.circular(15)),
+              ),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -243,24 +277,35 @@ Widget EventCard({
                         );
                       }).toList(),
                     ),
-                ],
-              ),
-            ),
 
-            // 💰 Price
-            Positioned(
-              bottom: 12,
-              right: 16,
-              child: Text(
-                activity["price"] != null
-                    ? "\$${activity["price"]} / ${activity["price_type"] ?? 'Person'}"
-                    : "Free",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
-                  fontFamily: 'Poppins',
-                ),
+                  SizedBox(height: 6),
+
+                  // 💰 Price aligned right
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          activity["price"] != null
+                              ? "\$${activity["price"]} / ${activity["price_type"] ?? 'Person'}"
+                              : "Free",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.blue.shade800,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
