@@ -1,83 +1,70 @@
-const { sequelize } = require("./db/db.js"); // Import Sequelize instance
-const User = require("./models/User.js"); // Import User model
+const { sequelize } = require("./db/db.js");
 const { QueryTypes } = require("sequelize");
 
-const distributeUsers = async () => {
+const distributeUser = async (user) => {
   try {
-    const users = await User.findAll(); // Fetch all users
+    const { user_id, first_name, last_name, user_type } = user;
+    const normalizedUserType = user_type ? user_type.trim().toLowerCase() : "client";
 
-    if (users.length === 0) {
-      console.log("No users found to distribute.");
+    // ✅ Determine which table the user currently exists in
+    const existingRecord = await sequelize.query(
+      `SELECT table_name FROM (
+        SELECT 'provider' AS table_name FROM provider WHERE user_id = :userId
+        UNION
+        SELECT 'client' FROM client WHERE user_id = :userId
+        UNION
+        SELECT 'administrator' FROM administrator WHERE user_id = :userId
+      ) AS tables`,
+      {
+        replacements: { userId: user_id },
+        type: QueryTypes.SELECT,
+      }
+    );
+
+    const currentTable = existingRecord.length > 0 ? existingRecord[0].table_name : null;
+    const correctTable =
+      normalizedUserType === "provider"
+        ? "provider"
+        : normalizedUserType === "admin"
+        ? "administrator"
+        : "client";
+
+    // ✅ Skip if already in the correct table
+    if (currentTable === correctTable) {
+      console.log(`✅ User "${first_name} ${last_name}" is correctly placed in ${correctTable}. Skipping.`);
       return;
     }
 
-    for (const user of users) {
-      const { user_id, first_name, last_name, user_type } = user;
-      const normalizedUserType = user_type ? user_type.trim().toLowerCase() : "client";
-
-      // **Check if user is already in the correct table**
-      const existingRecord = await sequelize.query(
-        `SELECT table_name FROM (
-          SELECT 'provider' AS table_name FROM provider WHERE user_id = :userId
-          UNION
-          SELECT 'client' FROM client WHERE user_id = :userId
-          UNION
-          SELECT 'administrator' FROM administrator WHERE user_id = :userId
-        ) AS tables`,
-        {
-          replacements: { userId: user_id },
-          type: QueryTypes.SELECT,
-        }
-      );
-
-      const currentTable = existingRecord.length > 0 ? existingRecord[0].table_name : null;
-      const correctTable =
-        normalizedUserType === "provider" ? "provider" :
-        normalizedUserType === "admin" ? "administrator" :
-        "client"; // Default to client
-
-      // **If user is already in the correct table, skip them**
-      if (currentTable === correctTable) {
-        console.log(`✅ User "${first_name} ${last_name}" is correctly placed in ${correctTable}. Skipping.`);
-        continue;
-      }
-
-      // **If user is in the wrong table, move them**
-      if (currentTable) {
-        await sequelize.query(`DELETE FROM ${currentTable} WHERE user_id = :userId`, {
-          replacements: { userId: user_id },
-          type: QueryTypes.DELETE,
-        });
-        console.log(`🗑 Removed user "${first_name} ${last_name}" from ${currentTable}.`);
-      }
-
-      // **Insert user into the correct table (without manually setting the primary key)**
-      let insertQuery = "";
-      let insertValues = {};
-      if (correctTable === "provider") {
-        insertQuery = `INSERT INTO provider (user_id, business_name) VALUES (:userId, 'Default Business')`;
-        insertValues = { userId: user_id };
-      } else if (correctTable === "administrator") {
-        insertQuery = `INSERT INTO administrator (user_id, permissions, admin_role) VALUES (:userId, 'All', 'Super Admin')`;
-        insertValues = { userId: user_id };
-      } else {
-        insertQuery = `INSERT INTO client (user_id, loyalty_points) VALUES (:userId, 0)`;
-        insertValues = { userId: user_id };
-      }
-
-      await sequelize.query(insertQuery, {
-        replacements: insertValues,
-        type: QueryTypes.INSERT,
+    // 🗑 Remove from wrong table (if any)
+    if (currentTable) {
+      await sequelize.query(`DELETE FROM ${currentTable} WHERE user_id = :userId`, {
+        replacements: { userId: user_id },
+        type: QueryTypes.DELETE,
       });
-
-      console.log(`✅ Moved user "${first_name} ${last_name}" to ${correctTable}.`);
+      console.log(`🗑 Removed user "${first_name} ${last_name}" from ${currentTable}.`);
     }
 
-    console.log("✅ User distribution completed successfully!");
+    // ✅ Insert into correct table
+    let insertQuery = "";
+    let insertValues = { userId: user_id };
+
+    if (correctTable === "provider") {
+      insertQuery = `INSERT INTO provider (user_id, business_name) VALUES (:userId, 'Default Business')`;
+    } else if (correctTable === "administrator") {
+      insertQuery = `INSERT INTO administrator (user_id, permissions, admin_role) VALUES (:userId, 'All', 'Super Admin')`;
+    } else {
+      insertQuery = `INSERT INTO client (user_id, loyalty_points) VALUES (:userId, 0)`;
+    }
+
+    await sequelize.query(insertQuery, {
+      replacements: insertValues,
+      type: QueryTypes.INSERT,
+    });
+
+    console.log(`✅ User "${first_name} ${last_name}" assigned to ${correctTable}`);
   } catch (error) {
-    console.error("❌ Error distributing users:", error);
+    console.error(`❌ Error distributing user "${user.first_name} ${user.last_name}":`, error);
   }
 };
 
-// Run the function
-module.exports = { distributeUsers };
+module.exports = { distributeUser };

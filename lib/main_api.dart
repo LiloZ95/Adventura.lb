@@ -38,8 +38,8 @@ class MainApi extends ChangeNotifier {
     }
     storageBox = await Hive.openBox('authBox');
 
-    print(
-        "🟢 Hive Initialized. Current Storage: ${storageBox.toMap()}"); // Debugging
+    // print(
+    //     "🟢 Hive Initialized. Current Storage: ${storageBox.toMap()}"); // Debugging
     await initializeApp();
   }
 

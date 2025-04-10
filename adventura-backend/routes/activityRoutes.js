@@ -10,6 +10,7 @@ const {
   getActivityImages,
   uploadImages,
   getActivitiesByProvider,
+  softDeleteActivity,
 } = require("../controllers/activityController");
 
 const {
@@ -28,6 +29,9 @@ router.get("/:id", getActivityById);
 
 // ✅ CREATE a new activity
 router.post("/create", createActivity);
+
+// ✅ DELETE an activity (soft delete)
+router.delete("/:id", softDeleteActivity);
 
 // ✅ POST: Get activity details by list of IDs
 router.post("/details", getActivitiesDetails);

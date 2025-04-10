@@ -59,11 +59,4 @@ router.post("/upload-profile-picture", upload.single("image"), userController.up
 router.get("/get-profile-picture/:id", userController.getProfilePicture);
 router.delete("/delete-profile-picture/:id", userController.deleteProfilePicture);
 
-// ✅ Activity Images
-router.post(
-  "/upload-activity-images/:activity_id",
-  upload.array("images", 10),
-  userController.uploadActivityImages
-);
-
 module.exports = router;
