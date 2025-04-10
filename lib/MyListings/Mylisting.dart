@@ -1,5 +1,5 @@
+import 'package:adventura/event_cards/eventDetailsScreen.dart';
 import 'package:flutter/material.dart';
-import 'package:adventura/search%20screen/eventDetailsScreen.dart';
 import 'package:adventura/services/activity_service.dart';
 import 'package:adventura/config.dart';
 import 'package:hive/hive.dart';
