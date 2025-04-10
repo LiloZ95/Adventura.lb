@@ -25,7 +25,6 @@ class UserService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        print("✅ User profile fetched successfully: $data");
 
         // ✅ Store user data in Hive
         storageBox.put("userProfile", data);

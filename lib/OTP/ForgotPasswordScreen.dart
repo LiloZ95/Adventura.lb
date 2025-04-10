@@ -25,8 +25,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       final response = await OtpService.sendOtp(_emailController.text,
           isForSignup: false); // Get response
 
-      print("🔍 API Response: $response");
-
       setState(() => _isLoading = false);
 
       if (response["success"] == true) {

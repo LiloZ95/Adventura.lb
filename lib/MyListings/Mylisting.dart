@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:adventura/services/activity_service.dart';
 import 'package:adventura/config.dart';
 import 'package:hive/hive.dart';
-import 'package:http/http.dart' as http;
 
 class MyListingsPage extends StatefulWidget {
   @override

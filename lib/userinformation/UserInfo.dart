@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:adventura/BecomeProvider/WelcomePage.dart';
-import 'package:adventura/CreateListing/CreateList.dart';
 import 'package:adventura/MyListings/Mylisting.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/login/login.dart';
@@ -246,10 +245,10 @@ class _UserInfoState extends State<UserInfo> {
                     title: "My listings",
                     onTap: () {
                       Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => MyListingsPage()),
-                                    );
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => MyListingsPage()),
+                      );
                     },
                   ),
 
@@ -483,7 +482,8 @@ class _UserInfoState extends State<UserInfo> {
       if (profilePicture.startsWith("data:image")) {
         try {
           String base64String = profilePicture.split(",")[1];
-          Uint8List imageBytes = base64Decode(base64String);
+          Uint8List imageBytes =
+              base64Decode(base64String.split(',').last); // ✅ Works
 
           return Image.memory(
             imageBytes,

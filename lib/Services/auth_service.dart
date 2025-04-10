@@ -84,11 +84,9 @@ class AuthService {
       );
 
       final data = jsonDecode(response.body);
-      print("🔍 Login API Response: $data");
 
       if (response.statusCode == 200 && data is Map) {
-        bool isProvider = false;
-        Box storageBox = await Hive.openBox('authBox'); // ✅ Use Hive
+        Box storageBox = await Hive.openBox('authBox');
 
         String? accessToken = data["accessToken"];
         String? refreshToken = data["refreshToken"];
@@ -97,7 +95,6 @@ class AuthService {
         print("🔑 Received Access Token: $accessToken");
         print("🔑 Received Refresh Token: $refreshToken");
 
-        // ✅ Check if the API response is valid
         if (accessToken == null || refreshToken == null || user == null) {
           print("❌ API response missing required fields.");
           return {
@@ -106,26 +103,29 @@ class AuthService {
           };
         }
 
-        // ✅ Store tokens & login state in Hive
+        // ✅ Store tokens
         await storageBox.put("accessToken", accessToken);
         await storageBox.put("refreshToken", refreshToken);
-        await storageBox.put("isLoggedIn", true); // ✅ Store login state
-        await storageBox.put("userId", user["user_id"].toString());
+        await storageBox.put("isLoggedIn", true);
 
-        print("✅ Tokens successfully stored in Hive!");
+        // ✅ Store user_id only if valid
+        if (user.containsKey("user_id") && user["user_id"] != null) {
+          await storageBox.put("userId", user["user_id"].toString());
+          print("✅ Saved userId to Hive: ${user["user_id"]}");
+        } else {
+          print("❌ Failed to save userId: user_id missing or null");
+        }
 
         try {
-          // ✅ Store user details
+          // ✅ Save user details
           await storageBox.put("firstName", user["first_name"]);
           await storageBox.put("lastName", user["last_name"]);
           await storageBox.put("profilePicture", user["profilePicture"] ?? "");
 
-          // ✅ Store the user type
           String userType = user["user_type"] ?? "client";
           await storageBox.put("userType", userType);
 
-          isProvider = userType == "provider";
-          if (isProvider && user.containsKey("provider_id")) {
+          if (userType == "provider" && user["provider_id"] != null) {
             await storageBox.put("providerId", user["provider_id"]);
             print("🏢 Stored providerId: ${user["provider_id"]}");
           }
@@ -139,7 +139,7 @@ class AuthService {
         return {
           "success": true,
           "user": user,
-          "isProvider": isProvider, // ⬅️ return this info for convenience
+          "isProvider": user["user_type"] == "provider",
         };
       } else {
         print("❌ Login failed. API Error: ${data["error"] ?? "Unknown error"}");
@@ -183,7 +183,7 @@ class AuthService {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/refresh'),
+        Uri.parse('$baseUrl/users/refresh-token'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"refreshToken": refreshToken}),
       );
