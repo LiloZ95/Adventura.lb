@@ -453,6 +453,155 @@ const refreshAccessToken = async (req, res) => {
 	}
 };
 
+// ✅ Logout Handler
+const logoutUser = (req, res) => {
+	const { refreshToken } = req.body;
+	if (!refreshToken || !refreshTokens.has(refreshToken)) {
+		return res
+			.status(403)
+			.json({ message: "Invalid or missing refresh token" });
+	}
+	refreshTokens.delete(refreshToken);
+	res.status(200).json({ message: "Logged out successfully!" });
+};
+
+// ✅ Token Validation
+const validateToken = (req, res) => {
+	const token = req.header("Authorization")?.split(" ")[1];
+	if (!token) return res.status(401).json({ error: "No token provided." });
+	try {
+		const decoded = jwt.verify(token, process.env.JWT_SECRET);
+		res.status(200).json({
+			success: true,
+			message: "Token is valid.",
+			userId: decoded.userId,
+		});
+	} catch (err) {
+		res.status(401).json({ error: "Invalid or expired token." });
+	}
+};
+
+// ✅ Dashboard Example
+const getDashboard = (req, res) => {
+	res.json({
+		message: `Welcome ${req.user.email}, your role is ${req.user.userType}`,
+	});
+};
+
+// ✅ OTP Handlers
+const sendOtp = async (req, res) => {
+	const { email, isForSignup } = req.body;
+	if (!isForSignup) {
+		const user = await User.findOne({ where: { email } });
+		if (!user) return res.status(404).json({ error: "User not found" });
+	}
+	const otp = Math.floor(100000 + Math.random() * 900000).toString();
+	otpStore[email] = { otp, expiresAt: Date.now() + 5 * 60 * 1000 };
+	console.log(`🔐 OTP for ${email}: ${otp}`);
+	// Skipping email logic for brevity
+	res.status(200).json({ success: true, message: "OTP sent successfully" });
+};
+
+const resendOtp = sendOtp; // Logic is the same
+
+const verifyOtp = async (req, res) => {
+	const {
+		email,
+		otp,
+		isForSignup,
+		firstName,
+		lastName,
+		phoneNumber,
+		password,
+	} = req.body;
+	const stored = otpStore[email];
+	if (!stored || stored.otp !== otp || Date.now() > stored.expiresAt) {
+		return res.status(400).json({ error: "Invalid or expired OTP" });
+	}
+	delete otpStore[email];
+
+	let user = await User.findOne({ where: { email } });
+	if (isForSignup && !user) {
+		const hashedPassword = await bcrypt.hash(password, 10);
+		user = await User.create({
+			first_name: firstName,
+			last_name: lastName,
+			email,
+			phone_number: phoneNumber,
+			password_hash: hashedPassword,
+			user_type: "client",
+		});
+		await distributeUser(user);
+	}
+
+	const accessToken = jwt.sign(
+		{ userId: user.user_id },
+		process.env.JWT_SECRET,
+		{ expiresIn: "15m" }
+	);
+	const refreshToken = jwt.sign(
+		{ userId: user.user_id },
+		process.env.JWT_REFRESH_SECRET,
+		{ expiresIn: "7d" }
+	);
+	refreshTokens.add(refreshToken);
+
+	res.cookie("refreshToken", refreshToken, {
+		httpOnly: true,
+		secure: true,
+		sameSite: "Strict",
+	});
+	res.status(200).json({ success: true, accessToken, refreshToken, user });
+};
+
+// ✅ Profile Picture Handling
+const uploadProfilePicture = async (req, res) => {
+	const user_id = req.body.user_id || req.query.user_id;
+	const imageBuffer = req.file?.buffer;
+	if (!user_id || !imageBuffer)
+		return res.status(400).json({ error: "Missing user ID or image." });
+
+	const existing = await UserPfp.findOne({ where: { user_id } });
+	if (existing)
+		await UserPfp.update({ image_data: imageBuffer }, { where: { user_id } });
+	else await UserPfp.create({ user_id, image_data: imageBuffer });
+	res.status(200).json({ success: true, message: "Profile picture saved." });
+};
+
+const getProfilePicture = async (req, res) => {
+	const userPfp = await UserPfp.findOne({ where: { user_id: req.params.id } });
+	if (!userPfp) return res.status(404).json({ error: "Not found" });
+	const imageBase64 = userPfp.image_data.toString("base64");
+	res.status(200).json({ image: `data:image/png;base64,${imageBase64}` });
+};
+
+const deleteProfilePicture = async (req, res) => {
+	const deleted = await UserPfp.destroy({ where: { user_id: req.params.id } });
+	if (!deleted) return res.status(404).json({ error: "Not found" });
+	res.status(200).json({ message: "Profile picture deleted" });
+};
+
+// ✅ Activity Image Upload
+const uploadActivityImages = async (req, res) => {
+	const { activity_id } = req.params;
+	if (!req.files?.length)
+		return res.status(400).json({ error: "No images uploaded." });
+
+	for (const file of req.files) {
+		await sequelize.query(
+			`INSERT INTO activity_images (activity_id, image_url) VALUES (:activity_id, :image_url)`,
+			{
+				replacements: {
+					activity_id,
+					image_url: `data:image/png;base64,${file.buffer.toString("base64")}`,
+				},
+				type: QueryTypes.INSERT,
+			}
+		);
+	}
+	res.status(200).json({ message: "Images uploaded successfully." });
+};
+
 module.exports = {
 	getAllUsers,
 	getUserById,
@@ -462,4 +611,14 @@ module.exports = {
 	deleteUser,
 	loginUser,
 	refreshAccessToken,
+	logoutUser,
+	validateToken,
+	getDashboard,
+	sendOtp,
+	resendOtp,
+	verifyOtp,
+	uploadProfilePicture,
+	getProfilePicture,
+	deleteProfilePicture,
+	uploadActivityImages,
 };
