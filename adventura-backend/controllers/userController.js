@@ -366,6 +366,7 @@ const loginUser = async (req, res) => {
 
 		// Store refresh token in DB (or a Redis cache)
 		refreshTokens.add(refreshToken); // Replace with DB storage
+		await user.update({ lastLogin: new Date() });
 
 		res.cookie("refreshToken", refreshToken, {
 			httpOnly: true,
@@ -382,27 +383,36 @@ const loginUser = async (req, res) => {
 	}
 };
 
-const refreshAccessToken = (req, res) => {
+const refreshAccessToken = async (req, res) => {
 	try {
 		const { refreshToken } = req.body;
-		if (!refreshToken)
-			return res.status(400).json({ error: "Refresh token required" });
+		if (!refreshToken) {
+			return res.status(400).json({ error: "Refresh token missing." });
+		}
 
-		// Verify refresh token
+		if (!refreshTokens.has(refreshToken)) {
+			return res.status(403).json({ error: "Unrecognized refresh token" });
+		}
+
+		// Verify the token
 		jwt.verify(
 			refreshToken,
-			process.env.REFRESH_TOKEN_SECRET,
+			process.env.JWT_REFRESH_SECRET,
 			async (err, decoded) => {
-				if (err)
+				if (err) {
+					console.error("❌ Refresh token error:", err.message);
 					return res
 						.status(401)
 						.json({ error: "Invalid or expired refresh token." });
+				}
 
 				const userId = decoded.userId;
 				const user = await User.findByPk(userId);
-				if (!user) return res.status(404).json({ error: "User not found." });
+				if (!user) {
+					return res.status(404).json({ error: "User not found." });
+				}
 
-				// Check last login time (only allow refresh within 7 days)
+				// Check lastLogin timing
 				const lastLogin = new Date(user.lastLogin || 0);
 				const now = new Date();
 				const diffDays = (now - lastLogin) / (1000 * 60 * 60 * 24);
@@ -413,27 +423,33 @@ const refreshAccessToken = (req, res) => {
 						.json({ error: "Session expired. Please log in again." });
 				}
 
-				// Generate new access & refresh tokens
+				// Issue new tokens
 				const newAccessToken = jwt.sign(
 					{ userId: user.user_id, email: user.email },
 					process.env.JWT_SECRET,
 					{ expiresIn: "15m" }
 				);
+
 				const newRefreshToken = jwt.sign(
 					{ userId: user.user_id },
 					process.env.JWT_REFRESH_SECRET,
 					{ expiresIn: "7d" }
 				);
 
-				res.json({
+				refreshTokens.add(newRefreshToken); // Add the new one
+				refreshTokens.delete(refreshToken); // Invalidate the old one
+				await user.update({ lastLogin: new Date() });
+
+				return res.status(200).json({
+					success: true,
 					accessToken: newAccessToken,
 					refreshToken: newRefreshToken,
 				});
 			}
 		);
-	} catch (error) {
-		console.error("Error refreshing token:", error);
-		res.status(500).json({ error: "Internal server error" });
+	} catch (err) {
+		console.error("❌ Error refreshing token:", err.message);
+		res.status(500).json({ error: "Internal server error." });
 	}
 };
 

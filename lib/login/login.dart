@@ -71,7 +71,7 @@ class _LoginPageState extends State<LoginPage> {
         _passwordController.text,
       );
 
-      print("🔍 API Response: $response");
+      
 
       if (response["success"] == true) {
         print("✅ Login Successful!");
@@ -80,10 +80,13 @@ class _LoginPageState extends State<LoginPage> {
         if (response.containsKey("user") && response["user"] is Map) {
           final user = response["user"];
           final box = await Hive.openBox('authBox');
-          box.put(
-              "userId", user["id"].toString()); // ✅ Save as string for safety
-          print("✅ Saved userId to Hive: ${user["id"]}");
-
+          if (user.containsKey("user_id") && user["user_id"] != null) {
+            box.put("userId", user["user_id"].toString());
+            print(
+                "✅ Saved userId to Hive from login screen: ${user["user_id"]}");
+          } else {
+            print("❌ 'user_id' missing or null in login screen");
+          }
           setState(() =>
               _isLoading = false); // ✅ Reset loading state before navigation
 

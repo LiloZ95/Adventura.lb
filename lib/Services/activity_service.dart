@@ -9,11 +9,17 @@ class ActivityService {
   /// ✅ Create Activity
   static Future<bool> createActivity(Map<String, dynamic> activityData,
       {List<XFile>? images}) async {
+    Box authBox = await Hive.openBox('authBox');
+    String? accessToken = authBox.get("accessToken");
+
     try {
       // 1. Create activity
       final activityResponse = await http.post(
         Uri.parse('$baseUrl/activities/create'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken', // ✅ add this if missing
+        },
         body: jsonEncode(activityData),
       );
 
@@ -287,7 +293,6 @@ class ActivityService {
       );
 
       print("🔍 API Response Code: ${response.statusCode}");
-      print("🔍 API Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

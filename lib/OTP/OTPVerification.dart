@@ -134,8 +134,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         password: widget.signupData?["password"],
       );
 
-      print("🔍 FULL API Response: $response");
-
       // ✅ Ensure response contains "user"
       if (!response.containsKey("user") || response["user"] == null) {
         print("❌ User data is missing in response! Full Response: $response");
