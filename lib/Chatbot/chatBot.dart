@@ -11,7 +11,10 @@ import 'package:adventura/config.dart';
 
 class AdventuraChatPage extends StatefulWidget {
   final String userName;
-  const AdventuraChatPage({Key? key, required this.userName}) : super(key: key);
+  final String userId;
+  const AdventuraChatPage(
+      {Key? key, required this.userName, required this.userId})
+      : super(key: key);
   @override
   _AdventuraChatPageState createState() => _AdventuraChatPageState();
 }
@@ -48,40 +51,67 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
   @override
   void initState() {
     super.initState();
-    _loadChatMessages();
-
-    _messages.add({
-      'text': "Welcome 👋 This is EVA — your adventure assistant here in Lebanon!\n\n"
-          "Here's what it can help you with:\n"
-          "✨ Suggest fun things to do\n"
-          "📍 Find activities near a place — like 'Show me something in Batroun'\n"
-          "🎟️ Help you book activities and trips\n"
-          "💬 Answer common questions — like pricing, refunds, group discounts\n\n"
-          "Ready to explore? Ask anything travel-related — or tap one of the quick options below to get started! 🧭",
-      'isUser': false,
-      'cards': [],
-      'isWelcome': true,
-      'timestamp': DateTime.now(),
-    });
+    _loadMessages(); // this handles everything
   }
 
-  Future<void> _loadChatMessages() async {
-    Box box = await Hive.openBox('chatBox');
-    List<dynamic> storedMessages = box.get('messages_${widget.userName}') ?? [];
+  Future<void> _loadMessages() async {
+    final chatBox = await Hive.openBox('chatMessages');
+    final stored = chatBox.get('messages_${widget.userId}');
 
-    setState(() {
-      _messages.addAll(List<Map<String, dynamic>>.from(storedMessages));
-    });
+    if (stored != null && stored is List) {
+      // Step 1: Convert each msg to Map<String, dynamic>
+      final typedMessages = stored.map<Map<String, dynamic>>((msg) {
+        final safeMsg = Map<String, dynamic>.from(msg);
+
+        // Step 2: If there's a cards list, cast each card inside it
+        if (safeMsg['cards'] != null && safeMsg['cards'] is List) {
+          final rawCards = safeMsg['cards'] as List;
+          safeMsg['cards'] = rawCards
+              .map<Map<String, dynamic>>(
+                (card) => Map<String, dynamic>.from(card),
+              )
+              .toList();
+        }
+
+        return safeMsg;
+      }).toList();
+
+      setState(() {
+        _messages.addAll(typedMessages);
+        for (int i = 0; i < typedMessages.length; i++) {
+          _animatedMessageIndexes.add(i);
+        }
+      });
+    } else {
+      setState(() {
+        _messages.add({
+          'text': "Welcome 👋 This is EVA — your adventure assistant here in Lebanon!\n\n"
+              "Here's what it can help you with:\n"
+              "✨ Suggest fun things to do\n"
+              "📍 Find activities near a place — like 'Show me something in Batroun'\n"
+              "🎟️ Help you book activities and trips\n"
+              "💬 Answer common questions — like pricing, refunds, group discounts\n\n"
+              "Ready to explore? Ask anything travel-related — or tap one of the quick options below to get started! 🧭",
+          'isUser': false,
+          'cards': [],
+          'isWelcome': true,
+          'timestamp': DateTime.now(),
+        });
+        _animatedMessageIndexes.add(0);
+      });
+
+      await chatBox.put('messages_${widget.userId}', _messages);
+    }
   }
 
   Future<void> _saveMessagesToHive() async {
-    Box box = await Hive.openBox('chatBox');
-    await box.put('messages_${widget.userName}', _messages);
+    final box = await Hive.openBox('chatMessages'); // ✅
+    await box.put('messages_${widget.userId}', _messages);
   }
 
   Future<void> _clearChat() async {
-    final box = await Hive.openBox('chatBox');
-    await box.delete('messages_${widget.userName}');
+    final box = await Hive.openBox('chatMessages');
+    await box.delete('messages_${widget.userId}'); // ✅ correct key
 
     setState(() {
       _messages.clear();
@@ -99,7 +129,10 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
         'isWelcome': true,
         'timestamp': DateTime.now(),
       });
+      _animatedMessageIndexes.add(0);
     });
+
+    await box.put('messages_${widget.userId}', _messages); // 🧠 Re-save fresh
   }
 
   void _sendMessage() async {

@@ -88,7 +88,7 @@ class MessageBubble extends StatelessWidget {
                                 color: Colors.black,
                                 fontFamily: "poppins",
                                 fontSize: 14),
-                            speed: Duration(milliseconds: 30),
+                            speed: Duration(milliseconds: 7),
                           ),
                         ],
                         isRepeatingAnimation: false,

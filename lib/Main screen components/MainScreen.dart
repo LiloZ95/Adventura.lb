@@ -242,16 +242,16 @@ class _MainScreenState extends State<MainScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => AdventuraChatPage(
-                                        userName:
-                                            firstName, // 👈 pass from Hive
+                                        userName: firstName,
+                                        userId: userId, // 👈 pass from Hive
                                       ),
                                     ),
                                   );
                                 },
                                 icon: Image.asset(
                                   'assets/Icons/ai.png',
-                                  width: 35,
-                                  height: 35,
+                                  width: screenWidth * 0.09,
+                                  height: screenWidth * 0.09,
                                 ),
                               ),
                               IconButton(
@@ -266,8 +266,8 @@ class _MainScreenState extends State<MainScreen> {
                                 },
                                 icon: Image.asset(
                                   'assets/Icons/bell-Bold.png',
-                                  width: 30,
-                                  height: 30,
+                                  width: screenWidth * 0.08,
+                                  height: screenWidth * 0.08,
                                 ),
                               ),
                               SizedBox(width: 8),
@@ -521,7 +521,7 @@ class _MainScreenState extends State<MainScreen> {
                       );
                     },
                     child: Container(
-                      width: 55,
+                      width: screenWidth * 0.14,
                       height: 55,
                       decoration: BoxDecoration(
                         color: Color.fromRGBO(137, 69, 247, 1),
@@ -537,8 +537,8 @@ class _MainScreenState extends State<MainScreen> {
                       child: Center(
                         child: Image.asset(
                           'assets/Icons/qr-code.png',
-                          width: 30,
-                          height: 30,
+                          width: screenWidth * 0.08,
+                          height: screenWidth * 0.08,
                           fit: BoxFit
                               .contain, // ✅ Forces it to stay inside the 30x30 box
                         ),
@@ -565,7 +565,7 @@ class _MainScreenState extends State<MainScreen> {
                       );
                     },
                     child: Container(
-                      width: 55,
+                      width: screenWidth * 0.14,
                       height: 55,
                       decoration: BoxDecoration(
                         color: AppColors.blue,
@@ -581,8 +581,8 @@ class _MainScreenState extends State<MainScreen> {
                       child: Center(
                         child: Image.asset(
                           'assets/Icons/add.png',
-                          width: 30,
-                          height: 30,
+                          width: screenWidth * 0.08,
+                          height: screenWidth * 0.08,
                           fit: BoxFit
                               .contain, // ✅ Forces it to stay inside the 30x30 box
                         ),
@@ -599,7 +599,7 @@ class _MainScreenState extends State<MainScreen> {
               child: Container(
                 margin: const EdgeInsets.only(bottom: 25),
                 width: screenWidth * 0.93,
-                height: 65,
+                height: screenHeight * 0.08,
                 decoration: BoxDecoration(
                   color: const Color(0xFF1B1B1B),
                   borderRadius: BorderRadius.circular(15),
@@ -618,7 +618,7 @@ class _MainScreenState extends State<MainScreen> {
                     IconButton(
                       onPressed: () {},
                       icon: Image.asset('assets/Icons/home.png',
-                          width: 35, height: 35, color: Colors.white),
+                          width: screenWidth * 0.09, height: screenWidth * 0.09, color: Colors.white),
                     ),
                     IconButton(
                       onPressed: () => Navigator.push(
@@ -626,7 +626,7 @@ class _MainScreenState extends State<MainScreen> {
                           MaterialPageRoute(
                               builder: (context) => SearchScreen())),
                       icon: Image.asset('assets/Icons/search.png',
-                          width: 35, height: 35, color: Colors.grey),
+                          width: screenWidth * 0.09, height: screenWidth * 0.09, color: Colors.grey),
                     ),
                     IconButton(
                       onPressed: () => Navigator.push(
@@ -634,12 +634,12 @@ class _MainScreenState extends State<MainScreen> {
                           MaterialPageRoute(
                               builder: (context) => MyBookingsPage())),
                       icon: Image.asset('assets/Icons/ticket.png',
-                          width: 35, height: 35, color: Colors.grey),
+                          width: screenWidth * 0.09, height: screenWidth * 0.09, color: Colors.grey),
                     ),
                     IconButton(
                       onPressed: () {},
                       icon: Image.asset('assets/Icons/bookmark.png',
-                          width: 35, height: 35, color: Colors.grey),
+                          width: screenWidth * 0.09, height: screenWidth * 0.09, color: Colors.grey),
                     ),
                     IconButton(
                       onPressed: () => Navigator.push(
@@ -647,7 +647,7 @@ class _MainScreenState extends State<MainScreen> {
                           MaterialPageRoute(
                               builder: (context) => ReelsPlayer())),
                       icon: Image.asset('assets/Icons/paper-plane.png',
-                          width: 35, height: 35, color: Colors.grey),
+                          width: screenWidth * 0.09, height: screenWidth * 0.09, color: Colors.grey),
                     ),
                   ],
                 ),
