@@ -1,12 +1,14 @@
 // Final version matching Figma layout exactly + polished bottom nav
 import 'dart:math';
-
+import 'package:adventura/OrganizerProfile/OrganizerProfile.dart';
+import 'package:adventura/Services/activity_service.dart';
 import 'package:adventura/colors.dart';
 import 'package:adventura/config.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/OrderDetail/Order.dart';
 import 'package:adventura/widgets/availability_modal.dart';
 import 'package:adventura/event_cards/widgets/readonly_location_map.dart';
+import 'package:hive/hive.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> activity;
@@ -207,7 +209,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               SizedBox(height: 4),
               Text(
                 widget.activity["description"] ?? "No description provided",
-                style: TextStyle(fontSize: 14, color: Colors.black87),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black87,
+                  fontFamily: "poppins",
+                ),
               ),
               SizedBox(height: 12),
               _buildTagsSection(),
@@ -222,21 +228,73 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               _buildSectionTitle("Organizer"),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: CircleAvatar(
-                  radius: 24,
-                  backgroundColor: Colors.grey.shade200,
-                  child: ClipOval(
-                    child: Image.network(
-                      "https://example.com/organizer_logo.png",
-                      fit: BoxFit.cover,
-                      width: 48,
-                      height: 48,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Center(
-                          child:
-                              Icon(Icons.person, color: Colors.grey, size: 28),
-                        );
-                      },
+                leading: GestureDetector(
+                  onTap: () async {
+                    final box = await Hive.openBox('authBox');
+                    int? providerId =
+                        int.tryParse(box.get("providerId")?.toString() ?? "");
+                    print("🔍 providerId: $providerId");
+
+                    if (providerId == null) {
+                      print("❌ No provider ID found");
+                      return;
+                    }
+
+                    String organizerName =
+                        "${box.get("firstName")} ${box.get("lastName")}";
+                    String organizerImage =
+                        "${box.get("profilePictureUrl_$providerId") ?? ""}";
+                    String bio = "Adventure provider";
+
+                    final activities =
+                        await ActivityService.fetchProviderListings(providerId);
+                    print("✅ Fetched ${activities.length} activities");
+
+                    if (!context.mounted) return;
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OrganizerProfilePage(
+                          organizerId: providerId.toString(),
+                          organizerName: organizerName,
+                          organizerImage: organizerImage,
+                          bio: bio,
+                          activities: activities,
+                        ),
+                      ),
+                    );
+                  },
+                  child: CircleAvatar(
+                    radius: 24,
+                    backgroundColor: Colors.grey.shade200,
+                    child: ClipOval(
+                      child: Builder(
+                        builder: (context) {
+                          final box = Hive.box('authBox');
+                          final profileImage =
+                              "${box.get("profilePictureUrl_${box.get("providerId")}") ?? ""}";
+
+                          if (profileImage.isNotEmpty) {
+                            return Image.network(
+                              profileImage,
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Icon(Icons.person,
+                                      size: 28, color: Colors.grey),
+                            );
+                          } else {
+                            return Image.asset(
+                              "assets/images/default_user.png",
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                            );
+                          }
+                        },
+                      ),
                     ),
                   ),
                 ),
@@ -269,7 +327,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         ),
                         child: Text("Report",
                             style: TextStyle(color: Colors.red, fontSize: 11)),
-                      )
+                      ),
                     ],
                   ),
                 ),

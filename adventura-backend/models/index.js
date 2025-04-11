@@ -5,6 +5,8 @@ const TripPlan = require("./TripPlan");
 const Client = require("./client");
 const Event = require("./Event"); // ✅ Add Event model
 const EventImage = require("./EventImage"); // ✅ Add EventImage model
+const User = require("./User"); // ✅ Add User model
+const Provider = require("./Provider");
 const UserPreferences = require("./UserPreferences");
 const UserActivityInteraction = require("./UserActivityInteraction");
 const Booking = require("./Booking");
@@ -52,7 +54,7 @@ Event.hasMany(EventImage, {
 	as: "event_images",
 	onDelete: "CASCADE",
 });
-EventImage.belongsTo(Event, { foreignKey: "event_id", as: "event_images" });
+EventImage.belongsTo(Event, { foreignKey: "event_id" });
 
 UserActivityInteraction.belongsTo(Activity, {
 	foreignKey: "activity_id",
@@ -62,6 +64,9 @@ UserActivityInteraction.belongsTo(UserPreferences, {
 	foreignKey: "user_id",
 	as: "user",
 });
+
+User.hasOne(Provider, { foreignKey: "user_id" });
+Provider.belongsTo(User, { foreignKey: "user_id" });
 
 sequelize
 	.sync({ alter: { drop: false } })
@@ -80,4 +85,6 @@ module.exports = {
 	UserActivityInteraction,
 	TripPlan,
 	Feature,
+	User,
+	Provider,
 };

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'ProviderWelcome.dart';
+import 'successfully_provider.dart';
 
 class BusinessInfoStep extends StatefulWidget {
   final VoidCallback onBack;

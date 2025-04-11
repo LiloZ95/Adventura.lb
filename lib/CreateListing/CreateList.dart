@@ -173,6 +173,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
       "description": _descriptionController.text.trim(),
       "location": _locationDisplayController.text.trim(),
       "price": double.tryParse(_priceController.text) ?? 0.0,
+      "price_type": _selectedTicketPriceType,
       "nb_seats": int.tryParse(_seatsController.text.trim()) ?? 0,
       "category_id": _selectedCategory?["id"],
       "latitude": _mapLatLng!.latitude,
@@ -181,6 +182,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
       "trip_plan": tripPlans,
       "from_time": _fromController.text.trim(),
       "to_time": _toController.text.trim(),
+      "listing_type": _selectedListingType.toString().split('.').last,
     };
 
     final success = await ActivityService.createActivity(activityData);

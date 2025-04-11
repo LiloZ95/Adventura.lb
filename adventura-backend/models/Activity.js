@@ -46,6 +46,17 @@ const Activity = sequelize.define("activities", {
 	to_time: {
 		type: DataTypes.STRING,
 	},
+	provider_id: {
+		type: DataTypes.INTEGER,
+		allowNull: false,
+	},
+	listing_type: {
+		type: DataTypes.ENUM("recurrent", "oneTime"),
+		allowNull: false,
+		validate: {
+			isIn: [["recurrent", "oneTime"]],
+		},
+	},
 });
 
 module.exports = Activity;

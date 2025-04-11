@@ -29,16 +29,22 @@ class ProfileService {
   }
 
   /// ✅ Cache profile image (base64 or URL)
-  static Future<void> _cacheProfileImage(String userId, String imageData) async {
+  static Future<void> _cacheProfileImage(
+      String userId, String imageData) async {
     Box storageBox = await Hive.openBox('authBox');
 
     if (imageData.startsWith("data:image")) {
-      // Cache base64 decoded bytes
-      String base64String = imageData.split(",")[1];
-      Uint8List imageBytes = base64Decode(base64String);
-      await storageBox.put("profileImageBytes_$userId", imageBytes);
-      await storageBox.delete("profilePictureUrl_$userId");
-      print("✅ Base64 image cached in Hive for user $userId.");
+      try {
+        // ✅ Strip prefix and decode only the base64 content
+        String base64String = imageData.split(",")[1];
+        Uint8List imageBytes = base64Decode(base64String);
+
+        await storageBox.put("profileImageBytes_$userId", imageBytes);
+        await storageBox.delete("profilePictureUrl_$userId");
+        print("✅ Base64 image cached in Hive for user $userId.");
+      } catch (e) {
+        print("❌ Error decoding base64 image: $e");
+      }
     } else if (imageData.startsWith("http")) {
       await storageBox.put("profilePictureUrl_$userId", imageData);
       await storageBox.delete("profileImageBytes_$userId");

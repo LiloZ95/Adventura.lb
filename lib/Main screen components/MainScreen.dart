@@ -6,6 +6,8 @@ import 'package:adventura/Services/profile_service.dart';
 import 'package:adventura/event_cards/Cards.dart';
 import 'package:adventura/colors.dart';
 import 'package:adventura/search%20screen/searchScreen.dart';
+import 'package:adventura/utils.dart';
+import 'package:adventura/utils/snackbars.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/userinformation/UserInfo.dart';
 import 'package:adventura/Notification/NotificationPage.dart';
@@ -33,6 +35,7 @@ class _MainScreenState extends State<MainScreen> {
   String firstName = "";
   String lastName = "";
   bool isProvider = true;
+  List<Map<String, dynamic>> limitedEvents = [];
 
   @override
   void initState() {
@@ -40,6 +43,14 @@ class _MainScreenState extends State<MainScreen> {
     _loadUserData();
     loadActivities();
     fetchUserData();
+    _loadLimitedEvents(); // 🆕 Add this line to trigger event fetch
+  }
+
+  Future<void> _loadLimitedEvents() async {
+    final events = await ActivityService.fetchEvents();
+    setState(() {
+      limitedEvents = events;
+    });
   }
 
   Future<void> _loadUserData() async {
@@ -230,7 +241,10 @@ class _MainScreenState extends State<MainScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => AdventuraChatPage(),
+                                      builder: (context) => AdventuraChatPage(
+                                        userName: firstName,
+                                        userId: userId, // 👈 pass from Hive
+                                      ),
                                     ),
                                   );
                                 },
@@ -314,14 +328,23 @@ class _MainScreenState extends State<MainScreen> {
                             color: Colors.black,
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () {},
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SearchScreen(
+                                    filterMode: "limited_events_only"),
+                              ),
+                            );
+                          },
                           child: Text(
-                            "see all",
+                            "See All",
                             style: TextStyle(
-                              fontSize: screenWidth * 0.04, // Dynamic font size
-                              fontFamily: 'Poppins',
                               color: AppColors.blue,
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
                           ),
                         ),
@@ -329,23 +352,30 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                   ),
                   SizedBox(
-                    height: screenHeight * 0.35, // Dynamic height
+                    height: MediaQuery.of(context).size.height * 0.36,
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(0, 0, 16, 0),
                         child: Row(
-                          children: [
-                            card('Hikes/assirafting.webp'),
-                            card('Hikes/nighthike.webp'),
-                            card('Hikes/mechwarna.webp'),
-                            card('Hikes/batroun.jpg'),
-                            card('Hikes/sunsethike.webp'),
-                          ],
+                          children: limitedEvents.map((event) {
+                            return LimitedEventCard(
+                              context: context,
+                              activity: event,
+                              imageUrl: getEventImageUrl(event),
+                              name: event["name"] ?? "Unnamed Event",
+                              date: event["date"] ?? "No date",
+                              location: event["location"] ?? "No location",
+                              price: event["price"] != null
+                                  ? "\$${event["price"]}"
+                                  : "Free",
+                            );
+                          }).toList(),
                         ),
                       ),
                     ),
                   ),
+
                   // Popular Categories Section
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
@@ -361,17 +391,17 @@ class _MainScreenState extends State<MainScreen> {
                             color: Colors.black,
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () {},
-                          child: Text(
-                            "see all",
-                            style: TextStyle(
-                              fontSize: screenWidth * 0.04, // Dynamic font size
-                              fontFamily: 'Poppins',
-                              color: AppColors.blue,
-                            ),
-                          ),
-                        ),
+                        // GestureDetector(
+                        //   onTap: () {},
+                        //   child: Text(
+                        //     "see all",
+                        //     style: TextStyle(
+                        //       fontSize: screenWidth * 0.04, // Dynamic font size
+                        //       fontFamily: 'Poppins',
+                        //       color: AppColors.blue,
+                        //     ),
+                        //   ),
+                        // ),
                       ],
                     ),
                   ),
@@ -383,31 +413,31 @@ class _MainScreenState extends State<MainScreen> {
                         padding: const EdgeInsets.fromLTRB(0, 0, 16, 0),
                         child: Row(
                           children: [
-                            card2(
+                            CategoryCard(
                                 'paragliding.webp',
                                 'Paragliding',
                                 'Soar above the stunning bay of Jounieh and enjoy breath-taking aerial views of the Lebanese coast.',
                                 9,
                                 0),
-                            card2(
+                            CategoryCard(
                                 'jetski.jpeg',
                                 'Jetski Rentals',
                                 'Experience the thrill of jetskiing along Lebanon’s shores, available at various coastal locations.',
                                 2,
                                 0.8),
-                            card2(
+                            CategoryCard(
                                 'island.jpg',
                                 'Island Trips',
                                 'Explore Lebanon’s coastline with private boat rentals, island hopping, and unforgettable sea adventures.',
                                 5,
                                 0.0),
-                            card2(
+                            CategoryCard(
                                 'picnic.webp',
                                 'Picnic Spots',
                                 'Relax and unwind at scenic picnic spots, options available for a perfect day out.',
                                 5,
                                 0.0),
-                            card2(
+                            CategoryCard(
                                 'cars.webp',
                                 'Car Events',
                                 'Join Lebanon’s car enthusiasts at exciting car meets and events.',
@@ -433,14 +463,22 @@ class _MainScreenState extends State<MainScreen> {
                             color: Colors.black,
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () {},
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SearchScreen(),
+                              ),
+                            );
+                          },
                           child: Text(
-                            "see all",
+                            "See All",
                             style: TextStyle(
-                              fontSize: screenWidth * 0.04, // Dynamic font size
-                              fontFamily: 'Poppins',
                               color: AppColors.blue,
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
                           ),
                         ),
@@ -509,12 +547,21 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                   SizedBox(height: 8),
                   GestureDetector(
-                    onTap: () {
+                    onTap: () async {
+                      final box = await Hive.openBox('authBox');
+                      final userType = box.get('userType');
+                      final providerId = box.get('providerId');
+
+                      if (userType != 'provider' || providerId == null) {
+                        showAppSnackBar(
+                            context, "Only providers can create listings.");
+                        return;
+                      }
+
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => CreateListingPage(),
-                        ),
+                            builder: (context) => CreateListingPage()),
                       );
                     },
                     child: Container(

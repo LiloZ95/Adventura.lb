@@ -1,13 +1,20 @@
-import 'package:adventura/Chatbot/activityCard.dart';
-import 'package:adventura/colors.dart';
+import 'package:adventura/Chatbot/gradientChip.dart';
+import 'package:adventura/Chatbot/inputBar.dart';
+import 'package:adventura/Chatbot/messageBubble.dart';
+import 'package:adventura/Chatbot/slideTransitionCard.dart';
 import 'package:adventura/widgets/bouncing_dots_loader.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:adventura/config.dart';
 
 class AdventuraChatPage extends StatefulWidget {
-  const AdventuraChatPage({Key? key}) : super(key: key);
-
+  final String userName;
+  final String userId;
+  const AdventuraChatPage(
+      {Key? key, required this.userName, required this.userId})
+      : super(key: key);
   @override
   _AdventuraChatPageState createState() => _AdventuraChatPageState();
 }
@@ -17,29 +24,152 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
   final TextEditingController _controller = TextEditingController();
   final List<Map<String, dynamic>> _messages = [];
   bool _isTyping = false;
+  final Set<int> _animatedMessageIndexes = {};
+  Widget buildQuickChip(String label, String textToSend) {
+    return GradientChip(
+      label: label,
+      onTap: () {
+        _controller.text = textToSend;
+        _sendMessage();
+      },
+    );
+  }
+
+  final ScrollController _scrollController = ScrollController();
+  void _scrollToBottom() {
+    Future.delayed(Duration(milliseconds: 300), () {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMessages(); // this handles everything
+  }
+
+  Future<void> _loadMessages() async {
+    final chatBox = await Hive.openBox('chatMessages');
+    final stored = chatBox.get('messages_${widget.userId}');
+
+    if (stored != null && stored is List) {
+      // Step 1: Convert each msg to Map<String, dynamic>
+      final typedMessages = stored.map<Map<String, dynamic>>((msg) {
+        final safeMsg = Map<String, dynamic>.from(msg);
+
+        // Step 2: If there's a cards list, cast each card inside it
+        if (safeMsg['cards'] != null && safeMsg['cards'] is List) {
+          final rawCards = safeMsg['cards'] as List;
+          safeMsg['cards'] = rawCards
+              .map<Map<String, dynamic>>(
+                (card) => Map<String, dynamic>.from(card),
+              )
+              .toList();
+        }
+
+        return safeMsg;
+      }).toList();
+
+      setState(() {
+        _messages.addAll(typedMessages);
+        for (int i = 0; i < typedMessages.length; i++) {
+          _animatedMessageIndexes.add(i);
+        }
+      });
+    } else {
+      setState(() {
+        _messages.add({
+          'text': "Welcome 👋 This is EVA — your adventure assistant here in Lebanon!\n\n"
+              "Here's what it can help you with:\n"
+              "✨ Suggest fun things to do\n"
+              "📍 Find activities near a place — like 'Show me something in Batroun'\n"
+              "🎟️ Help you book activities and trips\n"
+              "💬 Answer common questions — like pricing, refunds, group discounts\n\n"
+              "Ready to explore? Ask anything travel-related — or tap one of the quick options below to get started! 🧭",
+          'isUser': false,
+          'cards': [],
+          'isWelcome': true,
+          'timestamp': DateTime.now(),
+        });
+        _animatedMessageIndexes.add(0);
+      });
+
+      await chatBox.put('messages_${widget.userId}', _messages);
+    }
+  }
+
+  Future<void> _saveMessagesToHive() async {
+    final box = await Hive.openBox('chatMessages'); // ✅
+    await box.put('messages_${widget.userId}', _messages);
+  }
+
+  Future<void> _clearChat() async {
+    final box = await Hive.openBox('chatMessages');
+    await box.delete('messages_${widget.userId}'); // ✅ correct key
+
+    setState(() {
+      _messages.clear();
+      _animatedMessageIndexes.clear();
+      _messages.add({
+        'text': "Welcome 👋 This is EVA — your adventure assistant here in Lebanon!\n\n"
+            "Here's what it can help you with:\n"
+            "✨ Suggest fun things to do\n"
+            "📍 Find activities near a place — like 'Show me something in Batroun'\n"
+            "🎟️ Help you book activities and trips\n"
+            "💬 Answer common questions — like pricing, refunds, group discounts\n\n"
+            "Ready to explore? Ask anything travel-related — or tap one of the quick options below to get started! 🧭",
+        'isUser': false,
+        'cards': [],
+        'isWelcome': true,
+        'timestamp': DateTime.now(),
+      });
+      _animatedMessageIndexes.add(0);
+    });
+
+    await box.put('messages_${widget.userId}', _messages); // 🧠 Re-save fresh
+  }
 
   void _sendMessage() async {
     if (_controller.text.trim().isEmpty) return;
 
     final userMessage = _controller.text.trim();
-
+    final now = DateTime.now();
     _controller.clear();
+    _scrollToBottom();
 
     setState(() {
-      _messages.add({'text': userMessage, 'isUser': true});
+      _messages.add({
+        'text': userMessage,
+        'isUser': true,
+        'timestamp': now,
+      });
       _isTyping = true;
     });
+    await _saveMessagesToHive(); // 💾 Save after user sends
 
     try {
-      final botResponse = await sendMessageToBot(userMessage);
+      final botResponse = await sendMessageToBot(
+        userMessage,
+        userName: widget.userName,
+      );
+
       setState(() {
         _messages.add({
           'text': botResponse['chatbot_reply'],
           'isUser': false,
-          'cards': botResponse['cards']
+          'cards': botResponse['cards'],
+          'timestamp': DateTime.now(),
         });
         _isTyping = false;
       });
+      await _saveMessagesToHive(); // 💾 Save after bot responds
+      _scrollToBottom();
     } catch (e) {
       print("Bot API call failed: $e");
       setState(() {
@@ -50,20 +180,21 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
         });
         _isTyping = false;
       });
+      await _saveMessagesToHive(); // 💾 Still save fallback message
+      _scrollToBottom();
     }
   }
 
-  Future<Map<String, dynamic>> sendMessageToBot(String query) async {
-    const apiUrl =
-        "https://e468-34-125-120-105.ngrok-free.app/chat"; // Replace with your ngrok URL
+  Future<Map<String, dynamic>> sendMessageToBot(String query,
+      {String? userName}) async {
+    const apiUrl = "$chabotUrl/chat";
 
     final response = await http.post(
       Uri.parse(apiUrl),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "query": query,
-        "category_id": 1, // Optional, you can dynamically extract later
-        "location": "Tripoli",
+        "username": userName,
       }),
     );
 
@@ -80,12 +211,9 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
       backgroundColor: Colors.grey[200],
       appBar: AppBar(
         backgroundColor: Colors.blue,
-        // centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context); // Pops the current screen
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           "EVA Adventure Chatbot",
@@ -95,11 +223,40 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
             color: Colors.white,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_forever, color: Colors.redAccent),
+            tooltip: "Clear chat",
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text("Clear Chat"),
+                  content: const Text(
+                      "Are you sure you want to delete all messages?"),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text("Cancel")),
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text("Clear",
+                            style: TextStyle(color: Colors.red))),
+                  ],
+                ),
+              );
+              if (confirm == true) {
+                await _clearChat();
+              }
+            },
+          )
+        ],
       ),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
+              controller: _scrollController, // 👈 this!
               padding: const EdgeInsets.all(12),
               itemCount: _messages.length + (_isTyping ? 1 : 0),
               itemBuilder: (context, index) {
@@ -115,9 +272,7 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: const BouncingDotsLoader(
-                            size: 7,
-                          ),
+                          child: const BouncingDotsLoader(size: 7),
                         ),
                       ],
                     ),
@@ -127,168 +282,86 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
                 final msg = _messages[index];
                 final isUser = msg['isUser'] ?? false;
                 final isError = msg['isError'] ?? false;
+                final isWelcome = msg['isWelcome'] ?? false;
 
                 return AnimatedOpacity(
-                  opacity: 1.0,
-                  duration: const Duration(milliseconds: 400),
-                  child: Column(
-                    crossAxisAlignment: isUser
-                        ? CrossAxisAlignment.end
-                        : CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.symmetric(vertical: 6),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: isError
-                              ? Colors.red[400]
-                              : (isUser ? Colors.blue[400] : Colors.white),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          msg['text'],
-                          style: TextStyle(
-                            color: isError
-                                ? Colors.white
-                                : (isUser ? Colors.white : Colors.black),
-                            fontFamily: "poppins",
-                          ),
+                    opacity: 1.0,
+                    duration: const Duration(milliseconds: 400),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width * 0.75),
+                      child: IntrinsicWidth(
+                        child: Column(
+                          crossAxisAlignment: isUser
+                              ? CrossAxisAlignment.end
+                              : CrossAxisAlignment.start,
+                          children: [
+                            MessageBubble(
+                              msg: msg,
+                              isUser: isUser,
+                              isError: isError,
+                              isWelcome: isWelcome,
+                              index: index,
+                              animatedMessageIndexes: _animatedMessageIndexes,
+                              onAnimationFinished: () {
+                                setState(() {
+                                  _animatedMessageIndexes.add(index);
+                                });
+                              },
+                            ),
+                            if (!isUser && isWelcome)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children: [
+                                        buildQuickChip("❓ What is Adventura?",
+                                            "What is Adventura?"),
+                                        buildQuickChip("🗓 How do I book?",
+                                            "How do I book an activity?"),
+                                        buildQuickChip(
+                                            "🧭 Suggest something random",
+                                            "I want to discover something fun"),
+                                        buildQuickChip("🥾 Hiking near me",
+                                            "Show me hiking activities near me"),
+                                        buildQuickChip(
+                                            "🌊 Sea trips in Batroun",
+                                            "Can you suggest some sea trips in Batroun?"),
+                                        buildQuickChip(
+                                            "💰 Do you have group discounts?",
+                                            "Do you offer group discounts?"),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (!isUser && msg['cards'] != null)
+                              ...msg['cards']
+                                  .asMap()
+                                  .entries
+                                  .map<Widget>((entry) {
+                                final i = entry.key;
+                                final card = entry.value;
+                                return SlideTransitionCard(
+                                    card: card, index: i);
+                              }),
+                          ],
                         ),
                       ),
-                      if (!isUser && msg['cards'] != null)
-                        ...msg['cards'].asMap().entries.map<Widget>((entry) {
-                          final i = entry.key;
-                          final card = entry.value;
-                          return SlideTransitionCard(card: card, index: i);
-                        }),
-                    ],
-                  ),
-                );
+                    ));
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(
-                          vertical: 16, horizontal: 16),
-                      hintText: "Type your message...",
-                      hintStyle: const TextStyle(fontFamily: "poppins"),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(
-                          color: AppColors.grey0, // Blue border color
-                          width: 1,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(
-                          color: AppColors
-                              .grey3, // Blue border color when not focused
-                          width: 1,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(
-                          color: Colors.blue, // Blue border color when focused
-                          width: 2,
-                        ),
-                      ),
-                      fillColor: Colors.white,
-                      filled: true,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: _sendMessage,
-                  icon: const Icon(Icons.send),
-                  color: Colors.blue,
-                )
-              ],
-            ),
-          )
+          ChatInputBar(
+            controller: _controller,
+            onSend: _sendMessage,
+          ),
         ],
-      ),
-    );
-  }
-}
-
-class SlideTransitionCard extends StatefulWidget {
-  final Map<String, dynamic> card;
-  final int index; // 🆕 used for staggering animation
-
-  const SlideTransitionCard({
-    Key? key,
-    required this.card,
-    required this.index,
-  }) : super(key: key);
-
-  @override
-  State<SlideTransitionCard> createState() => _SlideTransitionCardState();
-}
-
-class _SlideTransitionCardState extends State<SlideTransitionCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<Offset> _offsetAnimation;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-
-    _offsetAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.2),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
-    );
-
-    // Staggered delay based on index
-    Future.delayed(Duration(milliseconds: 100 * widget.index), () {
-      if (mounted) _controller.forward();
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final card = widget.card;
-
-    return SlideTransition(
-      position: _offsetAnimation,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: ActivityCard(
-          name: card['name'],
-          description: card['description'],
-          price: card['price'],
-          duration: card['duration'],
-          seats: card['seats'],
-          location: card['location'],
-        ),
       ),
     );
   }
