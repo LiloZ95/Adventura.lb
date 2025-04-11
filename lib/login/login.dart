@@ -1,3 +1,4 @@
+import 'package:adventura/HomeControllerScreen.dart';
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/Services/auth_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -96,7 +97,9 @@ class _LoginPageState extends State<LoginPage> {
 
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => MainScreen()),
+            MaterialPageRoute(
+              builder: (context) => HomeControllerScreen(),
+            ),
           );
         } else {
           setState(
@@ -316,7 +319,8 @@ class _LoginPageState extends State<LoginPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => MainScreen()),
+                                builder: (context) => MainScreen(
+                                    onScrollChanged: (bool visible) {})),
                           );
                         },
                         icon: Image.asset(
@@ -346,7 +350,8 @@ class _LoginPageState extends State<LoginPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => MainScreen()),
+                                builder: (context) => MainScreen(
+                                    onScrollChanged: (bool visible) {})),
                           );
                         },
                         icon: Image.asset(

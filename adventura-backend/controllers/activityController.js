@@ -377,6 +377,11 @@ const getActivitiesByProvider = async (req, res) => {
 					attributes: ["image_url", "is_primary"],
 				},
 				{ model: TripPlan, as: "trip_plans" },
+				{
+					model: Feature, // Your join model
+					as: "features", // This must match your alias
+					attributes: ["name"],
+				},
 			],
 			order: [["createdAt", "DESC"]], // Optional: order newest first
 		});

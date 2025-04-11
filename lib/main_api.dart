@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/login/login.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -8,7 +7,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:adventura/intro/intro.dart';
 import 'package:adventura/config.dart'; // ✅ Import the global config file
 import 'package:flutter/foundation.dart'
-    show kIsWeb; // ✅ Detect if running on Web
+    show kIsWeb;
+
+import 'HomeControllerScreen.dart'; // ✅ Detect if running on Web
 
 class MainApi extends ChangeNotifier {
   late Box storageBox;
@@ -125,14 +126,14 @@ class MainApi extends ChangeNotifier {
 
       if (isValid) {
         print("✅ User is already logged in. Redirecting to MainScreen...");
-        _initialScreen = MainScreen();
+        _initialScreen = HomeControllerScreen();
       } else {
         print("❌ Token expired. Trying refresh...");
         bool refreshed = await refreshTokens();
 
         if (refreshed) {
           print("✅ Tokens refreshed. Redirecting to MainScreen...");
-          _initialScreen = MainScreen();
+          _initialScreen = HomeControllerScreen();
         } else {
           print("❌ Token refresh failed. Logging out.");
           await logout();

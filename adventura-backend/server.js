@@ -14,7 +14,7 @@ const Client = require("./models/client"); // Import Client model
 const { getUserById } = require("./controllers/userController");
 const categoryRoutes = require("./routes/categoryRoutes"); // Import category routes
 const activityRoutes = require("./routes/activityRoutes");
-// const eventRoutes = require("./routes/eventRoutes"); // ✅ Import event routes
+const eventRoutes = require("./routes/eventRoutes"); // ✅ Import event routes
 const availabilityRoutes = require('./routes/availabilityRoutes');
 const cron = require("node-cron"); // Import cron for scheduling tasks
 const { deactivatePastEvents } = require("./controllers/activityController");
@@ -56,7 +56,8 @@ app.use("/images", express.static(path.join(__dirname, "public/images")));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use("/activities", activityRoutes);
 
-// app.use("/events", eventRoutes);  // ✅ Add event routes
+// ✅ Event routes should be registered after activity routes to avoid conflicts
+app.use("/events", eventRoutes);  // ✅ Add event routes
 
 app.use("/availability", availabilityRoutes);
 
