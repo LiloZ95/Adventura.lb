@@ -71,8 +71,6 @@ class _LoginPageState extends State<LoginPage> {
         _passwordController.text,
       );
 
-      
-
       if (response["success"] == true) {
         print("✅ Login Successful!");
 
@@ -86,6 +84,12 @@ class _LoginPageState extends State<LoginPage> {
                 "✅ Saved userId to Hive from login screen: ${user["user_id"]}");
           } else {
             print("❌ 'user_id' missing or null in login screen");
+          }
+          if (user.containsKey("provider_id") && user["provider_id"] != null) {
+            box.put("providerId", user["provider_id"].toString());
+            print("✅ Stored providerId: ${user["provider_id"]}");
+          } else {
+            print("⚠️ No provider_id found in user payload.");
           }
           setState(() =>
               _isLoading = false); // ✅ Reset loading state before navigation

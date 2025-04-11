@@ -24,20 +24,6 @@ const createActivity = async (req, res) => {
 	const t = await Activity.sequelize.transaction();
 
 	try {
-		const provider_id = req.user?.provider_id;
-		const validTypes = ["recurrent", "oneTime"];
-
-		if (!provider_id) {
-			return res.status(403).json({
-				success: false,
-				message: "Only providers are allowed to create activities.",
-			});
-		}
-
-		if (!validTypes.includes(listing_type)) {
-			throw new Error("Invalid listing_type. Must be 'recurrent' or 'oneTime'");
-		}
-
 		const {
 			name,
 			description,
@@ -54,6 +40,24 @@ const createActivity = async (req, res) => {
 			to_time,
 			listing_type,
 		} = req.body;
+
+		console.log("🧠 [createActivity] req.user:", req.user);
+
+		const provider_id = req.user?.provider_id;
+		const validTypes = ["recurrent", "oneTime"];
+
+		console.log("🧠 [createActivity] provider_id:", provider_id);
+
+		if (!provider_id) {
+			return res.status(403).json({
+				success: false,
+				message: "Only providers are allowed to create activities.",
+			});
+		}
+
+		if (!validTypes.includes(listing_type)) {
+			throw new Error("Invalid listing_type. Must be 'recurrent' or 'oneTime'");
+		}
 
 		if (!isValid12HourTime(from_time) || !isValid12HourTime(to_time)) {
 			throw new Error("Invalid time format. Use HH:00 AM/PM");
@@ -111,6 +115,7 @@ const createActivity = async (req, res) => {
 				await Feature.bulkCreate(featureData, { transaction: t });
 			}
 		}
+		console.log("📦 Received listing_type:", listing_type);
 
 		await t.commit();
 

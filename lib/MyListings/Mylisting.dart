@@ -21,7 +21,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
   Future<void> loadListings() async {
     final box = await Hive.openBox('authBox');
-    final providerId = box.get("providerId");
+    final providerIdRaw = box.get("providerId");
+    final providerId = int.tryParse(providerIdRaw.toString());
+
     print("🔍 providerId from Hive: $providerId");
 
     if (providerId != null) {
@@ -57,7 +59,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
     );
 
     if (shouldDelete == true) {
-      await ActivityService.deleteActivity(activityId); // ✅ Ensure this function exists
+      await ActivityService.deleteActivity(
+          activityId); // ✅ Ensure this function exists
       setState(() {
         _myListings.removeAt(index);
       });
@@ -96,10 +99,15 @@ class _MyListingsPageState extends State<MyListingsPage> {
                   itemCount: _myListings.length,
                   itemBuilder: (context, index) {
                     final activity = _myListings[index];
-                    final String activityId = activity["activity_id"].toString();
-                    final List<dynamic> imagesRaw = activity["activity_images"] ?? [];
+                    final String activityId =
+                        activity["activity_id"].toString();
+                    final List<dynamic> imagesRaw =
+                        activity["activity_images"] ?? [];
                     final String? imageUrl = imagesRaw.isNotEmpty
-                        ? (imagesRaw[0]["image_url"]?.toString().startsWith("http") == true
+                        ? (imagesRaw[0]["image_url"]
+                                    ?.toString()
+                                    .startsWith("http") ==
+                                true
                             ? imagesRaw[0]["image_url"]
                             : "$baseUrl${imagesRaw[0]["image_url"]}")
                         : null;
@@ -109,7 +117,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => EventDetailsScreen(activity: activity),
+                            builder: (_) =>
+                                EventDetailsScreen(activity: activity),
                           ),
                         );
                       },
@@ -139,14 +148,16 @@ class _MyListingsPageState extends State<MyListingsPage> {
                               Stack(
                                 children: [
                                   ClipRRect(
-                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                                    borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(24)),
                                     child: imageUrl != null
                                         ? Image.network(
                                             imageUrl,
                                             height: 220,
                                             width: double.infinity,
                                             fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) {
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
                                               return Image.asset(
                                                 "assets/Pictures/island.jpg",
                                                 height: 220,
@@ -166,14 +177,16 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                     top: 12,
                                     right: 12,
                                     child: GestureDetector(
-                                      onTap: () => _confirmAndDelete(index, activityId),
+                                      onTap: () =>
+                                          _confirmAndDelete(index, activityId),
                                       child: Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
                                           color: Colors.white.withOpacity(0.85),
                                           shape: BoxShape.circle,
                                         ),
-                                        child: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                                        child: const Icon(Icons.delete_outline,
+                                            size: 20, color: Colors.red),
                                       ),
                                     ),
                                   ),
@@ -182,10 +195,12 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                       bottom: 12,
                                       left: 12,
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 10, vertical: 4),
                                         decoration: BoxDecoration(
                                           color: Colors.green.shade600,
-                                          borderRadius: BorderRadius.circular(20),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
                                         ),
                                         child: const Text(
                                           "Free",
@@ -214,7 +229,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                     const SizedBox(height: 6),
                                     Row(
                                       children: [
-                                        Icon(Icons.location_on, size: 16, color: Colors.grey.shade500),
+                                        Icon(Icons.location_on,
+                                            size: 16,
+                                            color: Colors.grey.shade500),
                                         const SizedBox(width: 4),
                                         Expanded(
                                           child: Text(
@@ -232,10 +249,12 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                     Row(
                                       children: [
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 4),
                                           decoration: BoxDecoration(
                                             color: Colors.blue.shade50,
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
                                           child: Text(
                                             activity["price"] != null
@@ -251,7 +270,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                         const SizedBox(width: 12),
                                         Row(
                                           children: [
-                                            Icon(Icons.timer, size: 16, color: Colors.grey.shade500),
+                                            Icon(Icons.timer,
+                                                size: 16,
+                                                color: Colors.grey.shade500),
                                             const SizedBox(width: 4),
                                             Text(
                                               "${activity["duration"] ?? 0} mins",

@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const upload = require("../middleware/upload");
+const { authenticateToken } = require("../middleware/auth");
 const {
   getAllActivities,
   getActivityById,
@@ -17,6 +18,7 @@ const {
   getRecommendedActivities,
 } = require("../controllers/recommendationController");
 
+
 // ==============================
 // 📍 MAIN ACTIVITY ROUTES
 // ==============================
@@ -28,7 +30,7 @@ router.get("/", getAllActivities);
 router.get("/:id", getActivityById);
 
 // ✅ CREATE a new activity
-router.post("/create", createActivity);
+router.post("/create", authenticateToken, createActivity); 
 
 // ✅ DELETE an activity (soft delete)
 router.delete("/:id", softDeleteActivity);

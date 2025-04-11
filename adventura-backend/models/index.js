@@ -5,6 +5,8 @@ const TripPlan = require("./TripPlan");
 const Client = require("./client");
 const Event = require("./Event"); // ✅ Add Event model
 const EventImage = require("./EventImage"); // ✅ Add EventImage model
+const User = require("./User"); // ✅ Add User model
+const Provider = require("./Provider");
 const UserPreferences = require("./UserPreferences");
 const UserActivityInteraction = require("./UserActivityInteraction");
 const Booking = require("./Booking");
@@ -63,6 +65,9 @@ UserActivityInteraction.belongsTo(UserPreferences, {
 	as: "user",
 });
 
+User.hasOne(Provider, { foreignKey: "user_id" });
+Provider.belongsTo(User, { foreignKey: "user_id" });
+
 sequelize
 	.sync({ alter: { drop: false } })
 	.then(() => console.log("✅ Database & tables synced!"))
@@ -80,4 +85,6 @@ module.exports = {
 	UserActivityInteraction,
 	TripPlan,
 	Feature,
+	User,
+	Provider,
 };

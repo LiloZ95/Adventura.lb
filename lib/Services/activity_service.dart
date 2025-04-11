@@ -22,6 +22,7 @@ class ActivityService {
         },
         body: jsonEncode(activityData),
       );
+      print("🔑 Token being sent: $accessToken");
 
       if (activityResponse.statusCode != 201) {
         print("Activity creation failed: ${activityResponse.body}");
