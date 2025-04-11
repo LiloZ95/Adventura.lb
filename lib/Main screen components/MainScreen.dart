@@ -242,8 +242,8 @@ class _MainScreenState extends State<MainScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => AdventuraChatPage(
-                                        userName:
-                                            firstName, // 👈 pass from Hive
+                                        userName: firstName,
+                                        userId: userId, // 👈 pass from Hive
                                       ),
                                     ),
                                   );

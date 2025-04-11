@@ -17,6 +17,7 @@ void main() async {
   // ✅ Initialize Hive for both web & mobile
   await Hive.initFlutter();
   await Hive.openBox('authBox'); // Open Hive storage
+  await Hive.openBox('chatMessages'); // ✅ THIS is what's missing
 
   runApp(
     MultiProvider(
