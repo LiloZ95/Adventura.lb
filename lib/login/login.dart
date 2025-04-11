@@ -5,6 +5,7 @@ import 'package:adventura/OTP/ForgotPasswordScreen.dart';
 import 'package:adventura/signUp%20page/Signup.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'dart:ui'; // For ImageFilter
 import '../colors.dart';
 
@@ -70,13 +71,26 @@ class _LoginPageState extends State<LoginPage> {
         _passwordController.text,
       );
 
-      print("🔍 API Response: $response");
-
       if (response["success"] == true) {
         print("✅ Login Successful!");
 
         // ✅ Ensure 'user' exists before accessing it
         if (response.containsKey("user") && response["user"] is Map) {
+          final user = response["user"];
+          final box = await Hive.openBox('authBox');
+          if (user.containsKey("user_id") && user["user_id"] != null) {
+            box.put("userId", user["user_id"].toString());
+            print(
+                "✅ Saved userId to Hive from login screen: ${user["user_id"]}");
+          } else {
+            print("❌ 'user_id' missing or null in login screen");
+          }
+          if (user.containsKey("provider_id") && user["provider_id"] != null) {
+            box.put("providerId", user["provider_id"].toString());
+            print("✅ Stored providerId: ${user["provider_id"]}");
+          } else {
+            print("⚠️ No provider_id found in user payload.");
+          }
           setState(() =>
               _isLoading = false); // ✅ Reset loading state before navigation
 

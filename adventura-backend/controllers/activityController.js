@@ -38,7 +38,26 @@ const createActivity = async (req, res) => {
 			features,
 			from_time,
 			to_time,
+			listing_type,
 		} = req.body;
+
+		console.log("🧠 [createActivity] req.user:", req.user);
+
+		const provider_id = req.user?.provider_id;
+		const validTypes = ["recurrent", "oneTime"];
+
+		console.log("🧠 [createActivity] provider_id:", provider_id);
+
+		if (!provider_id) {
+			return res.status(403).json({
+				success: false,
+				message: "Only providers are allowed to create activities.",
+			});
+		}
+
+		if (!validTypes.includes(listing_type)) {
+			throw new Error("Invalid listing_type. Must be 'recurrent' or 'oneTime'");
+		}
 
 		if (!isValid12HourTime(from_time) || !isValid12HourTime(to_time)) {
 			throw new Error("Invalid time format. Use HH:00 AM/PM");
@@ -57,6 +76,8 @@ const createActivity = async (req, res) => {
 				longitude,
 				from_time,
 				to_time,
+				provider_id,
+				listing_type,
 			},
 			{ transaction: t }
 		);
@@ -94,6 +115,7 @@ const createActivity = async (req, res) => {
 				await Feature.bulkCreate(featureData, { transaction: t });
 			}
 		}
+		console.log("📦 Received listing_type:", listing_type);
 
 		await t.commit();
 
@@ -145,6 +167,12 @@ const getAllActivities = async (req, res) => {
 
 		if (rating) {
 			where.rating = { [Op.gte]: parseFloat(rating) }; // only if you have a rating column!
+		}
+
+		where.availability_status = true;
+
+		if (req.query.type) {
+			where.listing_type = req.query.type === "event" ? "oneTime" : "recurrent";
 		}
 
 		const activities = await Activity.findAll({
@@ -326,6 +354,62 @@ const getActivityImages = async (req, res) => {
 	}
 };
 
+// 🟢 Get all activities by provider_id
+const getActivitiesByProvider = async (req, res) => {
+	try {
+		const { provider_id } = req.params;
+
+		if (!provider_id) {
+			return res
+				.status(400)
+				.json({ success: false, message: "Missing provider_id." });
+		}
+
+		const activities = await Activity.findAll({
+			where: {
+				provider_id,
+				availability_status: true, // ✅ hide soft-deleted listings
+			},
+			include: [
+				{
+					model: ActivityImage,
+					as: "activity_images",
+					attributes: ["image_url", "is_primary"],
+				},
+				{ model: TripPlan, as: "trip_plans" },
+			],
+			order: [["createdAt", "DESC"]], // Optional: order newest first
+		});
+
+		return res.status(200).json({ success: true, activities });
+	} catch (error) {
+		console.error("❌ Error fetching provider activities:", error);
+		return res.status(500).json({ success: false, message: "Server error." });
+	}
+};
+
+const softDeleteActivity = async (req, res) => {
+	try {
+		const { id } = req.params;
+
+		const activity = await Activity.findByPk(id);
+		if (!activity) {
+			return res
+				.status(404)
+				.json({ success: false, message: "Activity not found." });
+		}
+
+		await activity.update({ availability_status: false });
+
+		return res
+			.status(200)
+			.json({ success: true, message: "Activity soft-deleted (hidden)." });
+	} catch (error) {
+		console.error("❌ Error soft-deleting activity:", error);
+		return res.status(500).json({ success: false, message: "Server error." });
+	}
+};
+
 module.exports = {
 	createActivity,
 	getAllActivities,
@@ -334,4 +418,6 @@ module.exports = {
 	setPrimaryImage,
 	getActivityImages,
 	uploadImages,
+	getActivitiesByProvider,
+	softDeleteActivity,
 };

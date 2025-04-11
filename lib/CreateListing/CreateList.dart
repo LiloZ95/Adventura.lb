@@ -182,6 +182,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
       "trip_plan": tripPlans,
       "from_time": _fromController.text.trim(),
       "to_time": _toController.text.trim(),
+      "listing_type": _selectedListingType.toString().split('.').last,
     };
 
     final success = await ActivityService.createActivity(activityData);

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:adventura/BecomeProvider/WelcomePage.dart';
+import 'package:adventura/MyListings/Mylisting.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/login/login.dart';
 import 'package:adventura/Services/profile_service.dart';
@@ -241,9 +242,13 @@ class _UserInfoState extends State<UserInfo> {
                   //statement and reports option
                   ProfileOptionTile(
                     icon: Icons.report,
-                    title: "Security & Privacy",
+                    title: "My listings",
                     onTap: () {
-                      // handle tap
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => MyListingsPage()),
+                      );
                     },
                   ),
 
@@ -477,7 +482,8 @@ class _UserInfoState extends State<UserInfo> {
       if (profilePicture.startsWith("data:image")) {
         try {
           String base64String = profilePicture.split(",")[1];
-          Uint8List imageBytes = base64Decode(base64String);
+          Uint8List imageBytes =
+              base64Decode(base64String.split(',').last); // ✅ Works
 
           return Image.memory(
             imageBytes,

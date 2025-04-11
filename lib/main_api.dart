@@ -38,8 +38,8 @@ class MainApi extends ChangeNotifier {
     }
     storageBox = await Hive.openBox('authBox');
 
-    print(
-        "🟢 Hive Initialized. Current Storage: ${storageBox.toMap()}"); // Debugging
+    // print(
+    //     "🟢 Hive Initialized. Current Storage: ${storageBox.toMap()}"); // Debugging
     await initializeApp();
   }
 
@@ -144,7 +144,6 @@ class MainApi extends ChangeNotifier {
       _initialScreen = LoginPage();
     }
 
-    print("🔍 Final Hive Storage State: ${storageBox.toMap()}");
     notifyListeners();
   }
 
@@ -168,7 +167,8 @@ class MainApi extends ChangeNotifier {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        if (data["success"] == true) {
+        // Accept success either via flag or if tokens are present
+        if (data["accessToken"] != null && data["refreshToken"] != null) {
           await storageBox.put("accessToken", data["accessToken"]);
           await storageBox.put("refreshToken", data["refreshToken"]);
           await storageBox.put("isLoggedIn", true);

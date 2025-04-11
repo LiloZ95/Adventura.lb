@@ -9,13 +9,20 @@ class ActivityService {
   /// ✅ Create Activity
   static Future<bool> createActivity(Map<String, dynamic> activityData,
       {List<XFile>? images}) async {
+    Box authBox = await Hive.openBox('authBox');
+    String? accessToken = authBox.get("accessToken");
+
     try {
       // 1. Create activity
       final activityResponse = await http.post(
         Uri.parse('$baseUrl/activities/create'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken', // ✅ add this if missing
+        },
         body: jsonEncode(activityData),
       );
+      print("🔑 Token being sent: $accessToken");
 
       if (activityResponse.statusCode != 201) {
         print("Activity creation failed: ${activityResponse.body}");
@@ -52,6 +59,58 @@ class ActivityService {
       print("Error creating activity: $e");
       return false;
     }
+  }
+
+  static Future<void> deleteActivity(String activityId) async {
+    final box = await Hive.openBox('authBox');
+    String? accessToken = box.get("accessToken");
+
+    if (accessToken == null) {
+      throw Exception("No access token found.");
+    }
+
+    final url = Uri.parse('$baseUrl/activities/$activityId');
+
+    final response = await http.delete(
+      url,
+      headers: {
+        "Authorization": "Bearer $accessToken",
+        "Content-Type": "application/json",
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete activity: ${response.body}');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchProviderListings(
+      int providerId) async {
+    Box storageBox = await Hive.openBox('authBox');
+    String? accessToken = storageBox.get("accessToken");
+
+    if (accessToken == null) return [];
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/activities/by-provider/$providerId'),
+        headers: {
+          "Authorization": "Bearer $accessToken",
+          "Content-Type": "application/json",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return List<Map<String, dynamic>>.from(data["activities"]);
+      } else {
+        print("❌ Failed to fetch listings: ${response.body}");
+      }
+    } catch (e) {
+      print("❌ Error fetching listings: $e");
+    }
+
+    return [];
   }
 
   static Future<bool> uploadActivityImages({
@@ -235,7 +294,6 @@ class ActivityService {
       );
 
       print("🔍 API Response Code: ${response.statusCode}");
-      print("🔍 API Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

@@ -3,11 +3,11 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'package:adventura/Booking/MyBooking.dart';
 import 'package:adventura/Services/profile_service.dart';
-import 'package:adventura/config.dart';
 import 'package:adventura/event_cards/Cards.dart';
 import 'package:adventura/colors.dart';
 import 'package:adventura/search%20screen/searchScreen.dart';
 import 'package:adventura/utils.dart';
+import 'package:adventura/utils/snackbars.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/userinformation/UserInfo.dart';
 import 'package:adventura/Notification/NotificationPage.dart';
@@ -463,14 +463,22 @@ class _MainScreenState extends State<MainScreen> {
                             color: Colors.black,
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () {},
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SearchScreen(),
+                              ),
+                            );
+                          },
                           child: Text(
-                            "see all",
+                            "See All",
                             style: TextStyle(
-                              fontSize: screenWidth * 0.04, // Dynamic font size
-                              fontFamily: 'Poppins',
                               color: AppColors.blue,
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
                           ),
                         ),
@@ -539,12 +547,21 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                   SizedBox(height: 8),
                   GestureDetector(
-                    onTap: () {
+                    onTap: () async {
+                      final box = await Hive.openBox('authBox');
+                      final userType = box.get('userType');
+                      final providerId = box.get('providerId');
+
+                      if (userType != 'provider' || providerId == null) {
+                        showAppSnackBar(
+                            context, "Only providers can create listings.");
+                        return;
+                      }
+
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => CreateListingPage(),
-                        ),
+                            builder: (context) => CreateListingPage()),
                       );
                     },
                     child: Container(
