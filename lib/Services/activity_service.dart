@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart'; // ✅ Use Hive instead of StorageService
 import 'package:adventura/config.dart';
 import 'package:image_picker/image_picker.dart'; // ✅ Import the global config file
-import 'package:adventura/MyListings/widgets/expired_listings_modal.dart';
 
 class ActivityService {
   /// ✅ Create Activity
