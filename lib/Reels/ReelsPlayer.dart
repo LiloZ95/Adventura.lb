@@ -1,9 +1,23 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+class Comment {
+  final String userName;
+  final String text;
+  final DateTime timestamp;
+  final Uint8List? profileImageBytes;
+
+  Comment({
+    required this.userName,
+    required this.text,
+    required this.timestamp,
+    this.profileImageBytes,
+  });
+}
 
 class ReelsPlayer extends StatefulWidget {
   @override
@@ -11,21 +25,14 @@ class ReelsPlayer extends StatefulWidget {
 }
 
 class _ReelsPlayerState extends State<ReelsPlayer> {
-  final List<String> videoAssets = [
-    'assets/videos/Snapchat-75340133.mp4',
-    'assets/videos/Snapchat-91757244.mp4',
-    'assets/videos/Snapchat-125401604.mp4',
-    'assets/videos/Snapchat-142994796.mp4',
+  
+  final List<String> videoUrls = [
+    'https://firebasestorage.googleapis.com/v0/b/adevnutralb.firebasestorage.app/o/natrue%20videos%2FSnapchat-125401604.mp4?alt=media&token=a5df6988-6a24-45bf-89fc-eaac4d496661',
+    'https://firebasestorage.googleapis.com/v0/b/adevnutralb.firebasestorage.app/o/natrue%20videos%2FSnapchat-142994796.mp4?alt=media&token=2fac414f-a673-42fb-bbcf-11a100f29d79',
+    'https://firebasestorage.googleapis.com/v0/b/adevnutralb.firebasestorage.app/o/natrue%20videos%2FSnapchat-75340133.mp4?alt=media&token=1a458e2e-e4a8-48c8-a51f-ded337e26fed',
+    'https://firebasestorage.googleapis.com/v0/b/adevnutralb.firebasestorage.app/o/natrue%20videos%2FSnapchat-91757244.mp4?alt=media&token=f0dd1932-9c6b-468e-888c-76361641ae40',
   ];
-  void shareToWhatsApp(String message) async {
-  final url = Uri.parse("https://wa.me/?text=${Uri.encodeComponent(message)}");
 
-  if (await canLaunchUrl(url)) {
-    await launchUrl(url, mode: LaunchMode.externalApplication);
-  } else {
-    throw 'Could not launch WhatsApp';
-  }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -33,9 +40,9 @@ class _ReelsPlayerState extends State<ReelsPlayer> {
       backgroundColor: Colors.black,
       body: PageView.builder(
         scrollDirection: Axis.vertical,
-        itemCount: videoAssets.length,
+        itemCount: videoUrls.length,
         itemBuilder: (context, index) {
-          return ReelVideoItem(videoUrl: videoAssets[index]);
+          return ReelVideoItem(videoUrl: videoUrls[index]);
         },
       ),
     );
@@ -56,12 +63,12 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
   TextEditingController commentController = TextEditingController();
   bool isVisible = false;
   bool isLiked = false;
-  List<String> comments = []; 
+  List<Comment> comments = [];
 
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.asset(widget.videoUrl)
+    _controller = VideoPlayerController.network(widget.videoUrl)
       ..initialize().then((_) {
         if (mounted) setState(() {});
       });
@@ -71,6 +78,7 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
   @override
   void dispose() {
     _controller.dispose();
+    commentController.dispose();
     super.dispose();
   }
 
@@ -86,49 +94,7 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
     }
   }
 
-
-  @override
-  Widget build(BuildContext context) {
-    return VisibilityDetector(
-      key: Key(widget.videoUrl),
-      onVisibilityChanged: _handleVisibilityChanged,
-      child: Stack(
-  fit: StackFit.expand,
-  children: [
-    // Video playback
-    _controller.value.isInitialized
-        ? FittedBox(
-            fit: BoxFit.cover,
-            child: SizedBox(
-              width: _controller.value.size.width,
-              height: _controller.value.size.height,
-              child: VideoPlayer(_controller),
-            ),
-          )
-        : Center(child: CircularProgressIndicator()),
-
-          // Right-side vertical actions
-          Positioned(
-            bottom: 120,
-            right: 16,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-  onPressed: () {
-    setState(() {
-      isLiked = !isLiked;
-    });
-  },
-  icon: Icon(
-    isLiked ? Icons.favorite : Icons.favorite_border,
-    color: isLiked ? Colors.red : Colors.white,
-    size: 30,
-  ),
-),
-                SizedBox(height: 28),
-               IconButton(
-  onPressed: () {
+  void _openCommentSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -140,23 +106,52 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
         padding: MediaQuery.of(context).viewInsets,
         child: Container(
           padding: EdgeInsets.all(16),
-          height: 300,
+          height: 400,
           child: Column(
             children: [
               Expanded(
                 child: ListView(
-                  children: comments.map((comment) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: Row(
-                      children: [
-                        Icon(Icons.person, color: Colors.white),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(comment, style: TextStyle(color: Colors.white)),
-                        ),
-                      ],
-                    ),
-                  )).toList(),
+                  children: comments.map((comment) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CircleAvatar(
+                            backgroundImage: comment.profileImageBytes != null
+                                ? MemoryImage(comment.profileImageBytes!)
+                                : AssetImage('assets/default_avatar.png') as ImageProvider,
+                            radius: 18,
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(comment.userName,
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white)),
+                                    SizedBox(width: 10),
+                                    Text(
+                                      TimeOfDay.fromDateTime(comment.timestamp).format(context),
+                                      style: TextStyle(
+                                          fontSize: 12, color: Colors.white60),
+                                    )
+                                  ],
+                                ),
+                                SizedBox(height: 4),
+                                Text(comment.text,
+                                    style: TextStyle(color: Colors.white)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
               TextField(
@@ -174,9 +169,19 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
                   suffixIcon: IconButton(
                     icon: Icon(Icons.send, color: Colors.white),
                     onPressed: () {
+                      final box = Hive.box('authBox');
+                      final String firstName = box.get('firstName') ?? 'User';
+                      final String lastName = box.get('lastName') ?? '';
+                      final Uint8List? profileBytes = box.get('profileImageBytes_userId');
+
                       if (commentController.text.trim().isNotEmpty) {
                         setState(() {
-                          comments.add(commentController.text.trim());
+                          comments.add(Comment(
+                            userName: "$firstName $lastName",
+                            text: commentController.text.trim(),
+                            timestamp: DateTime.now(),
+                            profileImageBytes: profileBytes,
+                          ));
                         });
                         commentController.clear();
                       }
@@ -189,18 +194,59 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
         ),
       ),
     );
-  },
-  icon: Icon(Icons.comment, color: Colors.white, size: 32),
-),
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return VisibilityDetector(
+      key: Key(widget.videoUrl),
+      onVisibilityChanged: _handleVisibilityChanged,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          _controller.value.isInitialized
+              ? FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width: _controller.value.size.width,
+                    height: _controller.value.size.height,
+                    child: VideoPlayer(_controller),
+                  ),
+                )
+              : Center(child: CircularProgressIndicator()),
+
+          // Right-side actions
+          Positioned(
+            bottom: 120,
+            right: 16,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      isLiked = !isLiked;
+                    });
+                  },
+                  icon: Icon(
+                    isLiked ? Icons.favorite : Icons.favorite_border,
+                    color: isLiked ? Colors.red : Colors.white,
+                    size: 30,
+                  ),
+                ),
                 SizedBox(height: 28),
-            IconButton(
-            onPressed: () {
-              Share.share(
-                'Check out this event! 🌍\nhttps://adventura.lb/events/123',
-                subject: 'Adventure Invitation',
-              );
-            },
-            icon: Icon(Icons.send, color: Colors.white, size: 30))],
+                IconButton(
+                  onPressed: _openCommentSheet,
+                  icon: Icon(Icons.comment, color: Colors.white, size: 32),
+                ),
+                SizedBox(height: 28),
+                IconButton(
+                  onPressed: () {
+                    Share.share('Check out this event! https://adventura.lb/events/123');
+                  },
+                  icon: Icon(Icons.send, color: Colors.white, size: 30),
+                ),
+              ],
             ),
           ),
 
