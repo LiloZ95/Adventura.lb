@@ -410,6 +410,61 @@ const softDeleteActivity = async (req, res) => {
 	}
 };
 
+async function deactivatePastEvents() {
+	try {
+		const now = new Date();
+
+		const expiredEvents = await Activity.update(
+			{ availability_status: false },
+			{
+				where: {
+					listing_type: "oneTime",
+					to_time: { [Op.lt]: now },
+					availability_status: true,
+				},
+			}
+		);
+
+		console.log(`🕒 Deactivated ${expiredEvents[0]} expired one-time events`);
+	} catch (error) {
+		console.error("❌ Error deactivating past events:", error);
+	}
+}
+
+const getExpiredActivitiesByProvider = async (req, res) => {
+	try {
+		const { provider_id } = req.params;
+
+		if (!provider_id) {
+			return res
+				.status(400)
+				.json({ success: false, message: "Missing provider_id." });
+		}
+
+		const activities = await Activity.findAll({
+			where: {
+				provider_id,
+				availability_status: false,
+			},
+			include: [
+				{
+					model: ActivityImage,
+					as: "activity_images",
+					attributes: ["image_url", "is_primary"],
+				},
+				{ model: TripPlan, as: "trip_plans" },
+				{ model: Feature, as: "features" },
+			],
+			order: [["to_time", "DESC"]],
+		});
+
+		return res.status(200).json({ success: true, activities });
+	} catch (error) {
+		console.error("❌ Error fetching expired activities:", error);
+		return res.status(500).json({ success: false, message: "Server error." });
+	}
+};
+
 module.exports = {
 	createActivity,
 	getAllActivities,
@@ -420,4 +475,6 @@ module.exports = {
 	uploadImages,
 	getActivitiesByProvider,
 	softDeleteActivity,
+	deactivatePastEvents,
+	getExpiredActivitiesByProvider,
 };

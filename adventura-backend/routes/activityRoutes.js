@@ -12,6 +12,7 @@ const {
   uploadImages,
   getActivitiesByProvider,
   softDeleteActivity,
+  getExpiredActivitiesByProvider,
 } = require("../controllers/activityController");
 
 const {
@@ -67,5 +68,7 @@ router.get("/recommendations/:id", async (req, res) => {
 router.post('/activity-images/upload/:activityId', upload.array('images'), uploadImages);
 
 router.get('/by-provider/:provider_id', getActivitiesByProvider);
+
+router.get("/expired/:provider_id", getExpiredActivitiesByProvider);
 
 module.exports = router;

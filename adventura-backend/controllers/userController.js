@@ -136,7 +136,7 @@ const createUser = async (req, res) => {
 				userType: newUser.user_type,
 			},
 			process.env.JWT_SECRET,
-			{ expiresIn: "15m" } // Access token expires in 15 minutes
+			{ expiresIn: "7d" } // Access token expires in 15 minutes
 		);
 
 		const refreshToken = jwt.sign(
@@ -448,7 +448,7 @@ const loginUser = async (req, res) => {
 				provider_id: provider_id, // ✅ now defined
 			},
 			process.env.JWT_SECRET,
-			{ expiresIn: "15m" }
+			{ expiresIn: "7d" }
 		);
 
 		const refreshToken = jwt.sign(
@@ -537,7 +537,7 @@ const refreshAccessToken = async (req, res) => {
 				const newAccessToken = jwt.sign(
 					{ userId: user.user_id, email: user.email },
 					process.env.JWT_SECRET,
-					{ expiresIn: "15m" }
+					{ expiresIn: "7d" }
 				);
 
 				const newRefreshToken = jwt.sign(
@@ -647,7 +647,7 @@ const verifyOtp = async (req, res) => {
 	const accessToken = jwt.sign(
 		{ userId: user.user_id },
 		process.env.JWT_SECRET,
-		{ expiresIn: "15m" }
+		{ expiresIn: "7d" }
 	);
 	const refreshToken = jwt.sign(
 		{ userId: user.user_id },

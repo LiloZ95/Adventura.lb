@@ -16,6 +16,8 @@ const categoryRoutes = require("./routes/categoryRoutes"); // Import category ro
 const activityRoutes = require("./routes/activityRoutes");
 // const eventRoutes = require("./routes/eventRoutes"); // ✅ Import event routes
 const availabilityRoutes = require('./routes/availabilityRoutes');
+const cron = require("node-cron"); // Import cron for scheduling tasks
+const { deactivatePastEvents } = require("./controllers/activityController");
 
 const app = express();
 
@@ -63,6 +65,13 @@ app.use((err, req, res, next) => {
 	console.error("❌ Server Error:", err);
 	res.status(500).json({ error: "Internal server error" });
 });
+
+// Run every hour at minute 0
+cron.schedule("0 * * * *", () => {
+	console.log("⏰ [Cron] Running scheduled cleanup for expired one-time events...");
+	deactivatePastEvents();
+});
+deactivatePastEvents(); // Run once at boot
 
 // ✅ Start Server
 const PORT = process.env.PORT || 3000;
