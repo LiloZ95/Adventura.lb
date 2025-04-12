@@ -3,10 +3,16 @@ import 'package:provider/provider.dart';
 import 'package:adventura/main_api.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_core/firebase_core.dart';
+
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   try {
     await dotenv.load(fileName: ".env");
     print("✅ .env file loaded successfully");
@@ -17,6 +23,7 @@ void main() async {
   // ✅ Initialize Hive for both web & mobile
   await Hive.initFlutter();
   await Hive.openBox('authBox'); // Open Hive storage
+  await Hive.openBox('chatMessages'); // ✅ THIS is what's missing
 
   runApp(
     MultiProvider(

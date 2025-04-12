@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const upload = require("../middleware/upload");
+const { authenticateToken } = require("../middleware/auth");
 const {
   getAllActivities,
   getActivityById,
@@ -11,11 +12,13 @@ const {
   uploadImages,
   getActivitiesByProvider,
   softDeleteActivity,
+  getExpiredActivitiesByProvider,
 } = require("../controllers/activityController");
 
 const {
   getRecommendedActivities,
 } = require("../controllers/recommendationController");
+
 
 // ==============================
 // 📍 MAIN ACTIVITY ROUTES
@@ -28,7 +31,7 @@ router.get("/", getAllActivities);
 router.get("/:id", getActivityById);
 
 // ✅ CREATE a new activity
-router.post("/create", createActivity);
+router.post("/create", authenticateToken, createActivity); 
 
 // ✅ DELETE an activity (soft delete)
 router.delete("/:id", softDeleteActivity);
@@ -65,5 +68,7 @@ router.get("/recommendations/:id", async (req, res) => {
 router.post('/activity-images/upload/:activityId', upload.array('images'), uploadImages);
 
 router.get('/by-provider/:provider_id', getActivitiesByProvider);
+
+router.get("/expired/:provider_id", getExpiredActivitiesByProvider);
 
 module.exports = router;

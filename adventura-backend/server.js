@@ -14,8 +14,10 @@ const Client = require("./models/client"); // Import Client model
 const { getUserById } = require("./controllers/userController");
 const categoryRoutes = require("./routes/categoryRoutes"); // Import category routes
 const activityRoutes = require("./routes/activityRoutes");
-// const eventRoutes = require("./routes/eventRoutes"); // ✅ Import event routes
+const eventRoutes = require("./routes/eventRoutes"); // ✅ Import event routes
 const availabilityRoutes = require('./routes/availabilityRoutes');
+const cron = require("node-cron"); // Import cron for scheduling tasks
+const { deactivatePastEvents } = require("./controllers/activityController");
 
 const app = express();
 
@@ -54,7 +56,8 @@ app.use("/images", express.static(path.join(__dirname, "public/images")));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use("/activities", activityRoutes);
 
-// app.use("/events", eventRoutes);  // ✅ Add event routes
+// ✅ Event routes should be registered after activity routes to avoid conflicts
+app.use("/events", eventRoutes);  // ✅ Add event routes
 
 app.use("/availability", availabilityRoutes);
 
@@ -64,6 +67,13 @@ app.use((err, req, res, next) => {
 	res.status(500).json({ error: "Internal server error" });
 });
 app.use('/users', socialAuthRoutes);
+// Run every hour at minute 0
+cron.schedule("0 * * * *", () => {
+	console.log("⏰ [Cron] Running scheduled cleanup for expired one-time events...");
+	deactivatePastEvents();
+});
+deactivatePastEvents(); // Run once at boot
+
 // ✅ Start Server
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "0.0.0.0"; // ✅ Use ENV for flexibility

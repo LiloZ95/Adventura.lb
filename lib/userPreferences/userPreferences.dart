@@ -37,8 +37,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
 
   Future<void> fetchCategories() async {
     try {
-      final response =
-          await http.get(Uri.parse("$baseUrl/categories"));
+      final response = await http.get(Uri.parse("$baseUrl/categories"));
 
       if (response.statusCode == 200) {
         List<dynamic> data = jsonDecode(response.body);
@@ -92,7 +91,10 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
       print("✅ Preferences saved successfully!");
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => MainScreen()),
+        MaterialPageRoute(
+            builder: (context) => MainScreen(
+                  onScrollChanged: (bool visible) {},
+                )),
       );
     } else {
       print("❌ Failed to save preferences. Server response: ${response.body}");

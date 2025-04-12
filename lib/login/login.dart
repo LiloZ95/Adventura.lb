@@ -1,3 +1,4 @@
+import 'package:adventura/HomeControllerScreen.dart';
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/Services/auth_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -85,12 +86,20 @@ class _LoginPageState extends State<LoginPage> {
           } else {
             print("❌ 'user_id' missing or null in login screen");
           }
+          if (user.containsKey("provider_id") && user["provider_id"] != null) {
+            box.put("providerId", user["provider_id"].toString());
+            print("✅ Stored providerId: ${user["provider_id"]}");
+          } else {
+            print("⚠️ No provider_id found in user payload.");
+          }
           setState(() =>
               _isLoading = false); // ✅ Reset loading state before navigation
 
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => MainScreen()),
+            MaterialPageRoute(
+              builder: (context) => HomeControllerScreen(),
+            ),
           );
         } else {
           setState(
@@ -311,7 +320,8 @@ class _LoginPageState extends State<LoginPage> {
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => MainScreen()),
+                                  builder: (context) => MainScreen(
+                                    onScrollChanged: (bool visible) {})),
                             );
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -349,7 +359,8 @@ class _LoginPageState extends State<LoginPage> {
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => MainScreen()),
+                                  builder: (context) => MainScreen(
+                                    onScrollChanged: (bool visible) {})),
                             );
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(

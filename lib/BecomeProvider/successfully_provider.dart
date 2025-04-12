@@ -93,14 +93,21 @@ class _ProviderWelcomeScreenState extends State<ProviderWelcomeScreen>
 
               const Text(
                 "Thank you for applying as a provider. Our team is reviewing your information and will get back to you shortly.",
-                style: TextStyle(fontSize: 14, color: Colors.black87, fontFamily: 'poppins', height: 1.6),
+                style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    fontFamily: 'poppins',
+                    height: 1.6),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 30),
 
-              buildFeatureTile(Icons.verified_user_rounded, "We’re verifying your documents"),
-              buildFeatureTile(Icons.watch_later_outlined, "Approval usually takes 24-48 hours"),
-              buildFeatureTile(Icons.mark_email_read_outlined, "You’ll receive an email once approved"),
+              buildFeatureTile(Icons.verified_user_rounded,
+                  "We’re verifying your documents"),
+              buildFeatureTile(Icons.watch_later_outlined,
+                  "Approval usually takes 24-48 hours"),
+              buildFeatureTile(Icons.mark_email_read_outlined,
+                  "You’ll receive an email once approved"),
 
               const Spacer(),
 
@@ -108,11 +115,13 @@ class _ProviderWelcomeScreenState extends State<ProviderWelcomeScreen>
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                      Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => MainScreen()),
-                                    );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => MainScreen(
+                                onScrollChanged: (bool visible) {},
+                              )),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[700],

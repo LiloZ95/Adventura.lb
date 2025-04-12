@@ -5,6 +5,7 @@ const { sequelize } = require("../db/db.js"); // Import Sequelize instance
 const User = require("../models/User");
 const UserPfp = require("../models/UserPfp");
 const UserActivityInteraction = require("../models/UserActivityInteraction");
+const Provider = require("../models/Provider"); // Import Provider model
 const otpStore = {}; // Temporary storage for OTPs (replace with Redis or DB in production)
 const { QueryTypes } = require("sequelize");
 const { distributeUser } = require("../distributeUsers.js");
@@ -135,7 +136,7 @@ const createUser = async (req, res) => {
 				userType: newUser.user_type,
 			},
 			process.env.JWT_SECRET,
-			{ expiresIn: "15m" } // Access token expires in 15 minutes
+			{ expiresIn: "7d" } // Access token expires in 15 minutes
 		);
 
 		const refreshToken = jwt.sign(
@@ -400,39 +401,77 @@ const loginUser = async (req, res) => {
 	const { email, password } = req.body;
 
 	try {
+		console.log("🔐 Attempting login for:", email);
+
 		// Use Sequelize's findOne instead of raw SQL
 		const user = await User.findOne({ where: { email } });
 
 		if (!user) {
+			console.log("❌ User not found for email:", email);
 			return res.status(404).json({ message: "User not found" });
+		}
+
+		let provider_id = null;
+
+		if (user.user_type === "provider") {
+			const providerExists = await Provider.findOne({
+				where: { user_id: user.user_id },
+			});
+
+			if (!providerExists) {
+				await Provider.create({
+					user_id: user.user_id,
+					business_name: "Default Business",
+				});
+				console.log("🛠️ Auto-created provider record for user", user.user_id);
+			}
+
+			const fetchedProvider = await Provider.findOne({
+				where: { user_id: user.user_id },
+			});
+			provider_id = fetchedProvider?.provider_id;
+			console.log("✅ Provider ID fetched:", provider_id);
 		}
 
 		// Compare entered password with hashed password
 		const isMatch = await bcrypt.compare(password, user.password_hash);
 		if (!isMatch) {
+			console.log("❌ Invalid password for:", email);
 			return res.status(401).json({ error: "Invalid password" });
 		}
 
 		const accessToken = jwt.sign(
-			{ userId: user.user_id }, // ✅ userId should be included!
+			{
+				userId: user.user_id,
+				email: user.email,
+				userType: user.user_type,
+				provider_id: provider_id, // ✅ now defined
+			},
 			process.env.JWT_SECRET,
-			{ expiresIn: "15m" } // Access Token Expires in 15 minutes
+			{ expiresIn: "7d" }
 		);
 
 		const refreshToken = jwt.sign(
 			{ userId: user.user_id },
 			process.env.JWT_REFRESH_SECRET,
-			{ expiresIn: "7d" } // Refresh token lasts 30 days
+			{ expiresIn: "7d" }
 		);
 
-		// Store refresh token in DB (or a Redis cache)
-		refreshTokens.add(refreshToken); // Replace with DB storage
+		refreshTokens.add(refreshToken);
 		await user.update({ lastLogin: new Date() });
 
 		res.cookie("refreshToken", refreshToken, {
 			httpOnly: true,
 			secure: true,
 			sameSite: "Strict",
+		});
+
+		console.log("🎟️ Login successful for:", user.email);
+		console.log("🔑 JWT payload:", {
+			userId: user.user_id,
+			email: user.email,
+			userType: user.user_type,
+			provider_id,
 		});
 
 		res.status(200).json({
@@ -445,10 +484,7 @@ const loginUser = async (req, res) => {
 				last_name: user.last_name,
 				email: user.email,
 				user_type: user.user_type,
-				provider_id:
-					user.user_type === "provider"
-						? await getProviderId(user.user_id)
-						: null,
+				provider_id: provider_id,
 			},
 		});
 	} catch (err) {
@@ -501,7 +537,7 @@ const refreshAccessToken = async (req, res) => {
 				const newAccessToken = jwt.sign(
 					{ userId: user.user_id, email: user.email },
 					process.env.JWT_SECRET,
-					{ expiresIn: "15m" }
+					{ expiresIn: "7d" }
 				);
 
 				const newRefreshToken = jwt.sign(
@@ -611,7 +647,7 @@ const verifyOtp = async (req, res) => {
 	const accessToken = jwt.sign(
 		{ userId: user.user_id },
 		process.env.JWT_SECRET,
-		{ expiresIn: "15m" }
+		{ expiresIn: "7d" }
 	);
 	const refreshToken = jwt.sign(
 		{ userId: user.user_id },

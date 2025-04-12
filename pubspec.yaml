@@ -59,6 +59,7 @@ dependencies:
   visibility_detector: ^0.4.0+2
   reorderables: ^0.6.0
   lucide_icons: ^0.257.0
+  firebase_core: ^2.27.0
   google_sign_in: ^6.2.2
   flutter_facebook_auth: ^7.0.1
 

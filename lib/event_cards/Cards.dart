@@ -157,29 +157,29 @@ Widget EventCard({
                 ),
 
                 // 🕒 Duration Badge
-                if (duration != null)
-                  Positioned(
-                    top: 10,
-                    right: 10,
-                    child: Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.schedule, size: 14, color: Colors.white),
-                          SizedBox(width: 4),
-                          Text(
-                            duration,
-                            style: TextStyle(color: Colors.white, fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                // if (duration != null)
+                //   Positioned(
+                //     top: 10,
+                //     right: 10,
+                //     child: Container(
+                //       padding:
+                //           EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                //       decoration: BoxDecoration(
+                //         color: Colors.black.withOpacity(0.6),
+                //         borderRadius: BorderRadius.circular(16),
+                //       ),
+                //       child: Row(
+                //         children: [
+                //           Icon(Icons.schedule, size: 14, color: Colors.white),
+                //           SizedBox(width: 4),
+                //           Text(
+                //             duration,
+                //             style: TextStyle(color: Colors.white, fontSize: 12),
+                //           ),
+                //         ],
+                //       ),
+                //     ),
+                //   ),
               ],
             ),
 
@@ -280,9 +280,8 @@ Widget EventCard({
 
                   SizedBox(height: 6),
 
-                  // 💰 Price aligned right
+                  // 💰 Price + 🕒 Duration row (left aligned)
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Container(
                         padding:
@@ -291,18 +290,69 @@ Widget EventCard({
                           color: Colors.blue.shade50,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Text(
-                          activity["price"] != null
-                              ? "\$${activity["price"]} / ${activity["price_type"] ?? 'Person'}"
-                              : "Free",
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.blue.shade800,
-                            fontFamily: 'Poppins',
+                        child: activity["price"] != null
+                            ? RichText(
+                                text: TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: "\$${activity["price"]}",
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.blue.shade800,
+                                        fontFamily: 'Poppins',
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text:
+                                          " / ${activity["price_type"] ?? 'person'}",
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.blue.shade800,
+                                        fontWeight: FontWeight.w400,
+                                        fontFamily: 'Poppins',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : Text(
+                                "Free",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green.shade700,
+                                  fontFamily: 'Poppins',
+                                ),
+                              ),
+                      ),
+                      if (duration != null) ...[
+                        SizedBox(width: 10),
+                        Container(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.deepPurple.shade50,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.av_timer,
+                                  size: 16, color: Colors.deepPurple),
+                              SizedBox(width: 6),
+                              Text(
+                                duration,
+                                style: TextStyle(
+                                  color: Colors.deepPurple.shade700,
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: 'Poppins',
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ],

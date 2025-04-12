@@ -22,6 +22,7 @@ class ActivityService {
         },
         body: jsonEncode(activityData),
       );
+      print("🔑 Token being sent: $accessToken");
 
       if (activityResponse.statusCode != 201) {
         print("Activity creation failed: ${activityResponse.body}");
@@ -60,7 +61,7 @@ class ActivityService {
     }
   }
 
-  static Future<void> deleteActivity(String activityId) async {
+  static Future<bool> deleteActivity(String activityId) async {
     final box = await Hive.openBox('authBox');
     String? accessToken = box.get("accessToken");
 
@@ -78,8 +79,11 @@ class ActivityService {
       },
     );
 
-    if (response.statusCode != 200) {
-      throw Exception('Failed to delete activity: ${response.body}');
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      print("❌ Failed to delete activity: ${response.body}");
+      return false;
     }
   }
 
@@ -92,7 +96,7 @@ class ActivityService {
 
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/activities/by-provider/$providerId'),
+        Uri.parse('$baseUrl/activities/by-provider/$providerId?available=true'),
         headers: {
           "Authorization": "Bearer $accessToken",
           "Content-Type": "application/json",
@@ -109,6 +113,20 @@ class ActivityService {
       print("❌ Error fetching listings: $e");
     }
 
+    return [];
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchExpiredListings(
+      int providerId) async {
+    final url = Uri.parse('$baseUrl/activities/expired/$providerId');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      if (body["success"]) {
+        return List<Map<String, dynamic>>.from(body["activities"]);
+      }
+    }
     return [];
   }
 

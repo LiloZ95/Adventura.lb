@@ -24,20 +24,6 @@ const createActivity = async (req, res) => {
 	const t = await Activity.sequelize.transaction();
 
 	try {
-		const provider_id = req.user?.provider_id;
-		const validTypes = ["recurrent", "oneTime"];
-
-		if (!provider_id) {
-			return res.status(403).json({
-				success: false,
-				message: "Only providers are allowed to create activities.",
-			});
-		}
-
-		if (!validTypes.includes(listing_type)) {
-			throw new Error("Invalid listing_type. Must be 'recurrent' or 'oneTime'");
-		}
-
 		const {
 			name,
 			description,
@@ -54,6 +40,24 @@ const createActivity = async (req, res) => {
 			to_time,
 			listing_type,
 		} = req.body;
+
+		console.log("🧠 [createActivity] req.user:", req.user);
+
+		const provider_id = req.user?.provider_id;
+		const validTypes = ["recurrent", "oneTime"];
+
+		console.log("🧠 [createActivity] provider_id:", provider_id);
+
+		if (!provider_id) {
+			return res.status(403).json({
+				success: false,
+				message: "Only providers are allowed to create activities.",
+			});
+		}
+
+		if (!validTypes.includes(listing_type)) {
+			throw new Error("Invalid listing_type. Must be 'recurrent' or 'oneTime'");
+		}
 
 		if (!isValid12HourTime(from_time) || !isValid12HourTime(to_time)) {
 			throw new Error("Invalid time format. Use HH:00 AM/PM");
@@ -111,6 +115,7 @@ const createActivity = async (req, res) => {
 				await Feature.bulkCreate(featureData, { transaction: t });
 			}
 		}
+		console.log("📦 Received listing_type:", listing_type);
 
 		await t.commit();
 
@@ -372,6 +377,11 @@ const getActivitiesByProvider = async (req, res) => {
 					attributes: ["image_url", "is_primary"],
 				},
 				{ model: TripPlan, as: "trip_plans" },
+				{
+					model: Feature, // Your join model
+					as: "features", // This must match your alias
+					attributes: ["name"],
+				},
 			],
 			order: [["createdAt", "DESC"]], // Optional: order newest first
 		});
@@ -405,6 +415,61 @@ const softDeleteActivity = async (req, res) => {
 	}
 };
 
+async function deactivatePastEvents() {
+	try {
+		const now = new Date();
+
+		const expiredEvents = await Activity.update(
+			{ availability_status: false },
+			{
+				where: {
+					listing_type: "oneTime",
+					to_time: { [Op.lt]: now },
+					availability_status: true,
+				},
+			}
+		);
+
+		console.log(`🕒 Deactivated ${expiredEvents[0]} expired one-time events`);
+	} catch (error) {
+		console.error("❌ Error deactivating past events:", error);
+	}
+}
+
+const getExpiredActivitiesByProvider = async (req, res) => {
+	try {
+		const { provider_id } = req.params;
+
+		if (!provider_id) {
+			return res
+				.status(400)
+				.json({ success: false, message: "Missing provider_id." });
+		}
+
+		const activities = await Activity.findAll({
+			where: {
+				provider_id,
+				availability_status: false,
+			},
+			include: [
+				{
+					model: ActivityImage,
+					as: "activity_images",
+					attributes: ["image_url", "is_primary"],
+				},
+				{ model: TripPlan, as: "trip_plans" },
+				{ model: Feature, as: "features" },
+			],
+			order: [["to_time", "DESC"]],
+		});
+
+		return res.status(200).json({ success: true, activities });
+	} catch (error) {
+		console.error("❌ Error fetching expired activities:", error);
+		return res.status(500).json({ success: false, message: "Server error." });
+	}
+};
+
 module.exports = {
 	createActivity,
 	getAllActivities,
@@ -415,4 +480,6 @@ module.exports = {
 	uploadImages,
 	getActivitiesByProvider,
 	softDeleteActivity,
+	deactivatePastEvents,
+	getExpiredActivitiesByProvider,
 };
