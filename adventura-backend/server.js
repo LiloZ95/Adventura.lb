@@ -1,5 +1,5 @@
 require("dotenv").config(); // ✅ Load environment variables at the top
-
+const socialAuthRoutes = require('./routes/socialAuthRoutes');
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -14,7 +14,7 @@ const Client = require("./models/client"); // Import Client model
 const { getUserById } = require("./controllers/userController");
 const categoryRoutes = require("./routes/categoryRoutes"); // Import category routes
 const activityRoutes = require("./routes/activityRoutes");
-// const eventRoutes = require("./routes/eventRoutes"); // ✅ Import event routes
+const eventRoutes = require("./routes/eventRoutes"); // ✅ Import event routes
 const availabilityRoutes = require('./routes/availabilityRoutes');
 const cron = require("node-cron"); // Import cron for scheduling tasks
 const { deactivatePastEvents } = require("./controllers/activityController");
@@ -56,7 +56,8 @@ app.use("/images", express.static(path.join(__dirname, "public/images")));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use("/activities", activityRoutes);
 
-// app.use("/events", eventRoutes);  // ✅ Add event routes
+// ✅ Event routes should be registered after activity routes to avoid conflicts
+app.use("/events", eventRoutes);  // ✅ Add event routes
 
 app.use("/availability", availabilityRoutes);
 
@@ -65,7 +66,7 @@ app.use((err, req, res, next) => {
 	console.error("❌ Server Error:", err);
 	res.status(500).json({ error: "Internal server error" });
 });
-
+app.use('/users', socialAuthRoutes);
 // Run every hour at minute 0
 cron.schedule("0 * * * *", () => {
 	console.log("⏰ [Cron] Running scheduled cleanup for expired one-time events...");

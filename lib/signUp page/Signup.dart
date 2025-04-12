@@ -318,7 +318,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => MainScreen()),
+                                      builder: (context) => MainScreen(
+                                            onScrollChanged: (bool visible) {},
+                                          )),
                                 );
                               },
                               icon: Image.asset(
@@ -333,7 +335,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => MainScreen()),
+                                      builder: (context) => MainScreen(
+                                            onScrollChanged: (bool visible) {},
+                                          )),
                                 );
                               },
                               icon: Image.asset(

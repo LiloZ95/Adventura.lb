@@ -1,9 +1,9 @@
+import 'dart:async';
 import 'package:adventura/Booking/CancelBooking.dart';
-import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/colors.dart';
-import 'package:adventura/search%20screen/searchScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/widgets/booking_card.dart';
+import 'package:flutter/rendering.dart';
 import 'package:adventura/Services/booking_service.dart';
 import 'package:hive/hive.dart';
 
@@ -13,13 +13,15 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'My Bookings',
       debugShowCheckedModeBanner: false,
-      home: MyBookingsPage(),
+      home: MyBookingsPage(onScrollChanged: (_) {}),
     );
   }
 }
 
 class MyBookingsPage extends StatefulWidget {
-  const MyBookingsPage({Key? key}) : super(key: key);
+  final Function(bool) onScrollChanged;
+  const MyBookingsPage({Key? key, required this.onScrollChanged})
+      : super(key: key);
 
   @override
   _MyBookingsPageState createState() => _MyBookingsPageState();
@@ -28,15 +30,35 @@ class MyBookingsPage extends StatefulWidget {
 int selectedRating = 0;
 bool isUpcomingSelected = true;
 
-class _MyBookingsPageState extends State<MyBookingsPage> {
-  bool isLoading = false;
+class _MyBookingsPageState extends State<MyBookingsPage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
 
+  final ScrollController _scrollController = ScrollController();
+  Timer? _scrollStopTimer;
+  bool isLoading = false;
   List<Map<String, dynamic>> bookings = [];
 
   @override
   void initState() {
     super.initState();
     _fetchBookings();
+
+    _scrollController.addListener(() {
+      final direction = _scrollController.position.userScrollDirection;
+      _scrollStopTimer?.cancel();
+
+      if (direction == ScrollDirection.reverse) {
+        widget.onScrollChanged(false);
+      } else if (direction == ScrollDirection.forward) {
+        widget.onScrollChanged(true);
+      }
+
+      _scrollStopTimer = Timer(Duration(milliseconds: 300), () {
+        widget.onScrollChanged(true);
+      });
+    });
   }
 
   Future<void> _fetchBookings() async {
@@ -72,7 +94,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                   if (s == "pending") return "Upcoming";
                   return "Past";
                 })(),
-                "raw_status": b["status"], // 👈 for actual status badge display
+                "raw_status": b["status"],
               })
           .toList();
     });
@@ -81,9 +103,16 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    _scrollStopTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     double statusBarHeight = MediaQuery.of(context).padding.top;
-    double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -108,7 +137,6 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                     ),
                   ],
                 ),
-                // Toggle Section (Upcoming / Past)
                 SizedBox(height: 20),
                 Container(
                   height: 40,
@@ -137,7 +165,6 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                // Booking List
                 Expanded(
                   child: isLoading
                       ? Center(child: CircularProgressIndicator())
@@ -150,6 +177,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                               ),
                             )
                           : ListView.builder(
+                              controller: _scrollController,
                               itemCount: bookings
                                   .where((b) => isUpcomingSelected
                                       ? b["status"] == "Upcoming"
@@ -168,7 +196,6 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                                   bookingId: booking["bookingId"],
                                   guests: booking["guests"],
                                   status: booking["raw_status"],
-                                  // still used for coloring
                                   onCancel: () {
                                     showModalBottomSheet(
                                       context: context,
@@ -191,89 +218,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                 )
               ],
             ),
-          ),
-
-          // 🔥 Bottom Nav Bar — Positioned same as MainScreen
-          Positioned(
-            bottom: 25,
-            left: (screenWidth * 0.035),
-            child: Container(
-              width: screenWidth * 0.93,
-              height: 65,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1B1B1B),
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.70),
-                    offset: Offset(0, 1),
-                    blurRadius: 5,
-                    spreadRadius: 0,
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => MainScreen()));
-                    },
-                    icon: Image.asset(
-                      'assets/Icons/home.png',
-                      width: 35,
-                      height: 35,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => SearchScreen()));
-                    },
-                    icon: Image.asset(
-                      'assets/Icons/search.png',
-                      width: 35,
-                      height: 35,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: Image.asset(
-                      'assets/Icons/ticket.png',
-                      width: 35,
-                      height: 35,
-                      color: Colors.white, // Active Icon
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: Image.asset(
-                      'assets/Icons/bookmark.png',
-                      width: 35,
-                      height: 35,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: Image.asset(
-                      'assets/Icons/paper-plane.png',
-                      width: 35,
-                      height: 35,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          )
         ],
       ),
     );
@@ -286,7 +231,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
         setState(() {
           isUpcomingSelected = isUpcoming;
         });
-        _fetchBookings(); // 💡 Refetch filtered data
+        _fetchBookings(); // Refresh data
       },
       child: Container(
         decoration: BoxDecoration(

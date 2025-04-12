@@ -1,3 +1,4 @@
+import 'package:adventura/HomeControllerScreen.dart';
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/Services/auth_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -96,7 +97,9 @@ class _LoginPageState extends State<LoginPage> {
 
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => MainScreen()),
+            MaterialPageRoute(
+              builder: (context) => HomeControllerScreen(),
+            ),
           );
         } else {
           setState(
@@ -311,13 +314,22 @@ class _LoginPageState extends State<LoginPage> {
 
                       // Facebook login button
                       ElevatedButton.icon(
-                        onPressed: () {
-                          // Handle Apple login
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => MainScreen()),
-                          );
+                        onPressed: () async {
+                          final result = await AuthService.loginWithFacebook();
+                          if (result["success"]) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => MainScreen(
+                                    onScrollChanged: (bool visible) {})),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(result["error"] ??
+                                      "Facebook login failed")),
+                            );
+                          }
                         },
                         icon: Image.asset(
                           'assets/Icons/Facebook.png',
@@ -341,13 +353,22 @@ class _LoginPageState extends State<LoginPage> {
 
                       // Google login button
                       ElevatedButton.icon(
-                        onPressed: () {
-                          // Handle Apple login
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => MainScreen()),
-                          );
+                        onPressed: () async {
+                          final result = await AuthService.loginWithGoogle();
+                          if (result["success"]) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => MainScreen(
+                                    onScrollChanged: (bool visible) {})),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(result["error"] ??
+                                      "Google login failed")),
+                            );
+                          }
                         },
                         icon: Image.asset(
                           'assets/Icons/google.png',

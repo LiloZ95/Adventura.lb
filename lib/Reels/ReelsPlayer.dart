@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:hive/hive.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -20,12 +22,15 @@ class Comment {
 }
 
 class ReelsPlayer extends StatefulWidget {
+  final Function(bool) onScrollChanged;
+  const ReelsPlayer({Key? key, required this.onScrollChanged})
+      : super(key: key);
+
   @override
   _ReelsPlayerState createState() => _ReelsPlayerState();
 }
 
 class _ReelsPlayerState extends State<ReelsPlayer> {
-  
   final List<String> videoUrls = [
     'https://firebasestorage.googleapis.com/v0/b/adevnutralb.firebasestorage.app/o/natrue%20videos%2FSnapchat-125401604.mp4?alt=media&token=a5df6988-6a24-45bf-89fc-eaac4d496661',
     'https://firebasestorage.googleapis.com/v0/b/adevnutralb.firebasestorage.app/o/natrue%20videos%2FSnapchat-142994796.mp4?alt=media&token=2fac414f-a673-42fb-bbcf-11a100f29d79',
@@ -33,6 +38,37 @@ class _ReelsPlayerState extends State<ReelsPlayer> {
     'https://firebasestorage.googleapis.com/v0/b/adevnutralb.firebasestorage.app/o/natrue%20videos%2FSnapchat-91757244.mp4?alt=media&token=f0dd1932-9c6b-468e-888c-76361641ae40',
   ];
 
+  final ScrollController _scrollController = ScrollController();
+  Timer? _scrollStopTimer;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _scrollController.addListener(() {
+      final direction = _scrollController.position.userScrollDirection;
+
+      // Cancel any running timer
+      _scrollStopTimer?.cancel();
+
+      if (direction == ScrollDirection.reverse) {
+        widget.onScrollChanged(false); // hide nav bar
+      } else if (direction == ScrollDirection.forward) {
+        widget.onScrollChanged(true); // show nav bar
+      }
+
+      _scrollStopTimer = Timer(Duration(milliseconds: 300), () {
+        widget.onScrollChanged(true);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _scrollStopTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,8 +106,9 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
     super.initState();
     _controller = VideoPlayerController.network(widget.videoUrl)
       ..initialize().then((_) {
-        if (mounted) setState(() {});
+        if (mounted) setState(() {}); // ✅ Good check
       });
+
     _controller.setLooping(true);
   }
 
@@ -83,9 +120,17 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
   }
 
   void _handleVisibilityChanged(VisibilityInfo info) {
-    setState(() {
-      isVisible = info.visibleFraction > 0.8;
-    });
+    if (!mounted) return;
+
+    final visible = info.visibleFraction > 0.8;
+
+    if (isVisible != visible) {
+      setState(() {
+        isVisible = visible;
+      });
+    }
+
+    if (!mounted) return;
 
     if (isVisible && _controller.value.isInitialized) {
       _controller.play();
@@ -120,7 +165,8 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
                           CircleAvatar(
                             backgroundImage: comment.profileImageBytes != null
                                 ? MemoryImage(comment.profileImageBytes!)
-                                : AssetImage('assets/default_avatar.png') as ImageProvider,
+                                : AssetImage('assets/default_avatar.png')
+                                    as ImageProvider,
                             radius: 18,
                           ),
                           SizedBox(width: 10),
@@ -136,7 +182,8 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
                                             color: Colors.white)),
                                     SizedBox(width: 10),
                                     Text(
-                                      TimeOfDay.fromDateTime(comment.timestamp).format(context),
+                                      TimeOfDay.fromDateTime(comment.timestamp)
+                                          .format(context),
                                       style: TextStyle(
                                           fontSize: 12, color: Colors.white60),
                                     )
@@ -172,7 +219,8 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
                       final box = Hive.box('authBox');
                       final String firstName = box.get('firstName') ?? 'User';
                       final String lastName = box.get('lastName') ?? '';
-                      final Uint8List? profileBytes = box.get('profileImageBytes_userId');
+                      final Uint8List? profileBytes =
+                          box.get('profileImageBytes_userId');
 
                       if (commentController.text.trim().isNotEmpty) {
                         setState(() {
@@ -242,7 +290,8 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
                 SizedBox(height: 28),
                 IconButton(
                   onPressed: () {
-                    Share.share('Check out this event! https://adventura.lb/events/123');
+                    Share.share(
+                        'Check out this event! https://adventura.lb/events/123');
                   },
                   icon: Icon(Icons.send, color: Colors.white, size: 30),
                 ),
@@ -251,84 +300,83 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
           ),
 
           // Left-side organizer name
-         Positioned(
-  bottom: 20,
-  left: 16,
-  right: 20,
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        '@organizer_name',
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
-      ),
-      SizedBox(height: 10),
-      Container(
-        padding: EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: Colors.grey[850], // dark grey background
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: TextField(
-          style: TextStyle(color: Colors.white),
-          cursorColor: Colors.white,
-          decoration: InputDecoration(
-            hintText: 'Write a comment...',
-            hintStyle: TextStyle(color: Colors.white70),
-            border:OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
-               borderSide: BorderSide.none,
+          Positioned(
+            bottom: 20,
+            left: 16,
+            right: 20,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '@organizer_name',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                SizedBox(height: 10),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[850], // dark grey background
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: TextField(
+                    style: TextStyle(color: Colors.white),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      hintText: 'Write a comment...',
+                      hintStyle: TextStyle(color: Colors.white70),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-      ),
-    ],
-  ),
-),
 // Top Gradient Fade
-Positioned(
-  top: 0,
-  left: 0,
-  right: 0,
-  height: 100,
-  child: Container(
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Colors.black.withOpacity(0.8),
-          Colors.transparent,
-        ],
-      ),
-    ),
-  ),
-),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 100,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.8),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
 
 // Bottom Gradient Fade
-Positioned(
-  bottom: 0,
-  left: 0,
-  right: 0,
-  height: 120,
-  child: Container(
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.bottomCenter,
-        end: Alignment.topCenter,
-        colors: [
-          Colors.black.withOpacity(0.8),
-          Colors.transparent,
-        ],
-      ),
-    ),
-  ),
-),
-
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 120,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.8),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

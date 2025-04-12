@@ -1,22 +1,28 @@
+import 'dart:async';
 import 'dart:ui';
 
-import 'package:adventura/Booking/MyBooking.dart';
 import 'package:adventura/event_cards/Cards.dart';
-import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/Services/activity_service.dart';
 import 'package:adventura/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 class SearchScreen extends StatefulWidget {
-  final String? filterMode; // can be "limited_events_only", etc.
+  final String? filterMode;
+  final Function(bool) onScrollChanged;
 
-  SearchScreen({this.filterMode});
+  SearchScreen({this.filterMode, required this.onScrollChanged});
   @override
   _SearchScreenState createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> {
+class _SearchScreenState extends State<SearchScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   List<Map<String, dynamic>> searchResults = [];
+  final ScrollController _scrollController = ScrollController();
+  Timer? _scrollStopTimer;
 
   void showEventDetails(BuildContext context, String title, String date,
       String location, String price) {}
@@ -53,6 +59,30 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     _fetchResults();
+
+    _scrollController.addListener(() {
+      final direction = _scrollController.position.userScrollDirection;
+
+      // Cancel any running timer
+      _scrollStopTimer?.cancel();
+
+      if (direction == ScrollDirection.reverse) {
+        widget.onScrollChanged(false); // hide nav bar
+      } else if (direction == ScrollDirection.forward) {
+        widget.onScrollChanged(true); // show nav bar
+      }
+
+      _scrollStopTimer = Timer(Duration(milliseconds: 300), () {
+        widget.onScrollChanged(true);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _scrollStopTimer?.cancel();
+    super.dispose();
   }
 
   // Show filter dialog
@@ -418,13 +448,14 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
+    super.build(context);
     double statusBarHeight = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
           SingleChildScrollView(
+            controller: _scrollController,
             child: Column(
               children: [
                 // Title Section
@@ -533,12 +564,17 @@ class _SearchScreenState extends State<SearchScreen> {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
                     child: Column(
-                      children: searchResults.map((activity) {
-                        return EventCard(
-                          context: context,
-                          activity: activity,
-                        );
-                      }).toList(),
+                      children: [
+                        ...searchResults.map((activity) {
+                          return EventCard(
+                            context: context,
+                            activity: activity,
+                          );
+                        }).toList(),
+                        SizedBox(
+                            height: MediaQuery.of(context).size.height *
+                                0.12), // 👈 Add spacing
+                      ],
                     ),
                   ),
                 ),
@@ -546,86 +582,6 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
           // Bottom Navigation Bar
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 25),
-              width: screenWidth * 0.93,
-              height: 65,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1B1B1B),
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.70),
-                    offset: Offset(0, 1),
-                    blurRadius: 5,
-                    spreadRadius: 0,
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => MainScreen()));
-                    },
-                    icon: Image.asset(
-                      'assets/Icons/home.png',
-                      width: 35,
-                      height: 35,
-                      color: Colors.grey, // Adjust based on the screen
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: Image.asset(
-                      'assets/Icons/search.png',
-                      width: 35,
-                      height: 35,
-                      color: Colors.white, // Active
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => MyBookingsPage()));
-                    },
-                    icon: Image.asset(
-                      'assets/Icons/ticket.png',
-                      width: 35,
-                      height: 35,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: Image.asset(
-                      'assets/Icons/bookmark.png',
-                      width: 35,
-                      height: 35,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: Image.asset(
-                      'assets/Icons/paper-plane.png',
-                      width: 35,
-                      height: 35,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
         ],
       ),
     );
