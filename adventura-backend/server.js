@@ -1,5 +1,5 @@
 require("dotenv").config(); // ✅ Load environment variables at the top
-const socialAuthRoutes = require('./routes/socialAuthRoutes');
+// const socialAuthRoutes = require('./routes/socialAuthRoutes');
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -66,7 +66,7 @@ app.use((err, req, res, next) => {
 	console.error("❌ Server Error:", err);
 	res.status(500).json({ error: "Internal server error" });
 });
-app.use('/users', socialAuthRoutes);
+// app.use('/users', socialAuthRoutes);
 // Run every hour at minute 0
 cron.schedule("0 * * * *", () => {
 	console.log("⏰ [Cron] Running scheduled cleanup for expired one-time events...");

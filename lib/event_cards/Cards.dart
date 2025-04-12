@@ -387,13 +387,18 @@ Widget LimitedEventCard({
       padding: const EdgeInsets.only(left: 16),
       child: Container(
         width: 240,
-        height: 320,
+        height: 380,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(15),
-          image: DecorationImage(
-            image: NetworkImage(imageUrl),
-            fit: BoxFit.cover,
-          ),
+          image: imageUrl.startsWith('http')
+              ? DecorationImage(
+                  image: NetworkImage(imageUrl),
+                  fit: BoxFit.cover,
+                )
+              : DecorationImage(
+                  image: AssetImage(imageUrl),
+                  fit: BoxFit.cover,
+                ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.70),

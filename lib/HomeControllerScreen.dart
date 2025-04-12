@@ -84,9 +84,15 @@ class _HomeControllerScreenState extends State<HomeControllerScreen> {
       body: Stack(
         children: [
           // Your screens
-          IndexedStack(
-            index: _selectedIndex,
-            children: _screens,
+          AnimatedSwitcher(
+            duration: Duration(milliseconds: 400),
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: child,
+              );
+            },
+            child: _screens[_selectedIndex],
           ),
 
           // Floating Nav Bar on top with full transparency

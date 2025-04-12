@@ -246,6 +246,7 @@ class ActivityService {
     double? minPrice,
     double? maxPrice,
     int? rating,
+    String? listingType, // ✅ Add this line
   }) async {
     Box storageBox = await Hive.openBox('authBox');
     String? accessToken = storageBox.get("accessToken");
@@ -256,15 +257,17 @@ class ActivityService {
     }
 
     final queryParams = <String, String>{};
+    if (listingType != null) queryParams['type'] = listingType;
     if (search != null && search.isNotEmpty) queryParams['search'] = search;
     if (category != null) queryParams['category'] = category;
     if (location != null) queryParams['location'] = location;
     if (minPrice != null) queryParams['min_price'] = minPrice.toString();
     if (maxPrice != null) queryParams['max_price'] = maxPrice.toString();
     if (rating != null) queryParams['rating'] = rating.toString();
+    queryParams['type'] = 'event'; // 🔥 THIS IS MISSING
 
     final uri =
-        Uri.parse("$baseUrl/events").replace(queryParameters: queryParams);
+        Uri.parse("$baseUrl/activities").replace(queryParameters: queryParams);
 
     try {
       final response = await http.get(
@@ -277,8 +280,8 @@ class ActivityService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data.containsKey("events")) {
-          return List<Map<String, dynamic>>.from(data["events"]);
+        if (data is Map && data.containsKey("activities")) {
+          return List<Map<String, dynamic>>.from(data["activities"]);
         }
       } else {
         print("❌ Failed to fetch events: ${response.body}");

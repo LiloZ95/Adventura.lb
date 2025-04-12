@@ -24,17 +24,17 @@ String getImageUrl(Map<String, dynamic> activity) {
 }
 
 String getEventImageUrl(Map<String, dynamic> event) {
-  if (event.containsKey("event_images") &&
-      event["event_images"] is List &&
-      event["event_images"].isNotEmpty) {
-    final image = event["event_images"][0];
+  if (event.containsKey("activity_images") &&
+      event["activity_images"] is List &&
+      event["activity_images"].isNotEmpty) {
+    final image = event["activity_images"][0];
     final imageUrl = image["image_url"];
 
     if (imageUrl != null && imageUrl.isNotEmpty) {
-      return imageUrl.startsWith("http") ? imageUrl : "$baseUrl$imageUrl";
+      return imageUrl.startsWith("http") ? imageUrl : "$baseUrl/$imageUrl";
     }
   }
 
-  // If nothing found, use default
-  return "assets/Pictures/island.jpg"; // Or your asset fallback if needed
+  // 🛟 Fallback to asset image if no valid image was found
+  return 'assets/Pictures/island.jpg';
 }

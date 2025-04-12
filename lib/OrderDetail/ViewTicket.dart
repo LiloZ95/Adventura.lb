@@ -1,3 +1,4 @@
+import 'package:adventura/HomeControllerScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 // Import the barcode_widget package
@@ -24,7 +25,7 @@ class ViewTicketPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double screenWidth  = MediaQuery.of(context).size.width;
+    final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
@@ -97,9 +98,9 @@ class ViewTicketPage extends StatelessWidget {
               child: Center(
                 // BarcodeWidget from the barcode_widget package
                 child: BarcodeWidget(
-                  barcode: Barcode.qrCode(),  // Generate a QR code
-                  data: ticketId,             // The data to encode
-                  width: screenWidth * 0.45,  
+                  barcode: Barcode.qrCode(), // Generate a QR code
+                  data: ticketId, // The data to encode
+                  width: screenWidth * 0.45,
                   height: screenWidth * 0.45,
                 ),
               ),
@@ -111,7 +112,8 @@ class ViewTicketPage extends StatelessWidget {
             _buildInfoRow("Event", eventTitle, screenWidth),
             _buildInfoRow("Client name", clientName, screenWidth),
             _buildInfoRow("Event time", eventTime, screenWidth),
-            _buildInfoRow("Number of attendees", "$numberOfAttendees", screenWidth),
+            _buildInfoRow(
+                "Number of attendees", "$numberOfAttendees", screenWidth),
             _buildInfoRow("Ticket ID", ticketId, screenWidth),
 
             // Status row with colored background
@@ -128,7 +130,8 @@ class ViewTicketPage extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: (status == "Pending")
                         ? Colors.orange[100]
@@ -141,7 +144,8 @@ class ViewTicketPage extends StatelessWidget {
                       fontSize: screenWidth * 0.04,
                       fontFamily: "Poppins",
                       fontWeight: FontWeight.bold,
-                      color: (status == "Pending") ? Colors.orange : Colors.green,
+                      color:
+                          (status == "Pending") ? Colors.orange : Colors.green,
                     ),
                   ),
                 ),
@@ -164,7 +168,8 @@ class ViewTicketPage extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
+                      padding:
+                          EdgeInsets.symmetric(vertical: screenHeight * 0.02),
                     ),
                     child: Text(
                       "Cancel Booking",
@@ -185,7 +190,8 @@ class ViewTicketPage extends StatelessWidget {
                       // Navigate to home screen
                       Navigator.pushAndRemoveUntil(
                         context,
-                        MaterialPageRoute(builder: (context) => MainScreen(onScrollChanged: (bool visible) {})),
+                        MaterialPageRoute(
+                            builder: (context) => HomeControllerScreen()),
                         (route) => false,
                       );
                     },
@@ -194,7 +200,8 @@ class ViewTicketPage extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
+                      padding:
+                          EdgeInsets.symmetric(vertical: screenHeight * 0.02),
                     ),
                     child: Text(
                       "Go To Home",

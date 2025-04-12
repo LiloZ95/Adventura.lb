@@ -3,10 +3,6 @@ import 'package:adventura/Booking/CancelBooking.dart';
 import 'package:adventura/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/widgets/booking_card.dart';
-<<<<<<< HEAD
-import 'package:flutter/rendering.dart';
-=======
->>>>>>> 7dcd260 (Mybookings, Booking, ScanTicket, kellon cherkee)
 import 'package:adventura/Services/booking_service.dart';
 import 'package:hive/hive.dart';
 
@@ -33,44 +29,14 @@ class MyBookingsPage extends StatefulWidget {
 int selectedRating = 0;
 bool isUpcomingSelected = true;
 
-<<<<<<< HEAD
-class _MyBookingsPageState extends State<MyBookingsPage>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
-  final ScrollController _scrollController = ScrollController();
-  Timer? _scrollStopTimer;
-  bool isLoading = false;
-=======
 class _MyBookingsPageState extends State<MyBookingsPage> {
   bool isLoading = false;
-
->>>>>>> 7dcd260 (Mybookings, Booking, ScanTicket, kellon cherkee)
   List<Map<String, dynamic>> bookings = [];
 
   @override
   void initState() {
     super.initState();
     _fetchBookings();
-<<<<<<< HEAD
-
-    _scrollController.addListener(() {
-      final direction = _scrollController.position.userScrollDirection;
-      _scrollStopTimer?.cancel();
-
-      if (direction == ScrollDirection.reverse) {
-        widget.onScrollChanged(false);
-      } else if (direction == ScrollDirection.forward) {
-        widget.onScrollChanged(true);
-      }
-
-      _scrollStopTimer = Timer(Duration(milliseconds: 300), () {
-        widget.onScrollChanged(true);
-      });
-    });
-=======
->>>>>>> 7dcd260 (Mybookings, Booking, ScanTicket, kellon cherkee)
   }
 
   Future<void> _fetchBookings() async {
@@ -106,11 +72,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                   if (s == "pending") return "Upcoming";
                   return "Past";
                 })(),
-<<<<<<< HEAD
-                "raw_status": b["status"],
-=======
-                "raw_status": b["status"], // 👈 for actual status badge display
->>>>>>> 7dcd260 (Mybookings, Booking, ScanTicket, kellon cherkee)
+                "raw_status": b["status"], // 👈 Used for badge coloring
               })
           .toList();
     });
@@ -118,19 +80,8 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
     print("🎯 Final bookings: $bookings");
   }
 
-<<<<<<< HEAD
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    _scrollStopTimer?.cancel();
-    super.dispose();
-  }
-
-=======
->>>>>>> 7dcd260 (Mybookings, Booking, ScanTicket, kellon cherkee)
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     double statusBarHeight = MediaQuery.of(context).padding.top;
 
     return Scaffold(
@@ -196,10 +147,6 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                               ),
                             )
                           : ListView.builder(
-<<<<<<< HEAD
-                              controller: _scrollController,
-=======
->>>>>>> 7dcd260 (Mybookings, Booking, ScanTicket, kellon cherkee)
                               itemCount: bookings
                                   .where((b) => isUpcomingSelected
                                       ? b["status"] == "Upcoming"
@@ -218,10 +165,6 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                                   bookingId: booking["bookingId"],
                                   guests: booking["guests"],
                                   status: booking["raw_status"],
-<<<<<<< HEAD
-=======
-                                  // still used for coloring
->>>>>>> 7dcd260 (Mybookings, Booking, ScanTicket, kellon cherkee)
                                   onCancel: () {
                                     showModalBottomSheet(
                                       context: context,
@@ -257,11 +200,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
         setState(() {
           isUpcomingSelected = isUpcoming;
         });
-<<<<<<< HEAD
-        _fetchBookings(); // Refresh data
-=======
-        _fetchBookings(); // 💡 Refetch filtered data
->>>>>>> 7dcd260 (Mybookings, Booking, ScanTicket, kellon cherkee)
+        _fetchBookings(); // Refresh bookings
       },
       child: Container(
         decoration: BoxDecoration(

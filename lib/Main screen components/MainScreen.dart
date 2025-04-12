@@ -17,9 +17,11 @@ import 'package:hive/hive.dart';
 import 'package:adventura/Provider%20Only/ticketScanner.dart';
 import 'package:adventura/CreateListing/CreateList.dart';
 import 'package:adventura/Chatbot/chatBot.dart';
+import 'package:intl/intl.dart';
 
 class MainScreen extends StatefulWidget {
   final Function(bool) onScrollChanged;
+
   const MainScreen({Key? key, required this.onScrollChanged}) : super(key: key);
 
   @override
@@ -188,10 +190,11 @@ class _MainScreenState extends State<MainScreen>
               child: RefreshIndicator(
                 color: AppColors.blue,
                 onRefresh: () async {
-                  loadActivities();
+                  await _loadLimitedEvents(); // ✅ Refresh limited events
+                  loadActivities(); // (if this loads all activities)
                   await ProfileService.fetchProfilePicture(userId);
                   fetchUserData();
-                  setState(() {});
+                  setState(() {}); // 🔁 Trigger UI update
                 },
                 child: Container(
                   height: MediaQuery.of(context).size.height,
@@ -203,8 +206,7 @@ class _MainScreenState extends State<MainScreen>
                           children: [
                             // Header Section
                             Padding(
-                              padding: EdgeInsets.fromLTRB(
-                                  16, statusBarHeight + 6, 16, 6),
+                              padding: EdgeInsets.fromLTRB(16, 10, 16, 6),
                               child: Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
@@ -216,13 +218,12 @@ class _MainScreenState extends State<MainScreen>
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        SizedBox(height: 10.0),
                                         Text(
-                                          "Welcome back, \n$firstName !",
+                                          "Welcome \nback, $firstName !",
                                           style: TextStyle(
                                             height: 0.96,
                                             fontSize: screenWidth *
-                                                0.07, // Dynamic font size
+                                                0.075, // Dynamic font size
                                             fontWeight: FontWeight.bold,
                                             fontFamily: 'Poppins',
                                             color: Colors.black,
@@ -301,8 +302,8 @@ class _MainScreenState extends State<MainScreen>
                                           },
                                           icon: Image.asset(
                                             'assets/Icons/ai.png',
-                                            width: screenWidth * 0.09,
-                                            height: screenWidth * 0.09,
+                                            width: screenWidth * 0.075,
+                                            height: screenWidth * 0.075,
                                           ),
                                         ),
                                         IconButton(
@@ -317,11 +318,11 @@ class _MainScreenState extends State<MainScreen>
                                           },
                                           icon: Image.asset(
                                             'assets/Icons/bell-Bold.png',
-                                            width: screenWidth * 0.08,
-                                            height: screenWidth * 0.08,
+                                            width: screenWidth * 0.07,
+                                            height: screenWidth * 0.07,
                                           ),
                                         ),
-                                        SizedBox(width: 8),
+                                        SizedBox(width: 4),
                                         GestureDetector(
                                           onTap: () => Navigator.push(
                                             context,
@@ -373,10 +374,12 @@ class _MainScreenState extends State<MainScreen>
                             ),
                             // Limited Time Activities Section
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                              padding: const EdgeInsets.fromLTRB(16, 0, 0, 0),
                               child: Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
                                 children: [
                                   Text(
                                     "Limited Time Activities",
@@ -406,8 +409,7 @@ class _MainScreenState extends State<MainScreen>
                                       style: TextStyle(
                                         color: AppColors.blue,
                                         fontFamily: 'Poppins',
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
+                                        fontSize: screenWidth * 0.035,
                                       ),
                                     ),
                                   ),
@@ -415,7 +417,7 @@ class _MainScreenState extends State<MainScreen>
                               ),
                             ),
                             SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.36,
+                              height: MediaQuery.of(context).size.height * 0.4,
                               child: SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: Padding(
@@ -423,12 +425,18 @@ class _MainScreenState extends State<MainScreen>
                                       const EdgeInsets.fromLTRB(0, 0, 16, 0),
                                   child: Row(
                                     children: limitedEvents.map((event) {
+                                      // print("🧠 Event object: $event");
+
                                       return LimitedEventCard(
                                         context: context,
                                         activity: event,
                                         imageUrl: getEventImageUrl(event),
                                         name: event["name"] ?? "Unnamed Event",
-                                        date: event["date"] ?? "No date",
+                                        date: event["event_date"] != null
+                                            ? DateFormat('MMM d, yyyy').format(
+                                                DateTime.parse(
+                                                    event["event_date"]))
+                                            : "No date",
                                         location:
                                             event["location"] ?? "No location",
                                         price: event["price"] != null
@@ -443,7 +451,7 @@ class _MainScreenState extends State<MainScreen>
 
                             // Popular Categories Section
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                               child: Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
@@ -458,20 +466,10 @@ class _MainScreenState extends State<MainScreen>
                                       color: Colors.black,
                                     ),
                                   ),
-                                  // GestureDetector(
-                                  //   onTap: () {},
-                                  //   child: Text(
-                                  //     "see all",
-                                  //     style: TextStyle(
-                                  //       fontSize: screenWidth * 0.04, // Dynamic font size
-                                  //       fontFamily: 'Poppins',
-                                  //       color: AppColors.blue,
-                                  //     ),
-                                  //   ),
-                                  // ),
                                 ],
                               ),
                             ),
+                            // SizedBox(height: 6),
                             SizedBox(
                               height: screenHeight * 0.27, // Dynamic height
                               child: SingleChildScrollView(
@@ -522,12 +520,14 @@ class _MainScreenState extends State<MainScreen>
                               child: Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline
+                                    .alphabetic, // This is required for baseline alignment
                                 children: [
                                   Text(
                                     "You Might Like",
                                     style: TextStyle(
-                                      fontSize: screenWidth *
-                                          0.06, // Dynamic font size
+                                      fontSize: screenWidth * 0.06,
                                       fontFamily: 'Poppins',
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black,
@@ -550,14 +550,15 @@ class _MainScreenState extends State<MainScreen>
                                       style: TextStyle(
                                         color: AppColors.blue,
                                         fontFamily: 'Poppins',
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
+                                        fontSize: screenWidth * 0.035,
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
+                            SizedBox(height: 6),
+
                             // ✅ Activity List (Dynamically Loaded)
                             recommendedActivities.isEmpty
                                 ? Padding(

@@ -409,13 +409,30 @@ class _SearchScreenState extends State<SearchScreen>
     String? selectedLabel =
         selectedCategories.isNotEmpty ? selectedCategories.first : null;
     int? categoryId = selectedLabel != null ? categoryMap[selectedLabel] : null;
-    if (widget.filterMode == "limited_events_only") {
-      final events = await ActivityService.fetchEvents();
+
+    final isLimitedEventsOnly = widget.filterMode == "limited_events_only";
+
+    // 👇 If only fetching events
+    if (isLimitedEventsOnly) {
+      final events = await ActivityService.fetchEvents(
+        search: searchText,
+        category: categoryId?.toString(),
+        location: selectedLocation == "all" ? null : selectedLocation,
+        minPrice: budgetMin > 0 ? budgetMin : null,
+        maxPrice: budgetMax != null && budgetMax! > 0 ? budgetMax : null,
+        rating: selectedRatings.isNotEmpty
+            ? selectedRatings.reduce((a, b) => a > b ? a : b)
+            : null,
+        listingType: "event", // ✅ make sure this is passed
+      );
+
       setState(() {
-        searchResults = [...events];
+        searchResults = events;
       });
       return;
     }
+
+    // 👇 Normal flow for both activities & events
     final activities = await ActivityService.fetchActivities(
       search: searchText,
       category: categoryId?.toString(),
@@ -436,10 +453,19 @@ class _SearchScreenState extends State<SearchScreen>
       rating: selectedRatings.isNotEmpty
           ? selectedRatings.reduce((a, b) => a > b ? a : b)
           : null,
+      listingType: "event", // optional, or leave null
     );
+    // ✅ Filter each to ensure no overlap
+    final onlyActivities = activities
+        .where((a) => a["listing_type"]?.toLowerCase() != "onetime")
+        .toList();
 
-    final combinedResults = [...activities, ...events];
-    combinedResults.shuffle(); // 🔀 Randomize order
+    final onlyEvents = events
+        .where((e) => e["listing_type"]?.toLowerCase() == "onetime")
+        .toList();
+
+    final combinedResults = [...onlyActivities, ...onlyEvents];
+    combinedResults.shuffle();
 
     setState(() {
       searchResults = combinedResults;

@@ -177,6 +177,12 @@ const getAllActivities = async (req, res) => {
 
 		const activities = await Activity.findAll({
 			where,
+			attributes: [
+				"activity_id", "name", "description", "location", "price", "availability_status",
+				"nb_seats", "category_id", "latitude", "longitude",
+				"from_time", "to_time", "provider_id", "listing_type", "event_date",
+				"createdAt", "updatedAt"
+			  ],
 			include: [
 				{
 					model: ActivityImage,
@@ -416,24 +422,24 @@ const softDeleteActivity = async (req, res) => {
 };
 
 async function deactivatePastEvents() {
-	try {
-		const now = new Date();
+	// try {
+	// 	const now = new Date();
 
-		const expiredEvents = await Activity.update(
-			{ availability_status: false },
-			{
-				where: {
-					listing_type: "oneTime",
-					to_time: { [Op.lt]: now },
-					availability_status: true,
-				},
-			}
-		);
+	// 	const expiredEvents = await Activity.update(
+	// 		{ availability_status: false },
+	// 		{
+	// 			where: {
+	// 				listing_type: "oneTime",
+	// 				to_time: { [Op.lt]: now },
+	// 				availability_status: true,
+	// 			},
+	// 		}
+	// 	);
 
-		console.log(`🕒 Deactivated ${expiredEvents[0]} expired one-time events`);
-	} catch (error) {
-		console.error("❌ Error deactivating past events:", error);
-	}
+	// 	console.log(`🕒 Deactivated ${expiredEvents[0]} expired one-time events`);
+	// } catch (error) {
+	// 	console.error("❌ Error deactivating past events:", error);
+	// }
 }
 
 const getExpiredActivitiesByProvider = async (req, res) => {
@@ -470,6 +476,42 @@ const getExpiredActivitiesByProvider = async (req, res) => {
 	}
 };
 
+const getAllEvents = async (req, res) => {
+	try {
+	  const { search, category, location, min_price, max_price } = req.query;
+	  const where = {
+		listing_type: 'one_time', // 🎯 fetch events only
+	  };
+  
+	  if (category) where.category_id = parseInt(category);
+	  if (search) where.name = { [Op.iLike]: `%${search}%` };
+	  if (location) where.location = { [Op.iLike]: `%${location}%` };
+	  if (min_price) where.price = { [Op.gte]: parseFloat(min_price) };
+	  if (max_price) {
+		where.price = {
+		  ...(where.price || {}),
+		  [Op.lte]: parseFloat(max_price),
+		};
+	  }
+  
+	  const events = await Activity.findAll({
+		where,
+		include: [
+		  {
+			model: ActivityImage,
+			as: "activity_images",
+			attributes: ["image_url"],
+		  },
+		],
+	  });
+  
+	  res.status(200).json({ events }); // ⚠️ important: wrap in `events` for frontend
+	} catch (error) {
+	  console.error("❌ Error fetching events:", error);
+	  res.status(500).json({ error: "Server error." });
+	}
+  };
+  
 module.exports = {
 	createActivity,
 	getAllActivities,
@@ -482,4 +524,5 @@ module.exports = {
 	softDeleteActivity,
 	deactivatePastEvents,
 	getExpiredActivitiesByProvider,
+	getAllEvents
 };
