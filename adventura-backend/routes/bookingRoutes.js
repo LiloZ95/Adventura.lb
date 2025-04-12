@@ -21,6 +21,13 @@ router.get(
 	],
 	bookingController.checkAvailability
 );
+// Get booking by scanned QR (booking_id)
+router.get(
+	"/scan/:id",
+	limiter,
+	bookingController.getBookingById
+);
+
 
 // Create booking route
 router.post(
@@ -35,5 +42,8 @@ router.post(
 	],
 	bookingController.createBooking
 );
+router.put("/status/:id", limiter, bookingController.updateBookingStatus);
+router.post("/create", bookingController.createBooking);
+router.get("/user/:clientId", bookingController.getUserBookings);
 
 module.exports = router;

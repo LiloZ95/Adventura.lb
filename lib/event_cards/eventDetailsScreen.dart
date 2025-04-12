@@ -639,19 +639,34 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ),
               ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => OrderDetailsPage(
-                        selectedImage: images[_currentImageIndex],
-                        eventTitle: widget.activity["name"] ?? "Event",
-                        eventDate:
-                            confirmedDate ?? widget.activity["date"] ?? "Date",
-                        eventLocation:
-                            widget.activity["location"] ?? "Location",
+                  if (confirmedDate != null && confirmedSlot != null) {
+                    print("📦 Confirmed Date: $confirmedDate");
+                    print("⏰ Confirmed Slot: $confirmedSlot");
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OrderDetailsPage(
+                          activityId: widget.activity["activity_id"],
+                          selectedImage: images[_currentImageIndex],
+                          eventTitle: widget.activity["name"] ?? "Event",
+                          eventDate: confirmedDate!,
+                          eventLocation:
+                              widget.activity["location"] ?? "Location",
+                          selectedSlot: confirmedSlot!,
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  } else {
+                    print("⚠️ Date or Slot not selected yet!");
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content:
+                            Text("⚠️ Please select a date and time first."),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                  }
                 },
                 icon: Icon(Icons.local_activity_outlined,
                     color: Colors.white, size: 20),

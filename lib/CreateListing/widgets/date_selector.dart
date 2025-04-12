@@ -242,16 +242,16 @@ class _DateSelectorState extends State<DateSelector> {
                       hourMinuteShape: const RoundedRectangleBorder(
                         borderRadius: BorderRadius.all(Radius.circular(12)),
                       ),
-                      hourMinuteColor: WidgetStateColor.resolveWith((states) =>
-                          states.contains(WidgetState.selected)
+                      hourMinuteColor: MaterialStateColor.resolveWith(
+                          (states) => states.contains(MaterialState.selected)
                               ? const Color(0xFF007AFF)
                               : Colors.transparent),
-                      dayPeriodColor: WidgetStateColor.resolveWith((states) =>
-                          states.contains(WidgetState.selected)
+                      dayPeriodColor: MaterialStateColor.resolveWith((states) =>
+                          states.contains(MaterialState.selected)
                               ? const Color(0xFF007AFF)
                               : Colors.transparent),
-                      dayPeriodTextColor: WidgetStateColor.resolveWith(
-                          (states) => states.contains(WidgetState.selected)
+                      dayPeriodTextColor: MaterialStateColor.resolveWith(
+                          (states) => states.contains(MaterialState.selected)
                               ? Colors.white
                               : Colors.black),
                       entryModeIconColor: const Color(0xFF007AFF),

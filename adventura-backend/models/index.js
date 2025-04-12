@@ -11,6 +11,8 @@ const UserPreferences = require("./UserPreferences");
 const UserActivityInteraction = require("./UserActivityInteraction");
 const Booking = require("./Booking");
 const Feature = require("./Feature");
+const availability = require("./Availability");
+
 
 // ✅ Define Relationships
 Activity.hasMany(ActivityImage, {
@@ -67,6 +69,8 @@ UserActivityInteraction.belongsTo(UserPreferences, {
 
 User.hasOne(Provider, { foreignKey: "user_id" });
 Provider.belongsTo(User, { foreignKey: "user_id" });
+Client.belongsTo(User, { foreignKey: "user_id", as: "user" });
+
 
 sequelize
 	.sync({ alter: { drop: false } })
@@ -87,4 +91,6 @@ module.exports = {
 	Feature,
 	User,
 	Provider,
+	availability, // 👈 Add this
+
 };

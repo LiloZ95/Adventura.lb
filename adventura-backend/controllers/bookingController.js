@@ -1,4 +1,71 @@
-const bookingService = require("../services/bookingService");
+// const bookingService = require("../services/bookingService");
+
+const { Activity, Booking, availability, Client, User  } = require("../models");
+
+const getUserBookings = async (req, res) => {
+	try {
+	  const { clientId } = req.params;
+	  const userBookings = await Booking.findAll({
+		where: { client_id: clientId },
+		include: [
+		  {
+			model: Activity,
+			as: "activity"
+		  }
+		],
+		order: [["booking_date", "DESC"]],
+	  });
+  
+	  res.status(200).json(userBookings);
+	} catch (err) {
+	  console.error("❌ Fetch error:", err);
+	  res.status(500).json({ message: "Server error" });
+	}
+  };
+  
+
+  const getBookingById = async (req, res) => {
+	const { id } = req.params;
+	try {
+		const bookingInfo = await Booking.findOne({
+			where: { booking_id: id },
+			include: [
+				{
+					model: Activity,
+					as: "activity",
+				},
+				{
+					model: Client,
+					as: "client",
+					include: [
+						{
+							model: User,
+							as: "user", // alias must match the one you used in the association
+							attributes: ["first_name", "last_name"],
+						},
+					],
+				},
+			],
+		});
+
+		if (!bookingInfo) {
+			return res.status(404).json({ message: "Booking not found" });
+		}
+
+		res.json({
+			booking_id: bookingInfo.booking_id,
+			event_name: bookingInfo.activity?.name || "Unknown",
+			client_name: `${bookingInfo.client?.user?.first_name} ${bookingInfo.client?.user?.last_name}`,
+			event_time: bookingInfo.slot,
+			status: bookingInfo.status,
+		});
+	} catch (error) {
+		console.error("❌ Error fetching booking by ID:", error);
+		res.status(500).json({ message: "Server error" });
+	}
+};
+
+
 
 const checkAvailability = async (req, res) => {
 	try {
@@ -8,7 +75,7 @@ const checkAvailability = async (req, res) => {
 			return res.status(400).json({ message: "Missing activity_id or date" });
 		}
 
-		const activity = await activities.findByPk(activity_id);
+		const activity = await Activity.findByPk(activity_id);
 		if (!activity)
 			return res.status(404).json({ message: "Activity not found" });
 
@@ -36,43 +103,73 @@ const checkAvailability = async (req, res) => {
 		res.status(500).json({ message: "Server error" });
 	}
 };
-
+const { Op } = require("sequelize");
 const createBooking = async (req, res) => {
 	try {
-		const { activity_id, client_id, booking_date, slot, total_price } =
-			req.body;
+		console.log("📥 Booking Payload:", req.body); // <-- ADD THIS
 
-		const activity = await activities.findByPk(activity_id);
+		const { activity_id, client_id, booking_date, slot, total_price } = req.body;
+
+		// Check if the activity exists
+		const activity = await Activity.findByPk(activity_id);
 		if (!activity)
 			return res.status(404).json({ message: "Activity not found" });
 
-		const existingCount = await booking.count({
+		// Check for valid availability
+		const availabilitySlot = await availability.findOne({
 			where: {
 				activity_id,
-				booking_date,
+				date: booking_date,
 				slot,
-				cancelled_at: null,
 			},
 		});
 
-		if (existingCount >= activity.capacity) {
+		if (!availabilitySlot) {
+			return res.status(404).json({ message: "No availability for selected date/slot" });
+		}
+
+		if (availabilitySlot.available_seats <= 0) {
 			return res.status(400).json({ message: "Slot is fully booked" });
 		}
 
-		const newBooking = await booking.create({
+		// Create booking
+		const newBooking = await Booking.create({
 			activity_id,
 			client_id,
 			booking_date,
 			slot,
 			total_price,
-			status: "confirmed",
+			status: "pending",
 		});
 
-		res
-			.status(201)
-			.json({ message: "Booking successful", booking: newBooking });
+		// Decrease available seats
+		availabilitySlot.available_seats -= 1;
+		await availabilitySlot.save();
+
+		res.status(201).json({ message: "Booking successful", booking: newBooking });
 	} catch (error) {
 		console.error("❌ Booking error:", error);
+		console.error("🪵 Full stack:", error.stack);
+		res.status(500).json({ message: "Server error" });
+	}
+};
+
+const updateBookingStatus = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const { status } = req.body;
+
+		const bookingData = await Booking.findByPk(id);
+		if (!bookingData) {
+			return res.status(404).json({ message: "Booking not found" });
+		}
+
+		bookingData.status = status;
+		await bookingData.save();
+
+		res.json({ message: "Booking status updated", status: status });
+	} catch (error) {
+		console.error("❌ Error updating booking status:", error);
 		res.status(500).json({ message: "Server error" });
 	}
 };
@@ -80,4 +177,7 @@ const createBooking = async (req, res) => {
 module.exports = {
 	checkAvailability,
 	createBooking,
+	getBookingById,
+	updateBookingStatus,
+	getUserBookings, // ✅ this MUST be here
 };

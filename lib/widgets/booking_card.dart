@@ -1,5 +1,6 @@
 import 'package:adventura/Booking/MyBooking.dart';
 import 'package:adventura/OrderDetail/ViewTicket.dart';
+import 'package:adventura/config.dart';
 import 'package:adventura/event_cards/eventDetailsScreen.dart';
 import 'package:flutter/material.dart';
 
@@ -181,12 +182,29 @@ class BookingCard extends StatelessWidget {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.asset(
-                  activity["activity_images"][0],
-                  width: 120,
-                  height: 120,
-                  fit: BoxFit.cover,
-                ),
+                child: (activity["activity_images"] != null &&
+                        activity["activity_images"].isNotEmpty)
+                    ? Image.network(
+                        activity["activity_images"][0].startsWith("http")
+                            ? activity["activity_images"][0]
+                            : "$baseUrl${activity["activity_images"][0]}",
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Image.asset(
+                          'assets/Pictures/island.jpg',
+                          width: 120,
+                          height: 120,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Image.asset(
+                        'assets/Pictures/island.jpg',
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                      ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -220,15 +238,18 @@ class BookingCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.yellow,
+                        color: _getStatusColor(status),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        status,
+                        status[0].toUpperCase() +
+                            status.substring(1), // e.g. "confirmed"
                         style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'poppins'),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Poppins',
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ],
@@ -381,5 +402,20 @@ class BookingCard extends StatelessWidget {
         builder: (context) => EventDetailsScreen(activity: activity),
       ),
     );
+  }
+}
+
+Color _getStatusColor(String status) {
+  switch (status.toLowerCase()) {
+    case "pending":
+      return Colors.orange;
+    case "confirmed":
+      return Colors.green;
+    case "cancelled":
+      return Colors.red;
+    case "completed":
+      return Colors.blueGrey;
+    default:
+      return Colors.grey;
   }
 }

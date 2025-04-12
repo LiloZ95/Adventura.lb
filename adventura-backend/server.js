@@ -89,3 +89,6 @@ process.on("uncaughtException", (err) => {
 process.on("unhandledRejection", (reason, promise) => {
 	console.error("❌ Unhandled Promise Rejection:", reason);
 });
+
+const bookingRoutes = require("./routes/bookingRoutes");
+app.use("/booking", bookingRoutes);

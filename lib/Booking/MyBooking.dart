@@ -4,12 +4,9 @@ import 'package:adventura/colors.dart';
 import 'package:adventura/search%20screen/searchScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/widgets/booking_card.dart';
+import 'package:adventura/Services/booking_service.dart';
+import 'package:hive/hive.dart';
 
-void main() {
-  runApp(MyApp());
-}
-
-/// The root widget of the application.
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -21,9 +18,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-/// The MyBookingsPage displays the list of bookings.
-/// Tapping the Cancel button on a booking opens the CancelBookingScreen
-/// as a responsive modal that covers about 80% of the screen height.
 class MyBookingsPage extends StatefulWidget {
   const MyBookingsPage({Key? key}) : super(key: key);
 
@@ -35,35 +29,57 @@ int selectedRating = 0;
 bool isUpcomingSelected = true;
 
 class _MyBookingsPageState extends State<MyBookingsPage> {
-  // Temporary dummy bookings
-  List<Map<String, dynamic>> bookings = [
-    {
-      "activity": {
-        "name": "Saint Moritz",
-        "location": "Switzerland",
-        "date": "May 22, 2024 - May 26, 2024",
-        "price": "45",
-        "description": "A luxury mountain resort.",
-        "activity_images": ["assets/Pictures/island.jpg"]
-      },
-      "bookingId": "#UI891827BHY",
-      "guests": "3 Guests",
-      "status": "Upcoming",
-    },
-    {
-      "activity": {
-        "name": "Addu Atoll",
-        "location": "Maldives",
-        "date": "May 22, 2024 - May 26, 2024",
-        "price": "60",
-        "description": "Enjoy a tropical getaway.",
-        "activity_images": ["assets/Pictures/picnic.webp"]
-      },
-      "bookingId": "#TY671829BUI",
-      "guests": "2 Guests",
-      "status": "Upcoming",
-    },
-  ];
+  bool isLoading = false;
+
+  List<Map<String, dynamic>> bookings = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchBookings();
+  }
+
+  Future<void> _fetchBookings() async {
+    final box = await Hive.openBox('authBox');
+    final clientId = int.tryParse(box.get('userId') ?? '');
+    print("📦 Logged-in client ID: $clientId");
+
+    if (clientId == null) {
+      print("❌ No valid user ID");
+      return;
+    }
+
+    final fetched = await BookingService.getUserBookings(clientId);
+    print("📥 Bookings fetched: $fetched");
+
+    setState(() {
+      bookings = fetched
+          .map((b) => {
+                "activity": {
+                  "name": b["activity"]["name"],
+                  "location": b["activity"]["location"],
+                  "date": b["booking_date"],
+                  "price": b["total_price"].toString(),
+                  "description": b["activity"]["description"],
+                  "activity_images": (b["activity"]["activity_images"] ?? [])
+                      .map<String>((img) => img.toString())
+                      .toList(),
+                },
+                "bookingId": "#${b["booking_id"]}",
+                "guests": "1 Guest",
+                "status": (() {
+                  final s = b["status"]?.toLowerCase();
+                  if (s == "pending") return "Upcoming";
+                  return "Past";
+                })(),
+                "raw_status": b["status"], // 👈 for actual status badge display
+              })
+          .toList();
+    });
+
+    print("🎯 Final bookings: $bookings");
+  }
+
   @override
   Widget build(BuildContext context) {
     double statusBarHeight = MediaQuery.of(context).padding.top;
@@ -123,35 +139,56 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                 const SizedBox(height: 10),
                 // Booking List
                 Expanded(
-                  child: ListView.builder(
-                    itemCount: bookings.length,
-                    itemBuilder: (context, index) {
-                      final booking = bookings[index];
-                      return BookingCard(
-                        activity: booking["activity"],
-                        bookingId: booking["bookingId"],
-                        guests: booking["guests"],
-                        status: booking["status"],
-                        onCancel: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(16)),
+                  child: isLoading
+                      ? Center(child: CircularProgressIndicator())
+                      : bookings.isEmpty
+                          ? Center(
+                              child: Text(
+                                "No bookings found.",
+                                style: TextStyle(
+                                    fontSize: 16, fontFamily: 'Poppins'),
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: bookings
+                                  .where((b) => isUpcomingSelected
+                                      ? b["status"] == "Upcoming"
+                                      : b["status"] == "Past")
+                                  .length,
+                              itemBuilder: (context, index) {
+                                final filtered = bookings
+                                    .where((b) => isUpcomingSelected
+                                        ? b["status"] == "Upcoming"
+                                        : b["status"] == "Past")
+                                    .toList();
+
+                                final booking = filtered[index];
+                                return BookingCard(
+                                  activity: booking["activity"],
+                                  bookingId: booking["bookingId"],
+                                  guests: booking["guests"],
+                                  status: booking["raw_status"],
+                                  // still used for coloring
+                                  onCancel: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.vertical(
+                                            top: Radius.circular(16)),
+                                      ),
+                                      builder: (context) {
+                                        return FractionallySizedBox(
+                                          heightFactor: 0.8,
+                                          child: CancelBookingScreen(),
+                                        );
+                                      },
+                                    );
+                                  },
+                                );
+                              },
                             ),
-                            builder: (context) {
-                              return FractionallySizedBox(
-                                heightFactor: 0.8,
-                                child: CancelBookingScreen(),
-                              );
-                            },
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
+                )
               ],
             ),
           ),
@@ -249,6 +286,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
         setState(() {
           isUpcomingSelected = isUpcoming;
         });
+        _fetchBookings(); // 💡 Refetch filtered data
       },
       child: Container(
         decoration: BoxDecoration(

@@ -1,7 +1,9 @@
+import 'package:adventura/Services/booking_service.dart';
 import 'package:adventura/widgets/payment_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:adventura/colors.dart';
+import 'package:hive/hive.dart';
 
 /// Custom enforcer that rejects any new character if max length is exceeded.
 class MaxDigitsEnforcer extends TextInputFormatter {
@@ -27,13 +29,17 @@ class OrderDetailsPage extends StatefulWidget {
   final String eventTitle;
   final String eventDate;
   final String eventLocation;
+  final int activityId;
+  final String selectedSlot;
 
   const OrderDetailsPage({
     Key? key,
+    required this.activityId,
     required this.selectedImage,
     required this.eventTitle,
     required this.eventDate,
     required this.eventLocation,
+    required this.selectedSlot,
   }) : super(key: key);
 
   @override
@@ -132,7 +138,10 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                       child: Container(
                         decoration: const BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [Color.fromARGB(134, 62, 62, 62), Color.fromARGB(221, 0, 0, 0)],
+                            colors: [
+                              Color.fromARGB(134, 62, 62, 62),
+                              Color.fromARGB(221, 0, 0, 0)
+                            ],
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                           ),
@@ -315,7 +324,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                         height: 55,
                         child: ElevatedButton.icon(
                           icon: Icon(
-                            Icons.lock, // Optional: security/pay icon
+                            Icons.lock,
                             color: Colors.white,
                             size: screenWidth * 0.05,
                           ),
@@ -328,13 +337,47 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (context) => const PaymentModal(),
+                          onPressed: () async {
+                            final box = await Hive.openBox('authBox');
+                            final clientId =
+                                int.tryParse(box.get('userId') ?? '');
+
+                            if (clientId == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("❌ User not logged in")),
+                              );
+                              return;
+                            }
+
+                            // ✅ DEBUG LOG
+                            print("🟢 Proceed tapped - sending booking");
+
+                            final success = await BookingService.createBooking(
+                              activityId: widget.activityId,
+                              clientId: clientId,
+                              date: widget.eventDate,
+                              slot: widget.selectedSlot,
+                              totalPrice: totalDue,
                             );
+
+                            if (success) {
+                              print("✅ Booking confirmed");
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("✅ Booking successful")),
+                              );
+
+                              // TODO: Navigate to success screen
+                              // Navigator.push(...);
+                            } else {
+                              print("❌ Booking failed");
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      "❌ Booking failed. Please try again."),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.blue,
@@ -445,7 +488,6 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
             ),
           ),
           const Spacer(),
-          
           Radio<PaymentMethod>(
             value: method,
             groupValue: _selectedMethod,
