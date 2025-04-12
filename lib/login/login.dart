@@ -315,21 +315,21 @@ class _LoginPageState extends State<LoginPage> {
                       // Facebook login button
                       ElevatedButton.icon(
                         onPressed: () async {
-                          final result = await AuthService.loginWithFacebook();
-                          if (result["success"]) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => MainScreen(
-                                    onScrollChanged: (bool visible) {})),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text(result["error"] ??
-                                      "Facebook login failed")),
-                            );
-                          }
+                          // final result = await AuthService.loginWithFacebook();
+                          // if (result["success"]) {
+                          //   Navigator.pushReplacement(
+                          //     context,
+                          //     MaterialPageRoute(
+                          //         builder: (context) => MainScreen(
+                          //           onScrollChanged: (bool visible) {})),
+                          //   );
+                          // } else {
+                          //   ScaffoldMessenger.of(context).showSnackBar(
+                          //     SnackBar(
+                          //         content: Text(result["error"] ??
+                          //             "Facebook login failed")),
+                          //   );
+                          // }
                         },
                         icon: Image.asset(
                           'assets/Icons/Facebook.png',
@@ -354,21 +354,21 @@ class _LoginPageState extends State<LoginPage> {
                       // Google login button
                       ElevatedButton.icon(
                         onPressed: () async {
-                          final result = await AuthService.loginWithGoogle();
-                          if (result["success"]) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => MainScreen(
-                                    onScrollChanged: (bool visible) {})),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text(result["error"] ??
-                                      "Google login failed")),
-                            );
-                          }
+                          // final result = await AuthService.loginWithGoogle();
+                          // if (result["success"]) {
+                          //   Navigator.pushReplacement(
+                          //     context,
+                          //     MaterialPageRoute(
+                          //         builder: (context) => MainScreen(
+                          //           onScrollChanged: (bool visible) {})),
+                          //   );
+                          // } else {
+                          //   ScaffoldMessenger.of(context).showSnackBar(
+                          //     SnackBar(
+                          //         content: Text(result["error"] ??
+                          //             "Google login failed")),
+                          //   );
+                          // }
                         },
                         icon: Image.asset(
                           'assets/Icons/google.png',
