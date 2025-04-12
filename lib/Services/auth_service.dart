@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart'; // ✅ Use Hive for local storage
 import 'package:adventura/config.dart'; // ✅ Import the global config file
@@ -71,6 +73,76 @@ class AuthService {
     } catch (e) {
       print("❌ Exception in Signup: $e");
       return {"success": false, "error": "Failed to connect to server"};
+    }
+  }
+
+  /// google and facebook authenthication
+  static Future<Map<String, dynamic>> loginWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return {"success": false, "error": "Cancelled"};
+
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/login-google'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"idToken": idToken}),
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data["user"] != null) {
+        final storageBox = await Hive.openBox("authBox");
+        await storageBox.put("accessToken", data["accessToken"]);
+        await storageBox.put("refreshToken", data["refreshToken"]);
+        await storageBox.put("userId", data["user"]["user_id"].toString());
+        await storageBox.put("firstName", data["user"]["first_name"]);
+        await storageBox.put("lastName", data["user"]["last_name"]);
+        await storageBox.put(
+            "profilePicture", data["user"]["profile_picture"] ?? "");
+
+        return {"success": true, "user": data["user"]};
+      } else {
+        return {"success": false, "error": data["error"] ?? "Login failed"};
+      }
+    } catch (e) {
+      return {"success": false, "error": e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> loginWithFacebook() async {
+    try {
+      final result = await FacebookAuth.instance.login();
+      if (result.status != LoginStatus.success) {
+        return {"success": false, "error": "Facebook login failed"};
+      }
+
+      final accessToken = result.accessToken!.tokenString;
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/login-facebook'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"accessToken": accessToken}),
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data["user"] != null) {
+        final storageBox = await Hive.openBox("authBox");
+        await storageBox.put("accessToken", data["accessToken"]);
+        await storageBox.put("refreshToken", data["refreshToken"]);
+        await storageBox.put("userId", data["user"]["user_id"].toString());
+        await storageBox.put("firstName", data["user"]["first_name"]);
+        await storageBox.put("lastName", data["user"]["last_name"]);
+        await storageBox.put(
+            "profilePicture", data["user"]["profile_picture"] ?? "");
+
+        return {"success": true, "user": data["user"]};
+      } else {
+        return {"success": false, "error": data["error"] ?? "Login failed"};
+      }
+    } catch (e) {
+      return {"success": false, "error": e.toString()};
     }
   }
 

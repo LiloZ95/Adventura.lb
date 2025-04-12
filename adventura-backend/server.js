@@ -1,5 +1,5 @@
 require("dotenv").config(); // ✅ Load environment variables at the top
-
+const socialAuthRoutes = require('./routes/socialAuthRoutes');
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -63,7 +63,7 @@ app.use((err, req, res, next) => {
 	console.error("❌ Server Error:", err);
 	res.status(500).json({ error: "Internal server error" });
 });
-
+app.use('/users', socialAuthRoutes);
 // ✅ Start Server
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "0.0.0.0"; // ✅ Use ENV for flexibility
