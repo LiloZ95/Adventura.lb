@@ -48,10 +48,22 @@ dependencies:
   cached_network_image: ^3.3.1
   mobile_scanner: ^4.0.1
   google_maps_flutter: ^2.5.3
-  url_launcher: ^6.3.1
+  url_launcher: 
   flutter_map: ^6.1.0 #for web testing
   latlong2: ^0.9.1 #for web testing
-  flutter_native_splash: ^2.4.5
+  flutter_map_cancellable_tile_provider: ^2.0.0
+  flutter_dotenv: ^5.2.1
+  geolocator: ^11.1.0
+  share_plus: ^7.2.1
+  video_player:
+  visibility_detector: ^0.4.0+2
+  reorderables: ^0.6.0
+  lucide_icons: ^0.257.0
+  firebase_core: ^2.27.0
+  google_sign_in: 
+  flutter_facebook_auth: 
+
+  
 
 dev_dependencies:
   flutter_test:

@@ -260,8 +260,90 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         SizedBox(height: screenHeight * 0.01),
 
+<<<<<<< HEAD
                         
                         _buildSocialLoginButton(
+=======
+                      // Facebook login button
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          // final result = await AuthService.loginWithFacebook();
+                          // if (result["success"]) {
+                          //   Navigator.pushReplacement(
+                          //     context,
+                          //     MaterialPageRoute(
+                          //         builder: (context) => MainScreen(
+                          //           onScrollChanged: (bool visible) {})),
+                          //   );
+                          // } else {
+                          //   ScaffoldMessenger.of(context).showSnackBar(
+                          //     SnackBar(
+                          //         content: Text(result["error"] ??
+                          //             "Facebook login failed")),
+                          //   );
+                          // }
+                        },
+                        icon: Image.asset(
+                          'assets/Icons/Facebook.png',
+                          width: screenWidth * 0.1,
+                          height: screenWidth * 0.1,
+                        ),
+                        label: Text(
+                          "Sign in With Facebook",
+                          style: TextStyle(fontSize: 16, fontFamily: 'Poppins'),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black,
+                          padding: EdgeInsets.symmetric(vertical: 6),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: screenHeight * 0.02), // Dynamic spacing
+
+                      // Google login button
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          // final result = await AuthService.loginWithGoogle();
+                          // if (result["success"]) {
+                          //   Navigator.pushReplacement(
+                          //     context,
+                          //     MaterialPageRoute(
+                          //         builder: (context) => MainScreen(
+                          //           onScrollChanged: (bool visible) {})),
+                          //   );
+                          // } else {
+                          //   ScaffoldMessenger.of(context).showSnackBar(
+                          //     SnackBar(
+                          //         content: Text(result["error"] ??
+                          //             "Google login failed")),
+                          //   );
+                          // }
+                        },
+                        icon: Image.asset(
+                          'assets/Icons/google.png',
+                          width: screenWidth * 0.1,
+                          height: screenWidth * 0.1,
+                        ),
+                        label: Text(
+                          "Sign in With Google",
+                          style: TextStyle(fontSize: 16, fontFamily: 'Poppins'),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black,
+                          padding: EdgeInsets.symmetric(vertical: 6),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: screenHeight * 0.01), // Dynamic spacing
+                      Center(
+                        child: TextButton(
+>>>>>>> b1201e1 (Mybookings, Booking, ScanTicket, kellon cherkee cherry pick)
                           onPressed: () {
                             
                             Navigator.push(
