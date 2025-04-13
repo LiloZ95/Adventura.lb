@@ -227,6 +227,7 @@ class BookingContentWidget extends StatelessWidget {
                                 ),
                               ),
                             ],
+
                           ),
                         ),
                         Container(
