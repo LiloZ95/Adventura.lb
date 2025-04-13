@@ -1,16 +1,26 @@
-import 'dart:io';
+import 'package:adventura/utils/snackbars.dart';
+import 'package:adventura/CreateListing/widgets/category_selector.dart';
+import 'package:adventura/CreateListing/widgets/image_selector.dart';
+import 'package:adventura/widgets/location_picker.dart';
+import 'package:adventura/CreateListing/widgets/title_section.dart';
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
 import 'package:image_picker/image_picker.dart';
-
-// Define an enum for listing type
-enum ListingType {
-  recurrent,
-  oneTime,
-}
+import 'package:adventura/services/activity_service.dart';
+import 'package:adventura/controllers/create_listing_controller.dart';
+import 'widgets/age_selector.dart';
+import 'widgets/date_selector.dart';
+import 'widgets/description_section.dart';
+import 'widgets/features_section.dart';
+import 'widgets/listing_type_selector.dart';
+import 'widgets/location_section.dart';
+import 'widgets/ticket_price_selector.dart';
+import 'widgets/trip_plan_section.dart';
+import 'package:adventura/CreateListing/preview_page.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
-  
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -34,6 +44,9 @@ class _CreateListingPageState extends State<CreateListingPage> {
   final ImagePicker _picker = ImagePicker();
   final List<XFile> _images = [];
   static const int _maxImages = 10;
+  gmap.LatLng? _mapLatLng =
+      gmap.LatLng(33.8547, 35.8623); // Defaults to Lebanon
+  final controller = CreateListingController();
 
   int _currentPage = 0;
   final PageController _pageController = PageController();
@@ -43,49 +56,201 @@ class _CreateListingPageState extends State<CreateListingPage> {
   int _currentTitleLength = 0;
 
   // Category selection
-  String? _selectedCategory;
-  final List<String> _categories = [
-    "sea trip",
-    "picnic",
-    "paragliding",
-    "sunsets",
-    "tours",
-    "car events",
-    "festivals",
-    "hikes",
-    "snow skiing",
-    "Boat",
-    "JetSki",
-    "Museums",
-  ];
+  Map<String, dynamic>? _selectedCategory;
+  List<Map<String, dynamic>> categories = [];
 
   // Listing Type selection
   ListingType? _selectedListingType;
 
+  // Ticket Price selection dropdown variables
+  final TextEditingController _priceController = TextEditingController();
+  String _selectedTicketPriceType = 'Person';
+  final List<String> _ticketPriceTypes = ['Person', 'Per hour', 'Per day'];
+
+  // Controller + count for Description field
+  final TextEditingController _descriptionController = TextEditingController();
+  int _currentDescLength = 0;
+
+  // Day/Month/Year + Age Allowed
+  final List<String> _months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+
+  // Age Allowed
+  String? _selectedAge;
+
+  final List<int> _years = List.generate(
+    10, // or however many future years you want to include
+    (index) => DateTime.now().year + index,
+  );
+
+  String _selectedDay = 'Monday';
+  String _selectedMonth = 'January';
+  int _selectedYear = DateTime.now().year;
+
+  // from / to
+  final TextEditingController _fromController = TextEditingController();
+  final TextEditingController _toController = TextEditingController();
+
+  // Trip Plan
+  List<bool> _isEditable = [true]; // only last one is editable
+  List<Map<String, TextEditingController>> _tripPlanControllers = [
+    {
+      'time': TextEditingController(),
+      'desc': TextEditingController(),
+    },
+  ];
+
+  // Seats
+  final TextEditingController _seatsController = TextEditingController();
+
+  // Features
+  List<TextEditingController> _featureControllers = [TextEditingController()];
+  List<bool> _isFeatureEditable = [true];
+
+  // Location
+  final TextEditingController _locationDisplayController =
+      TextEditingController();
+
+  void _openLocationPicker() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LocationPicker(initialPosition: _mapLatLng),
+      ),
+    );
+
+    if (result != null && result is gmap.LatLng) {
+      setState(() {
+        _mapLatLng = result;
+      });
+    }
+  }
+
+  void _submitActivity() async {
+    if (_titleController.text.trim().isEmpty ||
+        _descriptionController.text.trim().isEmpty ||
+        _locationDisplayController.text.trim().isEmpty ||
+        _priceController.text.trim().isEmpty ||
+        _fromController.text.trim().isEmpty ||
+        _toController.text.trim().isEmpty ||
+        _seatsController.text.trim().isEmpty ||
+        _selectedCategory == null ||
+        _selectedListingType == null ||
+        _mapLatLng == null) {
+      showAppSnackBar(context, "⚠️ Please fill in all required fields.");
+      return;
+    }
+
+    final tripPlans = _tripPlanControllers
+        .where((plan) =>
+            plan["time"]!.text.trim().isNotEmpty &&
+            plan["desc"]!.text.trim().isNotEmpty)
+        .map((plan) => {
+              "time": plan["time"]!.text.trim(),
+              "description": plan["desc"]!.text.trim(),
+            })
+        .toList();
+
+    final features = _featureControllers
+        .map((f) => f.text.trim())
+        .where((text) => text.isNotEmpty)
+        .toList();
+
+    final activityData = {
+      "name": _titleController.text.trim(),
+      "description": _descriptionController.text.trim(),
+      "location": _locationDisplayController.text.trim(),
+      "price": double.tryParse(_priceController.text) ?? 0.0,
+      "price_type": _selectedTicketPriceType,
+      "nb_seats": int.tryParse(_seatsController.text.trim()) ?? 0,
+      "category_id": _selectedCategory?["id"],
+      "latitude": _mapLatLng!.latitude,
+      "longitude": _mapLatLng!.longitude,
+      "features": features,
+      "trip_plan": tripPlans,
+      "from_time": _fromController.text.trim(),
+      "to_time": _toController.text.trim(),
+      "listing_type": _selectedListingType.toString().split('.').last,
+    };
+
+    final success = await ActivityService.createActivity(activityData);
+
+    showAppSnackBar(
+      context,
+      success
+          ? "✅ Activity created successfully!"
+          : "❌ Failed to create activity.",
+    );
+  }
+
+  // A reusable widget method for text fields
+  Widget _buildTextFieldBox({
+    required TextEditingController controller,
+    required String hint,
+    IconData? icon,
+  }) {
+    return Container(
+      height: 50,
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFCFCFCF), width: 1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          suffixIcon: icon != null
+              ? Icon(
+                  icon,
+                  color: Colors.blue, // Change icon color here
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 14,
+          ),
+          hintText: hint,
+          hintStyle: const TextStyle(
+            color: Colors.grey,
+            fontSize: 14,
+            fontFamily: 'poppins',
+          ),
+        ),
+        style: const TextStyle(
+          color: Colors.black,
+          fontSize: 14,
+          fontFamily: 'poppins',
+        ),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
-    // Listen for text changes in the title
-    _titleController.addListener(() {
-      setState(() {
-        _currentTitleLength = _titleController.text.length;
-      });
-    });
+
+    controller.init(() => setState(() {}));
   }
 
   @override
   void dispose() {
-    _titleController.dispose();
-    _pageController.dispose();
+    controller.dispose();
     super.dispose();
   }
 
   // Helper to show a brief SnackBar
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
-    );
-  }
 
   // Picks multiple images from the gallery
   Future<void> _pickImages() async {
@@ -93,30 +258,27 @@ class _CreateListingPageState extends State<CreateListingPage> {
     if (pickedImages != null && pickedImages.isNotEmpty) {
       final int remainingSpace = _maxImages - _images.length;
       if (remainingSpace <= 0) {
-        _showSnackBar('You can only select up to $_maxImages images.');
+        showAppSnackBar(
+            context, 'You can only select up to $_maxImages images.');
         return;
       }
 
+      final imagesToAdd = pickedImages.take(remainingSpace).toList();
+
+      setState(() {
+        _images.addAll(imagesToAdd);
+        _currentPage = _images.length - 1;
+      });
+
+      if (_pageController.hasClients) {
+        _pageController.jumpToPage(_currentPage);
+      }
+
       if (pickedImages.length > remainingSpace) {
-        final truncatedList = pickedImages.sublist(0, remainingSpace);
-        setState(() {
-          _images.addAll(truncatedList);
-          _currentPage = 0;
-        });
-        if (_pageController.hasClients) {
-          _pageController.jumpToPage(0);
-        }
-        _showSnackBar(
+        showAppSnackBar(
+          context,
           'Only the first $remainingSpace images were added (max $_maxImages).',
         );
-      } else {
-        setState(() {
-          _images.addAll(pickedImages);
-          _currentPage = 0;
-        });
-        if (_pageController.hasClients) {
-          _pageController.jumpToPage(0);
-        }
       }
     }
   }
@@ -130,132 +292,13 @@ class _CreateListingPageState extends State<CreateListingPage> {
     if (_pageController.hasClients) {
       _pageController.jumpToPage(0);
     }
-    _showSnackBar("All images cleared.");
-  }
-
-  // Shows a bottom sheet containing the list of categories
-  Future<void> _showCategorySheet() async {
-    final chosenCategory = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return FractionallySizedBox(
-          heightFactor: 0.6,
-          child: SafeArea(
-            child: Column(
-              children: [
-                // Drag handle
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(top: 16, bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[400],
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                ),
-                // Scrollable list of categories
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ..._categories.map((category) {
-                          return InkWell(
-                            onTap: () {
-                              Navigator.pop(context, category);
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              child: Center(
-                                child: Text(
-                                  category,
-                                  style: const TextStyle(
-                                    fontFamily: 'poppins',
-                                    fontSize: 17,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                        const SizedBox(height: 16),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    if (chosenCategory != null) {
-      setState(() {
-        _selectedCategory = chosenCategory;
-      });
-    }
-  }
-
-  /// Listing-type button
-  /// - Removes default ripple/highlight effect
-  /// - Text & icon turn blue if selected
-  /// - Otherwise, border is grey, icon is grey, text is black
-  Widget _buildListingTypeOption({
-    required ListingType type,
-    required String text,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      splashColor: Colors.transparent,
-      highlightColor: Colors.transparent,
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        height: 45,
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected ? Colors.blue : Colors.grey,
-            width: 1,
-          ),
-          color: Colors.white,
-        ),
-        // Center icon + text
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.autorenew,
-              color: isSelected ? Colors.blue : Colors.grey,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              text,
-              style: TextStyle(
-                fontFamily: 'poppins',
-                fontSize: 15,
-                color: isSelected ? Colors.blue : Colors.black,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    showAppSnackBar(context, "All images cleared.");
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final totalImages = _images.length;
-
-    return Scaffold(
+    return (Scaffold(
+      key: const Key('main_scaffold'),
       appBar: AppBar(
         title: const Text(
           'Create Listing',
@@ -274,442 +317,331 @@ class _CreateListingPageState extends State<CreateListingPage> {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
+
+      // ----------------------------------------------------------------
+      // 1) Use bottomNavigationBar to keep the bar pinned at the bottom
+      // 2) The content is in a SingleChildScrollView, so it can scroll
+      //    independently above the pinned nav bar
+      // ----------------------------------------------------------------
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              // Container for images
-              Container(
-                width: double.infinity,
-                height: screenHeight * 0.25,
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey, width: 2),
-                ),
-                child: Stack(
-                  children: [
-                    // If no images, show "Add Photos"
-                    _images.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.add_photo_alternate_outlined),
-                                  iconSize: 48,
-                                  color: Colors.grey[600],
-                                  onPressed: _pickImages,
-                                ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'Add Photos',
-                                  style: TextStyle(
-                                    fontFamily: 'poppins',
-                                    fontSize: 16,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: PageView.builder(
-                              controller: _pageController,
-                              itemCount: totalImages,
-                              onPageChanged: (index) {
-                                setState(() {
-                                  _currentPage = index;
-                                });
-                              },
-                              itemBuilder: (context, index) {
-                                return Image.file(
-                                  File(_images[index].path),
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                );
-                              },
-                            ),
-                          ),
-                    // "Clear All" button if images exist
-                    if (_images.isNotEmpty)
-                      Positioned(
-                        bottom: 8,
-                        left: 8,
-                        child: TextButton(
-                          onPressed: _clearImages,
-                          style: TextButton.styleFrom(
-                            backgroundColor: Colors.grey[300],
-                            foregroundColor: Colors.blue,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            textStyle: const TextStyle(
-                              fontFamily: 'poppins',
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          child: const Text("Clear All"),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Image info text
-              Text(
-                _images.isEmpty
-                    ? 'Photos: 0/$_maxImages - First photo will be shown in the listing\'s thumbnail'
-                    : 'Photos: ${_currentPage + 1}/$totalImages - First photo will be shown in the listing\'s thumbnail',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontFamily: "poppins",
-                  color: Colors.blue,
-                  fontSize: 14,
-                ),
+              // ---------------------------------
+              // Images (Add, Clear, Display)
+              // ---------------------------------
+              ImageSelector(
+                images: _images,
+                currentPage: _currentPage,
+                maxImages: _maxImages,
+                pageController: _pageController,
+                onPickImages: _pickImages,
+                onClearImages: _clearImages,
               ),
 
               const SizedBox(height: 15),
 
-              // Title row with divider
-              Row(
-                children: [
-                  const Text(
-                    'Title',
-                    style: TextStyle(
-                      fontFamily: "poppins",
-                      fontSize: 22,
-                      color: Colors.black87,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Container(
-                      height: 1,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
+              // ---------------------------------
+              // Title
+              // ---------------------------------
+              TitleSection(
+                controller: _titleController,
+                currentLength: _currentTitleLength,
               ),
-
-              const SizedBox(height: 12),
-
-              // Title field
-              Container(
-                height: 50,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: const Color.fromRGBO(167, 167, 167, 1),
-                    width: 1,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TextField(
-                  controller: _titleController,
-                  maxLength: 30,
-                  decoration: InputDecoration(
-                    counterText: '',
-                    hintText: 'Enter title',
-                    hintStyle: const TextStyle(
-                      color: Color.fromRGBO(190, 188, 188, 0.87),
-                      fontFamily: "poppins",
-                      fontSize: 15,
-                    ),
-                    suffixText: '$_currentTitleLength/30',
-                    suffixStyle: const TextStyle(
-                      color: Color.fromRGBO(190, 188, 188, 0.87),
-                      fontFamily: "poppins",
-                      fontSize: 15,
-                    ),
-                    border: InputBorder.none,
-                  ),
-                  textAlign: TextAlign.left,
-                ),
-              ),
-
               const SizedBox(height: 22),
 
-              // Category row with divider
-              Row(
-                children: [
-                  const Text(
-                    'Category',
-                    style: TextStyle(
-                      fontFamily: "poppins",
-                      fontSize: 22,
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Container(
-                      height: 1,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
+              // ---------------------------------
+              // Category
+              // ---------------------------------
+              CategorySelector(
+                selectedCategory: _selectedCategory,
+                onCategorySelected: (cat) {
+                  setState(() {
+                    _selectedCategory = cat;
+                  });
+                },
               ),
-
-              const SizedBox(height: 12),
-
-              // Category selection
-              InkWell(
-                onTap: _showCategorySheet,
-                child: Container(
-                  height: 50,
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: const Color.fromRGBO(167, 167, 167, 1),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _selectedCategory ?? 'Select Category',
-                        style: TextStyle(
-                          fontFamily: "poppins",
-                          fontSize: 15,
-                          color: _selectedCategory == null
-                              ? const Color.fromRGBO(190, 188, 188, 0.87)
-                              : Colors.black,
-                        ),
-                      ),
-                      const Icon(
-                        Icons.arrow_circle_up,
-                        color: Color.fromRGBO(190, 188, 188, 0.87),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
               const SizedBox(height: 22),
 
-              // Listing Type row with divider
+              // ---------------------------------
+              // Listing Type
+              // ---------------------------------
+              ListingTypeSelector(
+                selectedType: _selectedListingType,
+                onChanged: (newType) {
+                  setState(() {
+                    _selectedListingType = newType;
+                  });
+                },
+              ),
+
+              // ---------------------------------
+              // Ticket Price
+              // ---------------------------------
+              TicketPriceSelector(
+                controller: _priceController,
+                selectedType: _selectedTicketPriceType,
+                types: _ticketPriceTypes,
+                onTypeChanged: (newValue) {
+                  setState(() {
+                    _selectedTicketPriceType = newValue!;
+                  });
+                },
+              ),
+              const SizedBox(height: 22),
+              // ---------------------------------
+              // Description
+              // ---------------------------------
+              DescriptionSection(
+                controller: _descriptionController,
+                currentLength: _currentDescLength,
+                onChanged: (text) {
+                  setState(() {
+                    _currentDescLength = text.length;
+                  });
+                },
+              ),
+              const SizedBox(height: 10),
+
+              // ---------------------------------
+              // Date Section
+              // ---------------------------------
+              DateSelector(
+                months: _months,
+                years: _years,
+                selectedDay: _selectedDay,
+                selectedMonth: _selectedMonth,
+                selectedYear: _selectedYear,
+                onDayChanged: (day) => setState(() => _selectedDay = day),
+                onMonthChanged: (month) =>
+                    setState(() => _selectedMonth = month),
+                onYearChanged: (year) => setState(() => _selectedYear = year),
+                fromController: _fromController,
+                toController: _toController,
+              ),
+
+              const SizedBox(height: 20),
+
+              // ---------------------------------
+              // Trip Plan Section
+              // ---------------------------------
+              TripPlanSection(
+                controllers: _tripPlanControllers,
+                isEditable: _isEditable,
+                onAdd: (index) {
+                  final time = _tripPlanControllers[index]['time']!.text.trim();
+                  final desc = _tripPlanControllers[index]['desc']!.text.trim();
+
+                  if (time.isNotEmpty && desc.isNotEmpty) {
+                    setState(() {
+                      _isEditable[index] = false; // lock current
+                      _tripPlanControllers.add({
+                        'time': TextEditingController(),
+                        'desc': TextEditingController(),
+                      });
+                      _isEditable.add(true); // new one is editable
+                    });
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Please fill both fields first."),
+                      ),
+                    );
+                  }
+                },
+                onDelete: (index) {
+                  setState(() {
+                    _tripPlanControllers.removeAt(index);
+                    _isEditable.removeAt(index);
+                  });
+                },
+                onReorder: (oldIndex, newIndex) {
+                  setState(() {
+                    if (newIndex > oldIndex) newIndex -= 1;
+
+                    final item = _tripPlanControllers.removeAt(oldIndex);
+                    final editableFlag = _isEditable.removeAt(oldIndex);
+
+                    _tripPlanControllers.insert(newIndex, item);
+                    _isEditable.insert(newIndex, editableFlag);
+                  });
+                },
+              ),
+
+              const SizedBox(height: 20),
+
+              // ---------------------------------
+              // Features
+              // ---------------------------------
+              FeaturesSection(
+                controllers: _featureControllers,
+                isEditable: _isFeatureEditable,
+                onAdd: (index) {
+                  final text = _featureControllers[index].text.trim();
+                  if (text.isNotEmpty) {
+                    setState(() {
+                      _isFeatureEditable[index] = false;
+                      _featureControllers.add(TextEditingController());
+                      _isFeatureEditable.add(true);
+                    });
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text("Please enter a feature first.")),
+                    );
+                  }
+                },
+                onDelete: (index) {
+                  setState(() {
+                    _featureControllers.removeAt(index);
+                    _isFeatureEditable.removeAt(index);
+                  });
+                },
+              ),
+
+              const SizedBox(height: 20),
+
               Row(
-                children: [
-                  const Text(
-                    'Listing Type',
+                children: const [
+                  Text(
+                    'Number of Seats',
                     style: TextStyle(
-                      fontFamily: "poppins",
-                      fontSize: 22,
-                      color: Colors.black,
+                      fontFamily: 'poppins',
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Container(
-                      height: 1,
-                      color: Colors.grey,
-                    ),
-                  ),
+                  SizedBox(width: 8),
+                  Expanded(child: Divider(color: Colors.grey)),
                 ],
               ),
-              const SizedBox(height: 12),
-
-              // Two listing-type buttons, each on its own line
-              Column(
-                children: [
-                  _buildListingTypeOption(
-                    type: ListingType.recurrent,
-                    text: "Recurrent Activity",
-                    isSelected: _selectedListingType == ListingType.recurrent,
-                    onTap: () {
-                      setState(() {
-                        _selectedListingType = ListingType.recurrent;
-                      });
-                    },
-                  ),
-                  _buildListingTypeOption(
-                    type: ListingType.oneTime,
-                    text: "One-time Event",
-                    isSelected: _selectedListingType == ListingType.oneTime,
-                    onTap: () {
-                      setState(() {
-                        _selectedListingType = ListingType.oneTime;
-                      });
-                    },
-                  ),
-
-                  // Ticket Price row with divider
-                  Row(
-                    children: [
-                      const Text(
-                        'Ticket Price',
-                        style: TextStyle(
-                          fontFamily: "poppins",
-                          fontSize: 22,
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Container(
-                          height: 1,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Ticket Price Input Row
-                  Row(
-                    children: [
-                      // Price input container
-                      Expanded(
-                        child: Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey, width: 1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            children: [
-                              // Actual text field for price
-                              Expanded(
-                                child: TextField(
-                                  keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: '0',
-                                    hintStyle: TextStyle(
-                                      fontFamily: 'poppins',
-                                      fontSize: 15,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                  style: const TextStyle(
-                                    fontFamily: 'poppins',
-                                    fontSize: 15,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ),
-                              // Dollar sign
-                              const Text(
-                                '\$',
-                                style: TextStyle(
-                                  fontFamily: 'poppins',
-                                  fontSize: 15,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Separator (vertical bar or slash)
-                      const Text(
-                        '/',
-                        style: TextStyle(
-                          fontFamily: 'poppins',
-                          fontSize: 18,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // "Person" container (could be a dropdown in the future)
-                      Container(
-                        height: 50,
-                        width: 100,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey, width: 1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Text(
-                              'Person',
-                              style: TextStyle(
-                                fontFamily: 'poppins',
-                                fontSize: 15,
-                                color: Colors.black,
-                              ),
-                            ),
-                            SizedBox(width: 4),
-                            Icon(
-                              Icons.arrow_drop_down,
-                              color: Colors.black,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Info lines
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.info,
-                        color: Colors.blue,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Putting 0 will make this ticket for Free.',
-                          style: const TextStyle(
-                            fontFamily: 'poppins',
-                            fontSize: 11,
-                            color: Colors.blue,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.info,
-                        color: Colors.blue,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Select whether the ticket is per (Person, Hour, Day, etc..)',
-                          style: const TextStyle(
-                            fontFamily: 'poppins',
-                            fontSize: 11,
-                            color: Colors.blue,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              const SizedBox(height: 8),
+              _buildTextFieldBox(
+                controller: _seatsController,
+                hint: 'Ex: 20',
+                icon: Icons.event_seat,
               ),
+
+              // ---------------------------------
+              // Age Allowed
+              // ---------------------------------
+              AgeSelector(
+                selectedAge: _selectedAge,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedAge = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // ---------------------------------
+              // Location
+              // ---------------------------------
+              LocationSection(
+                locationController: _locationDisplayController,
+                latLng: _mapLatLng,
+                onPickLocation: _openLocationPicker,
+              ),
+
+              const SizedBox(
+                  height: 50), // Extra space so we can scroll under nav
             ],
           ),
         ),
       ),
-    );
+
+      // ----------------------------------------------------------------
+      // Bottom nav is always pinned & visible
+      // ----------------------------------------------------------------
+      bottomNavigationBar: Container(
+        height: 60,
+        color: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // PREVIEW (Outlined) button
+            OutlinedButton(
+              onPressed: () {
+                final builtTripPlan = _tripPlanControllers
+                    .where((map) =>
+                        map['time']!.text.trim().isNotEmpty &&
+                        map['desc']!.text.trim().isNotEmpty)
+                    .map((map) => {
+                          "time": map['time']!.text.trim(),
+                          "description": map['desc']!.text.trim(),
+                        })
+                    .toList();
+
+                final builtFeatures = _featureControllers
+                    .map((c) => c.text.trim())
+                    .where((text) => text.isNotEmpty)
+                    .toList();
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PreviewPage(
+                      title: _titleController.text.trim(),
+                      description: _descriptionController.text.trim(),
+                      location: _locationDisplayController.text.trim(),
+                      features: builtFeatures,
+                      tripPlan: builtTripPlan,
+                      images: _images.isNotEmpty
+                          ? _images.map((img) => img.path).toList()
+                          : ['assets/Pictures/island.jpg'],
+                      mapLatLng: _mapLatLng!,
+                      seats: int.tryParse(_seatsController.text.trim()) ?? 0,
+                      ageAllowed: _selectedAge,
+                      price: int.tryParse(_priceController.text.trim()) ?? 0,
+                      priceType: _selectedTicketPriceType,
+                    ),
+                  ),
+                );
+              },
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFF007AFF), width: 1.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+              ),
+              child: const Text(
+                'Preview',
+                style: TextStyle(
+                  color: Color(0xFF007AFF),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+
+            // PUBLISH (Filled) button
+            ElevatedButton(
+              onPressed: () {
+                _submitActivity();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF007AFF),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+              ),
+              child: const Text(
+                'Publish',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ));
   }
 }
