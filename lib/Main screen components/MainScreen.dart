@@ -290,13 +290,25 @@ class _MainScreenState extends State<MainScreen>
                                           onPressed: () {
                                             Navigator.push(
                                               context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
+                                              PageRouteBuilder(
+                                                transitionDuration:
+                                                    Duration(milliseconds: 250),
+                                                pageBuilder: (context,
+                                                        animation,
+                                                        secondaryAnimation) =>
                                                     AdventuraChatPage(
                                                   userName: firstName,
-                                                  userId:
-                                                      userId, // 👈 pass from Hive
+                                                  userId: userId,
                                                 ),
+                                                transitionsBuilder: (context,
+                                                    animation,
+                                                    secondaryAnimation,
+                                                    child) {
+                                                  return FadeTransition(
+                                                    opacity: animation,
+                                                    child: child,
+                                                  );
+                                                },
                                               ),
                                             );
                                           },
@@ -310,9 +322,22 @@ class _MainScreenState extends State<MainScreen>
                                           onPressed: () {
                                             Navigator.push(
                                               context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
+                                              PageRouteBuilder(
+                                                transitionDuration:
+                                                    Duration(milliseconds: 250),
+                                                pageBuilder: (context,
+                                                        animation,
+                                                        secondaryAnimation) =>
                                                     NotificationScreen(),
+                                                transitionsBuilder: (context,
+                                                    animation,
+                                                    secondaryAnimation,
+                                                    child) {
+                                                  return FadeTransition(
+                                                    opacity: animation,
+                                                    child: child,
+                                                  );
+                                                },
                                               ),
                                             );
                                           },
@@ -326,9 +351,22 @@ class _MainScreenState extends State<MainScreen>
                                         GestureDetector(
                                           onTap: () => Navigator.push(
                                             context,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    UserInfo()),
+                                            PageRouteBuilder(
+                                              transitionDuration:
+                                                  Duration(milliseconds: 250),
+                                              pageBuilder: (context, animation,
+                                                      secondaryAnimation) =>
+                                                  UserInfo(),
+                                              transitionsBuilder: (context,
+                                                  animation,
+                                                  secondaryAnimation,
+                                                  child) {
+                                                return FadeTransition(
+                                                  opacity: animation,
+                                                  child: child,
+                                                );
+                                              },
+                                            ),
                                           ),
                                           child: FutureBuilder(
                                             future: Hive.openBox('authBox'),
