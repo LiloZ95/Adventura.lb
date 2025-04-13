@@ -15,18 +15,23 @@ class HomeControllerScreen extends StatefulWidget {
   _HomeControllerScreenState createState() => _HomeControllerScreenState();
 }
 
-class _HomeControllerScreenState extends State<HomeControllerScreen> {
+class _HomeControllerScreenState extends State<HomeControllerScreen> with TickerProviderStateMixin {
+
   int _selectedIndex = 0;
   late final List<Widget> _screens;
   final ScrollController _scrollController = ScrollController();
   bool _isNavBarVisible = true;
   Timer? _scrollStopTimer;
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
 
   void _onTabTapped(int index) {
-    print("Tab tapped: $index");
+    if (_selectedIndex == index) return;
+    _fadeController.reset();
     setState(() {
       _selectedIndex = index;
     });
+    _fadeController.forward();
   }
 
   void _handleScrollChanged(bool visible) {
@@ -68,6 +73,16 @@ class _HomeControllerScreenState extends State<HomeControllerScreen> {
       Placeholder(),
       ReelsPlayer(onScrollChanged: _handleScrollChanged),
     ];
+
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
+    );
+    _fadeController.forward();
   }
 
   @override
@@ -83,16 +98,13 @@ class _HomeControllerScreenState extends State<HomeControllerScreen> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Your screens
-          AnimatedSwitcher(
-            duration: Duration(milliseconds: 400),
-            transitionBuilder: (Widget child, Animation<double> animation) {
-              return FadeTransition(
-                opacity: animation,
-                child: child,
-              );
-            },
-            child: _screens[_selectedIndex],
+          // Replace AnimatedSwitcher with IndexedStack to preserve state of screens
+          FadeTransition(
+            opacity: _fadeAnimation,
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: _screens,
+            ),
           ),
 
           // Floating Nav Bar on top with full transparency
@@ -101,19 +113,19 @@ class _HomeControllerScreenState extends State<HomeControllerScreen> {
             curve: Curves.easeInOut,
             left: 16,
             right: 16,
-            bottom: 20, // ❗️ALWAYS VISIBLE
+            bottom: 20,
             child: AnimatedOpacity(
               duration: Duration(milliseconds: 300),
-              opacity: _isNavBarVisible ? 1.0 : 0.6, // 👈 Fade on scroll
+              opacity: _isNavBarVisible ? 1.0 : 0.6,
               child: AnimatedContainer(
                 duration: Duration(milliseconds: 300),
-                height: _isNavBarVisible ? 65 : 55, // 👈 Shrink
+                height: _isNavBarVisible ? 65 : 55,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
                   child: BackdropFilter(
                     filter: ImageFilter.blur(
                         sigmaX: _isNavBarVisible ? 0 : 6,
-                        sigmaY: _isNavBarVisible ? 0 : 6), // 👈 Blur on scroll
+                        sigmaY: _isNavBarVisible ? 0 : 6),
                     child: BottomNavBar(
                       selectedIndex: _selectedIndex,
                       onTap: _onTabTapped,

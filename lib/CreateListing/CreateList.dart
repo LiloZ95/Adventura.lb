@@ -1,3 +1,4 @@
+import 'package:adventura/MyListings/Mylisting.dart';
 import 'package:adventura/utils/snackbars.dart';
 import 'package:adventura/CreateListing/widgets/category_selector.dart';
 import 'package:adventura/CreateListing/widgets/image_selector.dart';
@@ -187,12 +188,21 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
     final success = await ActivityService.createActivity(activityData);
 
-    showAppSnackBar(
-      context,
-      success
-          ? "✅ Activity created successfully!"
-          : "❌ Failed to create activity.",
-    );
+    if (success) {
+      showAppSnackBar(context, "✅ Activity created successfully!");
+
+      // Delay briefly so the snackbar is visible before navigating
+      await Future.delayed(const Duration(milliseconds: 400));
+
+      // Push to MyListingsPage and remove this screen from back stack
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => MyListingsPage()),
+        (route) => false,
+      );
+    } else {
+      showAppSnackBar(context, "❌ Failed to create activity.");
+    }
   }
 
   // A reusable widget method for text fields

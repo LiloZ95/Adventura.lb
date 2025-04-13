@@ -24,12 +24,20 @@ class ActivityService {
       );
       print("🔑 Token being sent: $accessToken");
 
-      if (activityResponse.statusCode != 201) {
-        print("Activity creation failed: ${activityResponse.body}");
+      if (activityResponse.statusCode < 200 ||
+          activityResponse.statusCode >= 300) {
+        print(
+            "❌ Activity creation failed (Status ${activityResponse.statusCode}): ${activityResponse.body}");
         return false;
       }
 
-      final activityId = jsonDecode(activityResponse.body)['activity_id'];
+      final decoded = jsonDecode(activityResponse.body);
+      final activityId = decoded is Map &&
+              decoded.containsKey('activity') &&
+              decoded['activity'] != null
+          ? decoded['activity']['activity_id']
+          : null;
+
       if (activityId == null) return false;
 
       // 2. Upload images if available
