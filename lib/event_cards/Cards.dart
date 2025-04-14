@@ -1,7 +1,9 @@
 import 'dart:ui';
+import 'package:adventura/Services/interaction_service.dart';
 import 'package:adventura/event_cards/eventDetailsScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/utils.dart';
+import 'package:hive/hive.dart';
 
 String? _calculateDuration(String? from, String? to) {
   if (from == null || to == null) return null;
@@ -64,7 +66,27 @@ Widget EventCard({
   });
 
   return GestureDetector(
-    onTap: () {
+    onTap: () async {
+      try {
+        var box = await Hive.openBox('authBox');
+        int? userId;
+        final storedUserId = box.get('userId');
+        if (storedUserId != null) {
+          userId = int.tryParse(storedUserId.toString()); // 👈 safely convert
+        }
+
+        if (userId != null) {
+          await InteractionService.logInteraction(
+            userId: userId,
+            activityId: activity["activity_id"],
+            type: "view",
+          );
+          print("🟢 Success interaction");
+        }
+      } catch (e) {
+        print("🔴 Failed to log view interaction: $e");
+      }
+
       Navigator.of(context).push(
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 800),
@@ -73,8 +95,7 @@ Widget EventCard({
           transitionsBuilder: (_, animation, __, child) {
             final curvedAnimation = CurvedAnimation(
               parent: animation,
-              curve: Curves
-                  .easeOutExpo, // Feel free to try easeInOutCubic or easeInOutBack
+              curve: Curves.easeOutExpo,
             );
 
             return FadeTransition(

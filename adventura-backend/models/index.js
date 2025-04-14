@@ -14,6 +14,7 @@ const Feature = require("./Feature");
 const availability = require("./Availability");
 
 
+
 // ✅ Define Relationships
 Activity.hasMany(ActivityImage, {
 	foreignKey: "activity_id",
@@ -62,10 +63,11 @@ UserActivityInteraction.belongsTo(Activity, {
 	foreignKey: "activity_id",
 	as: "activity",
 });
-UserActivityInteraction.belongsTo(UserPreferences, {
+UserActivityInteraction.belongsTo(User, {
 	foreignKey: "user_id",
 	as: "user",
-});
+  });
+  
 
 User.hasOne(Provider, { foreignKey: "user_id" });
 Provider.belongsTo(User, { foreignKey: "user_id" });

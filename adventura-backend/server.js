@@ -18,6 +18,7 @@ const eventRoutes = require("./routes/eventRoutes"); // ✅ Import event routes
 const availabilityRoutes = require('./routes/availabilityRoutes');
 const cron = require("node-cron"); // Import cron for scheduling tasks
 const { deactivatePastEvents } = require("./controllers/activityController");
+const interactionRoutes = require('./routes/interactionRoutes');
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use("/users", userRoutes);
 app.use("/categories", categoryRoutes); // Add category routes
 app.get("/users/profile", authenticateToken, getUserById); // ✅ Correct authentication usage
 app.use("/recommendations", recommendationRoutes);
+app.use('/api', interactionRoutes);
 
 // ✅ Serve static files from 'public/images'
 app.use("/images", express.static(path.join(__dirname, "public/images")));

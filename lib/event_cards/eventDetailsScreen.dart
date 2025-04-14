@@ -2,6 +2,7 @@
 import 'dart:math';
 import 'package:adventura/OrganizerProfile/OrganizerProfile.dart';
 import 'package:adventura/Services/activity_service.dart';
+import 'package:adventura/Services/interaction_service.dart';
 import 'package:adventura/colors.dart';
 import 'package:adventura/config.dart';
 import 'package:flutter/material.dart';
@@ -490,7 +491,26 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         IconButton(
           icon:
               Icon(Icons.share, color: Colors.black, size: screenWidth * 0.07),
-          onPressed: () {},
+          onPressed: () async {
+            final box = await Hive.openBox('authBox');
+            final userId = int.tryParse(box.get('userId').toString());
+            final activityId = widget.activity["activity_id"];
+
+            if (userId != null) {
+              await InteractionService.logInteraction(
+                userId: userId,
+                activityId: activityId,
+                type: "share",
+              );
+            }
+
+            // Share logic (using native share or share_plus package)
+            final shareText =
+                "${widget.activity["name"]} - Check it out on Adventura!";
+            // You can import 'package:share_plus/share_plus.dart';
+            // and use: Share.share(shareText);
+            print("📤 Shared: $shareText");
+          },
         ),
         IconButton(
           icon: Icon(
@@ -498,10 +518,22 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             size: screenWidth * 0.07,
             color: isFavorite ? Colors.red : Colors.black,
           ),
-          onPressed: () {
+          onPressed: () async {
+            final box = await Hive.openBox('authBox');
+            final userId = int.tryParse(box.get('userId').toString());
+            final activityId = widget.activity["activity_id"];
+
             setState(() {
               isFavorite = !isFavorite;
             });
+
+            if (userId != null) {
+              await InteractionService.logInteraction(
+                userId: userId,
+                activityId: activityId,
+                type: "like",
+              );
+            }
           },
         ),
       ],
