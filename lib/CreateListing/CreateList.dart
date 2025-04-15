@@ -103,8 +103,9 @@ class _CreateListingPageState extends State<CreateListingPage> {
   final TextEditingController _seatsController = TextEditingController();
 
   // Features
-  List<TextEditingController> _featureControllers = [TextEditingController()];
-  List<bool> _isFeatureEditable = [true];
+  // List<TextEditingController> _featureControllers = [TextEditingController()];
+  // List<bool> _isFeatureEditable = [true];
+  List<String> _selectedFeatures = [];
 
   // Location
   final TextEditingController _locationDisplayController =
@@ -133,7 +134,6 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
   void _submitActivity() async {
     bool isRecurrent = _selectedListingType == ListingType.recurrent;
-    bool isOneTime = _selectedListingType == ListingType.oneTime;
 
     print("Title: ${_titleController.text}");
     print("Desc: ${_descriptionController.text}");
@@ -176,10 +176,10 @@ class _CreateListingPageState extends State<CreateListingPage> {
             })
         .toList();
 
-    final features = _featureControllers
-        .map((f) => f.text.trim())
-        .where((text) => text.isNotEmpty)
-        .toList();
+    // final features = _featureControllers
+    //     .map((f) => f.text.trim())
+    //     .where((text) => text.isNotEmpty)
+    //     .toList();
 
     final activityData = {
       "name": _titleController.text.trim(),
@@ -191,7 +191,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
       "category_id": _selectedCategory?["id"],
       "latitude": _mapLatLng!.latitude,
       "longitude": _mapLatLng!.longitude,
-      "features": features,
+      "features": _selectedFeatures,
       "trip_plan": tripPlans,
       "from_time": _fromTime != null ? _formatTime(_fromTime!) : "",
       "to_time": _toTime != null ? _formatTime(_toTime!) : "",
@@ -214,7 +214,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
       showAppSnackBar(context, "✅ Activity created successfully!");
 
       // Delay briefly so the snackbar is visible before navigating
-      await Future.delayed(const Duration(milliseconds: 400));
+      await Future.delayed(const Duration(milliseconds: 500));
 
       // Push to MyListingsPage and remove this screen from back stack
       Navigator.pushAndRemoveUntil(
@@ -333,6 +333,11 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final categoryId = _selectedCategory?["id"];
+    final List<Map<String, String>> availableFeatures = categoryId != null
+        ? List<Map<String, String>>.from(featuresByCategoryId[categoryId] ?? [])
+        : [];
+
     return (Scaffold(
       key: const Key('main_scaffold'),
       appBar: AppBar(
@@ -454,19 +459,6 @@ class _CreateListingPageState extends State<CreateListingPage> {
               // ---------------------------------
               // Date Section
               // ---------------------------------
-              // DateSelector(
-              //   months: _months,
-              //   years: _years,
-              //   selectedDay: _selectedDay,
-              //   selectedMonth: _selectedMonth,
-              //   selectedYear: _selectedYear,
-              //   onDayChanged: (day) => setState(() => _selectedDay = day),
-              //   onMonthChanged: (month) =>
-              //       setState(() => _selectedMonth = month),
-              //   onYearChanged: (year) => setState(() => _selectedYear = year),
-              //   fromController: _fromController,
-              //   toController: _toController,
-              // ),
               CalendarDateSelector(
                 selectedListingType: _selectedListingType!,
                 onDateRangeSelected: (start, end) {
@@ -540,27 +532,15 @@ class _CreateListingPageState extends State<CreateListingPage> {
               // Features
               // ---------------------------------
               FeaturesSection(
-                controllers: _featureControllers,
-                isEditable: _isFeatureEditable,
-                onAdd: (index) {
-                  final text = _featureControllers[index].text.trim();
-                  if (text.isNotEmpty) {
-                    setState(() {
-                      _isFeatureEditable[index] = false;
-                      _featureControllers.add(TextEditingController());
-                      _isFeatureEditable.add(true);
-                    });
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text("Please enter a feature first.")),
-                    );
-                  }
-                },
-                onDelete: (index) {
+                selectedFeatures: _selectedFeatures,
+                availableFeatures: availableFeatures,
+                onFeatureToggle: (feature) {
                   setState(() {
-                    _featureControllers.removeAt(index);
-                    _isFeatureEditable.removeAt(index);
+                    if (_selectedFeatures.contains(feature)) {
+                      _selectedFeatures.remove(feature);
+                    } else if (_selectedFeatures.length < 5) {
+                      _selectedFeatures.add(feature);
+                    }
                   });
                 },
               ),
@@ -640,10 +620,10 @@ class _CreateListingPageState extends State<CreateListingPage> {
                         })
                     .toList();
 
-                final builtFeatures = _featureControllers
-                    .map((c) => c.text.trim())
-                    .where((text) => text.isNotEmpty)
-                    .toList();
+                // final builtFeatures = _featureControllers
+                //     .map((c) => c.text.trim())
+                //     .where((text) => text.isNotEmpty)
+                //     .toList();
 
                 Navigator.push(
                   context,
@@ -652,7 +632,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
                       title: _titleController.text.trim(),
                       description: _descriptionController.text.trim(),
                       location: _locationDisplayController.text.trim(),
-                      features: builtFeatures,
+                      features: _selectedFeatures,
                       tripPlan: builtTripPlan,
                       images: _images.isNotEmpty
                           ? _images.map((img) => img.path).toList()

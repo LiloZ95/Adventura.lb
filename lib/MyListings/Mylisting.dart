@@ -1,4 +1,4 @@
-import 'package:adventura/Main%20screen%20components/MainScreen.dart';
+import 'package:adventura/HomeControllerScreen.dart';
 import 'package:adventura/event_cards/Cards.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/services/activity_service.dart';
@@ -83,12 +83,10 @@ class _MyListingsPageState extends State<MyListingsPage> {
     return WillPopScope(
       onWillPop: () async {
         if (widget.cameFromCreation) {
-          Navigator.pushReplacement(
+          Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(
-                builder: (_) => MainScreen(
-                      onScrollChanged: (bool visible) {},
-                    )),
+            MaterialPageRoute(builder: (_) => HomeControllerScreen()),
+            (route) => false,
           );
           return false;
         }
@@ -98,13 +96,13 @@ class _MyListingsPageState extends State<MyListingsPage> {
         appBar: AppBar(
           leading: widget.cameFromCreation
               ? IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Color.fromARGB(255, 0, 0, 0)),
+                  icon: const Icon(Icons.arrow_back,
+                      color: Color.fromARGB(255, 0, 0, 0)),
                   onPressed: () {
-                    Navigator.pushReplacement(
+                    Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => MainScreen(onScrollChanged: (_) {}),
-                      ),
+                      MaterialPageRoute(builder: (_) => HomeControllerScreen()),
+                      (route) => false,
                     );
                   },
                 )

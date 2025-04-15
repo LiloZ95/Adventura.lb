@@ -1,8 +1,8 @@
+import 'package:adventura/HomeControllerScreen.dart';
 import 'package:adventura/Services/otp_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:ui';
-import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/colors.dart';
 import '../login/login.dart';
 import 'package:adventura/OTP/OTPVerification.dart';
@@ -315,12 +315,11 @@ class _SignUpPageState extends State<SignUpPage> {
                             IconButton(
                               onPressed: () {
                                 // Handle Google login
-                                Navigator.push(
+                                Navigator.pushAndRemoveUntil(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => MainScreen(
-                                            onScrollChanged: (bool visible) {},
-                                          )),
+                                      builder: (_) => HomeControllerScreen()),
+                                  (route) => false,
                                 );
                               },
                               icon: Image.asset(
@@ -332,12 +331,11 @@ class _SignUpPageState extends State<SignUpPage> {
                             IconButton(
                               onPressed: () {
                                 // Handle Apple login
-                                Navigator.push(
+                                Navigator.pushAndRemoveUntil(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => MainScreen(
-                                            onScrollChanged: (bool visible) {},
-                                          )),
+                                      builder: (_) => HomeControllerScreen()),
+                                  (route) => false,
                                 );
                               },
                               icon: Image.asset(
