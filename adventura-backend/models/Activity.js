@@ -57,6 +57,11 @@ const Activity = sequelize.define("activities", {
 			isIn: [["recurrent", "oneTime"]],
 		},
 	},
+	is_trending: {
+		type: DataTypes.BOOLEAN,
+		defaultValue: false,
+	},
+	
 });
 
 module.exports = Activity;

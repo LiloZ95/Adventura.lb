@@ -176,6 +176,43 @@ Widget EventCard({
                     ),
                   ),
                 ),
+// 🔥 Trending Badge
+                if (activity["is_trending"] == true)
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        gradient:
+                            LinearGradient(colors: [Colors.orange, Colors.red]),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 4,
+                            offset: Offset(2, 2),
+                          )
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.whatshot, size: 16, color: Colors.white),
+                          SizedBox(width: 4),
+                          Text(
+                            "Trending",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
                 // 🕒 Duration Badge
                 // if (duration != null)
