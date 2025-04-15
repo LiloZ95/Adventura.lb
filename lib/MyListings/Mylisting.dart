@@ -1,3 +1,4 @@
+import 'package:adventura/HomeControllerScreen.dart';
 import 'package:adventura/event_cards/Cards.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/services/activity_service.dart';
@@ -6,6 +7,11 @@ import 'package:hive/hive.dart';
 import 'widgets/expired_listings_modal.dart';
 
 class MyListingsPage extends StatefulWidget {
+  final bool cameFromCreation;
+
+  const MyListingsPage({Key? key, this.cameFromCreation = false})
+      : super(key: key);
+
   @override
   _MyListingsPageState createState() => _MyListingsPageState();
 }
@@ -74,130 +80,158 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "My Listings",
-          style: TextStyle(
-            fontFamily: "Poppins",
-            color: Colors.blue,
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
+    return WillPopScope(
+      onWillPop: () async {
+        if (widget.cameFromCreation) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => HomeControllerScreen()),
+            (route) => false,
+          );
+          return false;
+        }
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: widget.cameFromCreation
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back,
+                      color: Color.fromARGB(255, 0, 0, 0)),
+                  onPressed: () {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => HomeControllerScreen()),
+                      (route) => false,
+                    );
+                  },
+                )
+              : null,
+          title: const Text(
+            "My Listings",
+            style: TextStyle(
+              fontFamily: "Poppins",
+              color: Color.fromARGB(255, 0, 0, 0),
+              fontWeight: FontWeight.w600,
+              fontSize: 20,
+            ),
           ),
+          centerTitle: true,
+          backgroundColor: Colors.white,
+          elevation: 0.5,
         ),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-      ),
-      backgroundColor: const Color(0xFFF6F6F6),
-      body: Column(
-        children: [
-          // 🔹 Expired Listings Button
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () => showExpiredListingsModal(context),
-                icon: Icon(Icons.history, color: Colors.blue.shade600),
-                label: Text(
-                  "Expired Listings",
-                  style: TextStyle(
-                    color: Colors.blue.shade600,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                    fontFamily: 'Poppins',
+        backgroundColor: const Color(0xFFF6F6F6),
+        body: Column(
+          children: [
+            // 🔹 Expired Listings Button
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => showExpiredListingsModal(context),
+                  icon: Icon(Icons.history, color: Colors.blue.shade600),
+                  label: Text(
+                    "Expired Listings",
+                    style: TextStyle(
+                      color: Colors.blue.shade600,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                      fontFamily: 'Poppins',
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
 
-          // 🔹 Listings content
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : _myListings.isEmpty
-                    ? const Center(
-                        child: Text(
-                          "No listings found.",
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _myListings.length,
-                        itemBuilder: (context, index) {
-                          final activity = _myListings[index];
+            // 🔹 Listings content
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _myListings.isEmpty
+                      ? const Center(
+                          child: Text(
+                            "No listings found.",
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _myListings.length,
+                          itemBuilder: (context, index) {
+                            final activity = _myListings[index];
 
-                          return TweenAnimationBuilder(
-                            tween: Tween<double>(begin: 0.95, end: 1.0),
-                            duration: Duration(milliseconds: 400 + index * 80),
-                            curve: Curves.easeOutBack,
-                            builder: (context, scale, child) {
-                              return Transform.scale(
-                                  scale: scale, child: child);
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 20),
-                              child: Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  // 🎯 The card itself
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      EventCard(
-                                          context: context, activity: activity),
-                                    ],
-                                  ),
+                            return TweenAnimationBuilder(
+                              tween: Tween<double>(begin: 0.95, end: 1.0),
+                              duration:
+                                  Duration(milliseconds: 400 + index * 80),
+                              curve: Curves.easeOutBack,
+                              builder: (context, scale, child) {
+                                return Transform.scale(
+                                    scale: scale, child: child);
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 20),
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    // 🎯 The card itself
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        EventCard(
+                                            context: context,
+                                            activity: activity),
+                                      ],
+                                    ),
 
-                                  // 🗑️ Delete button with elevated glassy style
-                                  Positioned(
-                                    top: 13,
-                                    right: 24,
-                                    child: GestureDetector(
-                                      onTap: () => _confirmAndDelete(index,
-                                          activity["activity_id"].toString()),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              Colors.white.withOpacity(0.7),
-                                              Colors.white.withOpacity(0.4),
-                                            ],
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                          ),
-                                          border: Border.all(
-                                              color:
-                                                  Colors.white.withOpacity(0.6),
-                                              width: 1),
-                                          shape: BoxShape.circle,
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color:
-                                                  Colors.black.withOpacity(0.2),
-                                              blurRadius: 10,
-                                              offset: Offset(0, 4),
+                                    // 🗑️ Delete button with elevated glassy style
+                                    Positioned(
+                                      top: 13,
+                                      right: 24,
+                                      child: GestureDetector(
+                                        onTap: () => _confirmAndDelete(index,
+                                            activity["activity_id"].toString()),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                Colors.white.withOpacity(0.7),
+                                                Colors.white.withOpacity(0.4),
+                                              ],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
                                             ),
-                                          ],
+                                            border: Border.all(
+                                                color: Colors.white
+                                                    .withOpacity(0.6),
+                                                width: 1),
+                                            shape: BoxShape.circle,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black
+                                                    .withOpacity(0.2),
+                                                blurRadius: 10,
+                                                offset: Offset(0, 4),
+                                              ),
+                                            ],
+                                          ),
+                                          child: const Icon(Icons.delete,
+                                              size: 20, color: Colors.red),
                                         ),
-                                        child: const Icon(Icons.delete,
-                                            size: 20, color: Colors.red),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                      ),
-          ),
-        ],
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
       ),
     );
   }

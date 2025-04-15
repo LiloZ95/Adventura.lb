@@ -9,8 +9,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
 import 'package:image_picker/image_picker.dart';
 import 'package:adventura/services/activity_service.dart';
 import 'package:adventura/controllers/create_listing_controller.dart';
+import 'package:intl/intl.dart';
 import 'widgets/age_selector.dart';
-import 'widgets/date_selector.dart';
+import 'widgets/calendar_date_selector.dart';
 import 'widgets/description_section.dart';
 import 'widgets/features_section.dart';
 import 'widgets/listing_type_selector.dart';
@@ -54,7 +55,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
   // Controller and character count for the title TextField
   final TextEditingController _titleController = TextEditingController();
-  int _currentTitleLength = 0;
+  int _titleCharCount = 0;
 
   // Category selection
   Map<String, dynamic>? _selectedCategory;
@@ -72,37 +73,22 @@ class _CreateListingPageState extends State<CreateListingPage> {
   final TextEditingController _descriptionController = TextEditingController();
   int _currentDescLength = 0;
 
-  // Day/Month/Year + Age Allowed
-  final List<String> _months = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
+  // Duration for Recurrent Activities
+  Duration? _selectedDuration;
+
+  // Weekdays for Recurrent Activities
+  Set<String> _selectedWeekdays = {};
+  DateTime? _startDate;
+  DateTime? _endDate;
 
   // Age Allowed
   String? _selectedAge;
 
-  final List<int> _years = List.generate(
-    10, // or however many future years you want to include
-    (index) => DateTime.now().year + index,
-  );
-
-  String _selectedDay = 'Monday';
-  String _selectedMonth = 'January';
-  int _selectedYear = DateTime.now().year;
-
   // from / to
   final TextEditingController _fromController = TextEditingController();
   final TextEditingController _toController = TextEditingController();
+  TimeOfDay? _fromTime;
+  TimeOfDay? _toTime;
 
   // Trip Plan
   List<bool> _isEditable = [true]; // only last one is editable
@@ -117,8 +103,9 @@ class _CreateListingPageState extends State<CreateListingPage> {
   final TextEditingController _seatsController = TextEditingController();
 
   // Features
-  List<TextEditingController> _featureControllers = [TextEditingController()];
-  List<bool> _isFeatureEditable = [true];
+  // List<TextEditingController> _featureControllers = [TextEditingController()];
+  // List<bool> _isFeatureEditable = [true];
+  List<String> _selectedFeatures = [];
 
   // Location
   final TextEditingController _locationDisplayController =
@@ -139,17 +126,42 @@ class _CreateListingPageState extends State<CreateListingPage> {
     }
   }
 
+  String _formatTime(TimeOfDay time) {
+    final now = DateTime.now();
+    final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
+    return DateFormat('hh:mm a').format(dt); // e.g., "02:00 PM"
+  }
+
   void _submitActivity() async {
+    bool isRecurrent = _selectedListingType == ListingType.recurrent;
+
+    print("Title: ${_titleController.text}");
+    print("Desc: ${_descriptionController.text}");
+    print("Location: ${_locationDisplayController.text}");
+    print("Price: ${_priceController.text}");
+    print("From: ${_fromController.text}");
+    print("To: ${_toController.text}");
+    print("Seats: ${_seatsController.text}");
+    print("Category: $_selectedCategory");
+    print("Type: $_selectedListingType");
+    print("LatLng: $_mapLatLng");
+    print("Duration: $_selectedDuration");
+    print("Weekdays: $_selectedWeekdays");
+    print("Start Date: $_startDate");
+
     if (_titleController.text.trim().isEmpty ||
         _descriptionController.text.trim().isEmpty ||
         _locationDisplayController.text.trim().isEmpty ||
         _priceController.text.trim().isEmpty ||
-        _fromController.text.trim().isEmpty ||
-        _toController.text.trim().isEmpty ||
         _seatsController.text.trim().isEmpty ||
         _selectedCategory == null ||
         _selectedListingType == null ||
-        _mapLatLng == null) {
+        _mapLatLng == null ||
+        (isRecurrent &&
+            (_selectedDuration == null ||
+                _selectedWeekdays.isEmpty ||
+                _startDate == null ||
+                _endDate == null))) {
       showAppSnackBar(context, "⚠️ Please fill in all required fields.");
       return;
     }
@@ -164,10 +176,10 @@ class _CreateListingPageState extends State<CreateListingPage> {
             })
         .toList();
 
-    final features = _featureControllers
-        .map((f) => f.text.trim())
-        .where((text) => text.isNotEmpty)
-        .toList();
+    // final features = _featureControllers
+    //     .map((f) => f.text.trim())
+    //     .where((text) => text.isNotEmpty)
+    //     .toList();
 
     final activityData = {
       "name": _titleController.text.trim(),
@@ -179,12 +191,22 @@ class _CreateListingPageState extends State<CreateListingPage> {
       "category_id": _selectedCategory?["id"],
       "latitude": _mapLatLng!.latitude,
       "longitude": _mapLatLng!.longitude,
-      "features": features,
+      "features": _selectedFeatures,
       "trip_plan": tripPlans,
-      "from_time": _fromController.text.trim(),
-      "to_time": _toController.text.trim(),
+      "from_time": _fromTime != null ? _formatTime(_fromTime!) : "",
+      "to_time": _toTime != null ? _formatTime(_toTime!) : "",
       "listing_type": _selectedListingType.toString().split('.').last,
+      // "repeat_weeks": _repeatWeeks,
+      "start_date": _startDate?.toIso8601String().split("T")[0],
+      "end_date": _endDate?.toIso8601String().split("T")[0] ??
+          _startDate?.toIso8601String().split("T")[0],
+      "repeat_days": _selectedWeekdays.toList(),
+      "duration_minutes": _selectedDuration?.inMinutes ?? 60,
     };
+    if (_fromTime == null || _toTime == null) {
+      showAppSnackBar(context, "⚠️ Please select start and end times.");
+      return;
+    }
 
     final success = await ActivityService.createActivity(activityData);
 
@@ -192,12 +214,13 @@ class _CreateListingPageState extends State<CreateListingPage> {
       showAppSnackBar(context, "✅ Activity created successfully!");
 
       // Delay briefly so the snackbar is visible before navigating
-      await Future.delayed(const Duration(milliseconds: 400));
+      await Future.delayed(const Duration(milliseconds: 500));
 
       // Push to MyListingsPage and remove this screen from back stack
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => MyListingsPage()),
+        MaterialPageRoute(
+            builder: (_) => MyListingsPage(cameFromCreation: true)),
         (route) => false,
       );
     } else {
@@ -250,8 +273,11 @@ class _CreateListingPageState extends State<CreateListingPage> {
   @override
   void initState() {
     super.initState();
-
     controller.init(() => setState(() {}));
+    _selectedListingType = ListingType.oneTime;
+
+    _fromController.addListener(() => setState(() {}));
+    _toController.addListener(() => setState(() {}));
   }
 
   @override
@@ -307,6 +333,11 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final categoryId = _selectedCategory?["id"];
+    final List<Map<String, String>> availableFeatures = categoryId != null
+        ? List<Map<String, String>>.from(featuresByCategoryId[categoryId] ?? [])
+        : [];
+
     return (Scaffold(
       key: const Key('main_scaffold'),
       appBar: AppBar(
@@ -357,8 +388,14 @@ class _CreateListingPageState extends State<CreateListingPage> {
               // ---------------------------------
               TitleSection(
                 controller: _titleController,
-                currentLength: _currentTitleLength,
+                currentLength: _titleCharCount,
+                onChanged: (value) {
+                  setState(() {
+                    _titleCharCount = value.length;
+                  });
+                },
               ),
+
               const SizedBox(height: 22),
 
               // ---------------------------------
@@ -382,6 +419,11 @@ class _CreateListingPageState extends State<CreateListingPage> {
                 onChanged: (newType) {
                   setState(() {
                     _selectedListingType = newType;
+                    _selectedDuration =
+                        null; // Reset duration when type changes
+                    _selectedWeekdays = {}; // Reset weekdays when type changes
+                    _startDate = null; // Reset start date when type changes
+                    _endDate = null; // Reset end date when type changes
                   });
                 },
               ),
@@ -417,18 +459,23 @@ class _CreateListingPageState extends State<CreateListingPage> {
               // ---------------------------------
               // Date Section
               // ---------------------------------
-              DateSelector(
-                months: _months,
-                years: _years,
-                selectedDay: _selectedDay,
-                selectedMonth: _selectedMonth,
-                selectedYear: _selectedYear,
-                onDayChanged: (day) => setState(() => _selectedDay = day),
-                onMonthChanged: (month) =>
-                    setState(() => _selectedMonth = month),
-                onYearChanged: (year) => setState(() => _selectedYear = year),
-                fromController: _fromController,
-                toController: _toController,
+              CalendarDateSelector(
+                selectedListingType: _selectedListingType!,
+                onDateRangeSelected: (start, end) {
+                  _startDate = start;
+                  _endDate = end;
+                },
+                selectedDuration: _selectedDuration,
+                onDurationChanged: (d) => setState(() => _selectedDuration = d),
+                selectedWeekdays: _selectedWeekdays,
+                onWeekdaysChanged: (days) =>
+                    setState(() => _selectedWeekdays = days),
+                onTimeRangeSelected: (from, to) {
+                  setState(() {
+                    _fromTime = from;
+                    _toTime = to;
+                  });
+                },
               ),
 
               const SizedBox(height: 20),
@@ -485,27 +532,15 @@ class _CreateListingPageState extends State<CreateListingPage> {
               // Features
               // ---------------------------------
               FeaturesSection(
-                controllers: _featureControllers,
-                isEditable: _isFeatureEditable,
-                onAdd: (index) {
-                  final text = _featureControllers[index].text.trim();
-                  if (text.isNotEmpty) {
-                    setState(() {
-                      _isFeatureEditable[index] = false;
-                      _featureControllers.add(TextEditingController());
-                      _isFeatureEditable.add(true);
-                    });
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text("Please enter a feature first.")),
-                    );
-                  }
-                },
-                onDelete: (index) {
+                selectedFeatures: _selectedFeatures,
+                availableFeatures: availableFeatures,
+                onFeatureToggle: (feature) {
                   setState(() {
-                    _featureControllers.removeAt(index);
-                    _isFeatureEditable.removeAt(index);
+                    if (_selectedFeatures.contains(feature)) {
+                      _selectedFeatures.remove(feature);
+                    } else if (_selectedFeatures.length < 5) {
+                      _selectedFeatures.add(feature);
+                    }
                   });
                 },
               ),
@@ -585,10 +620,10 @@ class _CreateListingPageState extends State<CreateListingPage> {
                         })
                     .toList();
 
-                final builtFeatures = _featureControllers
-                    .map((c) => c.text.trim())
-                    .where((text) => text.isNotEmpty)
-                    .toList();
+                // final builtFeatures = _featureControllers
+                //     .map((c) => c.text.trim())
+                //     .where((text) => text.isNotEmpty)
+                //     .toList();
 
                 Navigator.push(
                   context,
@@ -597,7 +632,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
                       title: _titleController.text.trim(),
                       description: _descriptionController.text.trim(),
                       location: _locationDisplayController.text.trim(),
-                      features: builtFeatures,
+                      features: _selectedFeatures,
                       tripPlan: builtTripPlan,
                       images: _images.isNotEmpty
                           ? _images.map((img) => img.path).toList()

@@ -1,6 +1,5 @@
 import 'package:adventura/HomeControllerScreen.dart';
 import 'package:flutter/material.dart';
-import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 // Import the barcode_widget package
 import 'package:barcode_widget/barcode_widget.dart';
 
