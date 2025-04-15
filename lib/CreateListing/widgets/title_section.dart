@@ -3,17 +3,20 @@ import 'package:flutter/material.dart';
 class TitleSection extends StatelessWidget {
   final TextEditingController controller;
   final int currentLength;
-  final int maxLength;
+  final Function(String) onChanged;
 
   const TitleSection({
     Key? key,
     required this.controller,
     required this.currentLength,
-    this.maxLength = 30,
+    required this.onChanged,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -24,7 +27,7 @@ class TitleSection extends StatelessWidget {
               style: TextStyle(
                 fontFamily: "poppins",
                 fontSize: 20,
-                color: Colors.black87,
+                color: Colors.black,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -34,6 +37,7 @@ class TitleSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Container(
+          width: screenWidth * 0.9,
           height: 50,
           decoration: BoxDecoration(
             border: Border.all(
@@ -42,26 +46,45 @@ class TitleSection extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(12),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: TextField(
-            controller: controller,
-            maxLength: maxLength,
-            decoration: InputDecoration(
-              counterText: '',
-              hintText: 'Enter title',
-              hintStyle: const TextStyle(
-                color: Color.fromRGBO(190, 188, 188, 0.87),
-                fontFamily: "poppins",
-                fontSize: 15,
+          child: Stack(
+            children: [
+              TextField(
+                controller: controller,
+                maxLength: 30,
+                onChanged: onChanged,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  counterText: '',
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: screenWidth * 0.04,
+                    vertical: screenHeight * 0.01,
+                  ),
+                  hintText: 'Enter title...',
+                  hintStyle: TextStyle(
+                    color: const Color.fromRGBO(190, 188, 188, 0.87),
+                    fontFamily: "poppins",
+                    fontSize: screenWidth * 0.04,
+                  ),
+                ),
+                style: TextStyle(
+                  fontFamily: 'poppins',
+                  fontSize: screenWidth * 0.04,
+                  color: Colors.black,
+                ),
               ),
-              suffixText: '$currentLength/$maxLength',
-              suffixStyle: const TextStyle(
-                color: Color.fromRGBO(190, 188, 188, 0.87),
-                fontFamily: "poppins",
-                fontSize: 15,
+              Positioned(
+                bottom: 6,
+                right: screenWidth * 0.04,
+                child: Text(
+                  '$currentLength/30',
+                  style: TextStyle(
+                    fontFamily: 'poppins',
+                    fontSize: screenWidth * 0.03,
+                    color: Colors.grey,
+                  ),
+                ),
               ),
-              border: InputBorder.none,
-            ),
+            ],
           ),
         ),
       ],

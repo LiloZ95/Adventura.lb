@@ -105,6 +105,7 @@ class DescriptionSection extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: 12),
       ],
     );
   }

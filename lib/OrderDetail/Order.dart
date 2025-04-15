@@ -1,5 +1,4 @@
 import 'package:adventura/Services/booking_service.dart';
-import 'package:adventura/widgets/payment_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:adventura/colors.dart';
