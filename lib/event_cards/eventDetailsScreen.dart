@@ -627,6 +627,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Widget _buildBottomBar(double screenWidth, List<String> images) {
+    final box = Hive.box('authBox');
+    final providerId = box.get("providerId");
+    final isOwnActivity = providerId != null &&
+        widget.activity["provider_id"].toString() == providerId.toString();
+
     return Container(
       decoration: BoxDecoration(
         boxShadow: [
@@ -670,47 +675,53 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 ],
               ),
               ElevatedButton.icon(
-                onPressed: () {
-                  if (confirmedDate != null && confirmedSlot != null) {
-                    print("📦 Confirmed Date: $confirmedDate");
-                    print("⏰ Confirmed Slot: $confirmedSlot");
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => OrderDetailsPage(
-                          activityId: widget.activity["activity_id"],
-                          selectedImage: images[_currentImageIndex],
-                          eventTitle: widget.activity["name"] ?? "Event",
-                          eventDate: confirmedDate!,
-                          eventLocation:
-                              widget.activity["location"] ?? "Location",
-                          selectedSlot: confirmedSlot!,
-                        ),
-                      ),
-                    );
-                  } else {
-                    print("⚠️ Date or Slot not selected yet!");
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content:
-                            Text("⚠️ Please select a date and time first."),
-                        backgroundColor: Colors.orange,
-                      ),
-                    );
-                  }
-                },
-                icon: Icon(Icons.local_activity_outlined,
-                    color: Colors.white, size: 20),
-                label:
-                    Text("Book Ticket", style: TextStyle(color: Colors.white)),
+                onPressed: isOwnActivity
+                    ? null // disables the button
+                    : () {
+                        if (confirmedDate != null && confirmedSlot != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OrderDetailsPage(
+                                activityId: widget.activity["activity_id"],
+                                selectedImage: images[_currentImageIndex],
+                                eventTitle: widget.activity["name"] ?? "Event",
+                                eventDate: confirmedDate!,
+                                eventLocation:
+                                    widget.activity["location"] ?? "Location",
+                                selectedSlot: confirmedSlot!,
+                              ),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  "⚠️ Please select a date and time first."),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                        }
+                      },
+                icon: Icon(
+                  isOwnActivity
+                      ? Icons.block // or Icons.info_outline
+                      : Icons.local_activity_outlined,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                label: Text(
+                  isOwnActivity ? "Your Listing" : "Book Ticket",
+                  style: TextStyle(color: Colors.white),
+                ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.blue,
+                  backgroundColor: isOwnActivity ? Colors.grey : AppColors.blue,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   padding: EdgeInsets.symmetric(horizontal: 25, vertical: 18),
                 ),
-              )
+              ),
             ],
           ),
         ),
