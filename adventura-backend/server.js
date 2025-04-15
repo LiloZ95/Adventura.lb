@@ -22,8 +22,8 @@ const { deactivatePastEvents } = require("./controllers/activityController");
 const updateTrendingActivities = require("./controllers/trendingUpdater");
 
 // Run once on server boot
-updateTrendingActivities();
-deactivatePastEvents();
+// updateTrendingActivities();
+// deactivatePastEvents();
 
 // Schedule periodic jobs
 cron.schedule("0 * * * *", () => {
