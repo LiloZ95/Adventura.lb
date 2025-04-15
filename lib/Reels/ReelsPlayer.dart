@@ -23,8 +23,13 @@ class Comment {
 
 class ReelsPlayer extends StatefulWidget {
   final Function(bool) onScrollChanged;
-  const ReelsPlayer({Key? key, required this.onScrollChanged})
-      : super(key: key);
+  final VoidCallback onBackToMainTab;
+
+  const ReelsPlayer({
+    Key? key,
+    required this.onScrollChanged,
+    required this.onBackToMainTab,
+  }) : super(key: key);
 
   @override
   _ReelsPlayerState createState() => _ReelsPlayerState();
@@ -72,14 +77,36 @@ class _ReelsPlayerState extends State<ReelsPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: PageView.builder(
-        scrollDirection: Axis.vertical,
-        itemCount: videoUrls.length,
-        itemBuilder: (context, index) {
-          return ReelVideoItem(videoUrl: videoUrls[index]);
-        },
+    return WillPopScope(
+      onWillPop: () async {
+        widget.onBackToMainTab(); // back gesture (Android)
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            // PageView with reels
+            PageView.builder(
+              scrollDirection: Axis.vertical,
+              itemCount: videoUrls.length,
+              itemBuilder: (context, index) {
+                return ReelVideoItem(videoUrl: videoUrls[index]);
+              },
+            ),
+
+            // Top-left back arrow
+            Positioned(
+              top: 40,
+              left: 16,
+              child: IconButton(
+                icon: Icon(Icons.arrow_back_ios_new_rounded,
+                    color: Colors.white, size: 24),
+                onPressed: widget.onBackToMainTab,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
