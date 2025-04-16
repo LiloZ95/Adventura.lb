@@ -70,6 +70,8 @@ const recommendationRoutes = require("./routes/recommendationRoutes");
 const interactionRoutes = require("./routes/interactionRoutes");
 const availabilityRoutes = require("./routes/availabilityRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
+const adminRoutes = require('./routes/adminRoutes');
+
 // const socialAuthRoutes = require('./routes/socialAuthRoutes'); // optional
 
 // ===========================================================
@@ -87,6 +89,8 @@ app.use("/recommendations", recommendationRoutes);
 app.use("/api", interactionRoutes); // Interaction endpoints
 app.use("/availability", availabilityRoutes);
 app.use("/booking", bookingRoutes);
+app.use('/admin', adminRoutes); // ← important to keep this prefix!
+
 // app.use("/users", socialAuthRoutes); // Optional social login routes
 
 // ===========================================================
