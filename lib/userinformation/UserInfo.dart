@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:adventura/BecomeProvider/WelcomePage.dart';
 import 'package:adventura/MyListings/Mylisting.dart';
 import 'package:adventura/OrganizerProfile/OrganizerProfile.dart';
-import 'package:adventura/userinformation/Security&Privacy.dart';
-import 'package:adventura/userinformation/button.dart';
-import 'package:adventura/userinformation/custom_page_route.dart';
+import 'package:adventura/userinformation/widgets/Security&Privacy.dart';
+import 'package:adventura/userinformation/widgets/theme_button.dart';
+import 'package:adventura/userinformation/widgets/custom_page_route.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/login/login.dart';
 import 'package:adventura/Services/profile_service.dart';
@@ -14,7 +14,7 @@ import 'package:adventura/Services/storage_service.dart';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:dotted_border/dotted_border.dart';
-import 'package:adventura/userinformation/profileOptionTile.dart';
+import 'package:adventura/userinformation/widgets/profileOptionTile.dart';
 import 'package:hive/hive.dart';
 
 class UserInfo extends StatefulWidget {
@@ -274,19 +274,20 @@ class _UserInfoState extends State<UserInfo> {
                               title: "My listings",
                               onTap: () async {
                                 final box = await Hive.openBox('authBox');
-                      final userType = box.get('userType');
-                      final providerId = box.get('providerId');
+                                final userType = box.get('userType');
+                                final providerId = box.get('providerId');
 
-                      if (userType != 'provider' || providerId == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text(
-                                  "Only providers can access My Listings.")),
-                        );
-                        return;
-                      }
+                                if (userType != 'provider' ||
+                                    providerId == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text(
+                                            "Only providers can access My Listings.")),
+                                  );
+                                  return;
+                                }
 
-                      Navigator.push(
+                                Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                       builder: (context) => MyListingsPage()),
@@ -344,19 +345,6 @@ class _UserInfoState extends State<UserInfo> {
                     },
                   ),
 
-                  //appearance options
-                  AppearanceToggleTile(
-                    isDarkMode: isDarkMode,
-                    onChanged: (value) {
-                      setState(() => isDarkMode = value);
-
-                      // TODO: Here you'd update the actual app theme
-                      // Example:
-                      // Provider.of<ThemeProvider>(context, listen: false)
-                      //     .setTheme(value ? ThemeMode.dark : ThemeMode.light);
-                    },
-                  ),
-
                   //personal details option
                   ProfileOptionTile(
                     icon: Icons.person,
@@ -366,6 +354,7 @@ class _UserInfoState extends State<UserInfo> {
                       // handle tap
                     },
                   ),
+
                   SizedBox(height: screenHeight * 0.02),
 
                   Padding(
@@ -442,6 +431,10 @@ class _UserInfoState extends State<UserInfo> {
                 ],
               ),
             ),
+      floatingActionButton: AppearanceFAB(
+        isDarkMode: isDarkMode,
+        onToggle: () => setState(() => isDarkMode = !isDarkMode),
+      ),
     );
   }
 
