@@ -1,8 +1,4 @@
-const { sequelize } = require('../db/db');
-const Activity = require('../models/Activity');
-const ActivityCategory = require('../models/ActivityCategory');
-const User = require('../models/User');
-
+const { sequelize, Activity, ActivityCategory, User } = require('../models');
 // GET all activities with category name
 const getAllActivities = async (req, res) => {
   try {

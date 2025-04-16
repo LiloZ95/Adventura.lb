@@ -1,4 +1,8 @@
+import 'dart:convert';
+
+import 'package:adventura/config.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:adventura/event_cards/Cards.dart';
 import 'package:share_plus/share_plus.dart';
@@ -22,6 +26,7 @@ class OrganizerProfilePage extends StatefulWidget {
   @override
   State<OrganizerProfilePage> createState() => _OrganizerProfilePageState();
 }
+
 
 class _OrganizerProfilePageState extends State<OrganizerProfilePage> {
   bool isFollowing = false;
@@ -65,6 +70,22 @@ class _OrganizerProfilePageState extends State<OrganizerProfilePage> {
         break;
     }
   }
+
+
+Future<String> fetchProviderProfilePicture(String userId) async {
+  final response = await http.get(
+    Uri.parse('$baseUrl/users/get-profile-picture/$userId'),
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return data['image'] ?? "";
+  } else {
+    print("❌ Failed to fetch provider image: ${response.body}");
+    return "";
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {

@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../db/db');
-
+const { sequelize } = require("../db/db");
 const ActivityCategory = sequelize.define('category', {
   category_id: {
     type: DataTypes.INTEGER,

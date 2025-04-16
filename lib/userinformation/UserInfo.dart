@@ -2,6 +2,10 @@ import 'dart:io';
 
 import 'package:adventura/BecomeProvider/WelcomePage.dart';
 import 'package:adventura/MyListings/Mylisting.dart';
+import 'package:adventura/OrganizerProfile/OrganizerProfile.dart';
+import 'package:adventura/userinformation/Security&Privacy.dart';
+import 'package:adventura/userinformation/button.dart';
+import 'package:adventura/userinformation/custom_page_route.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/login/login.dart';
 import 'package:adventura/Services/profile_service.dart';
@@ -24,6 +28,8 @@ class _UserInfoState extends State<UserInfo> {
   late String lastName;
   late String profilePicture;
   bool isLoading = true;
+  late String userType = "null";
+  bool isDarkMode = false; // Add this in your State class
 
   @override
   void initState() {
@@ -34,6 +40,9 @@ class _UserInfoState extends State<UserInfo> {
   // ✅ Load user data from storage and fetch profile picture
   Future<void> _loadUserData() async {
     Box box = await Hive.openBox('authBox');
+    userType =
+        box.get("userType", defaultValue: "client"); // fallback to 'client'
+    userType = box.get("userType"); // 👈 Add this
 
     userId = box.get("userId", defaultValue: "");
     firstName = box.get("firstName", defaultValue: "");
@@ -149,10 +158,12 @@ class _UserInfoState extends State<UserInfo> {
                     ),
                   ),
 
-                  SizedBox(height: screenHeight * 0.01),
+                  SizedBox(height: screenHeight * 0.02),
                   // ✅ Personal Account Text
                   Text(
-                    "Personal Account",
+                    userType == "provider"
+                        ? "Business Account"
+                        : "Personal Account",
                     style: TextStyle(
                       fontSize: screenHeight * 0.018,
                       fontWeight: FontWeight.w500,
@@ -160,91 +171,109 @@ class _UserInfoState extends State<UserInfo> {
                       fontFamily: "Poppins",
                     ),
                   ),
-                  SizedBox(height: screenHeight * 0.02),
+
+                  SizedBox(height: screenHeight * 0.01),
 
                   // ✅ Dotted-Border Button
-                  buildBusinessAccountButton(
-                    screenWidth: screenWidth,
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        PageRouteBuilder(
-                          pageBuilder:
-                              (context, animation, secondaryAnimation) =>
-                                  const ProviderWelcomeScreen(),
-                          transitionsBuilder:
-                              (context, animation, secondaryAnimation, child) {
-                            final curved = CurvedAnimation(
-                              parent: animation,
-                              curve: Curves.easeOutExpo,
-                            );
-
-                            return FadeTransition(
-                              opacity: curved,
-                              child: ScaleTransition(
-                                scale: Tween<double>(begin: 1.5, end: 1.0)
-                                    .animate(curved),
-                                child: SlideTransition(
-                                  position: Tween<Offset>(
-                                    begin: const Offset(0, 0.08),
-                                    end: Offset.zero,
-                                  ).animate(curved),
-                                  child: child,
+                  if (userType != "provider")
+                    buildBusinessAccountButton(
+                      screenWidth: screenWidth,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder:
+                                (context, animation, secondaryAnimation) =>
+                                    const ProviderWelcomeScreen(),
+                            transitionsBuilder: (context, animation,
+                                secondaryAnimation, child) {
+                              final curved = CurvedAnimation(
+                                parent: animation,
+                                curve: Curves.easeOutExpo,
+                              );
+                              return FadeTransition(
+                                opacity: curved,
+                                child: ScaleTransition(
+                                  scale: Tween<double>(begin: 1.5, end: 1.0)
+                                      .animate(curved),
+                                  child: SlideTransition(
+                                    position: Tween<Offset>(
+                                      begin: const Offset(0, 0.08),
+                                      end: Offset.zero,
+                                    ).animate(curved),
+                                    child: child,
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                          transitionDuration: const Duration(milliseconds: 650),
-                        ),
-                      );
+                              );
+                            },
+                            transitionDuration:
+                                const Duration(milliseconds: 650),
+                          ),
+                        );
+                        print("Open Business Account Tapped");
+                      },
+                    ),
 
-                      print("Open Business Account Tapped");
-                    },
-                  ),
-
-                  SizedBox(height: screenHeight * 0.02),
+                  SizedBox(height: screenHeight * 0.005),
                   Padding(
                     padding: EdgeInsets.only(
-                      left: screenWidth * 0.05,
-                      top: screenHeight * 0.02,
+                      left: screenWidth * 0.01,
+                      top: screenHeight * 0.025,
                     ),
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Account",
-                        style: TextStyle(
-                          fontSize: screenHeight * 0.025,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                          fontFamily: "Poppins",
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: screenHeight * 0.01),
-
-                  // inbox option
-                  ProfileOptionTile(
-                    icon: Icons.inbox,
-                    title: "Inbox",
-                    onTap: () {
-                      // handle tap
-                    },
-                  ),
-                  //help option
-                  ProfileOptionTile(
-                    icon: Icons.help,
-                    title: "Help",
-                    onTap: () {
-                      // handle tap
-                    },
-                  ),
-                  //statement and reports option
-                  ProfileOptionTile(
-                    icon: Icons.report,
-                    title: "My listings",
-                    onTap: () async {
-                      final box = await Hive.openBox('authBox');
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (userType == "provider") ...[
+                            Padding(
+                              padding: EdgeInsets.only(
+                                left: screenWidth * 0.05,
+                                top: screenHeight * 0.02,
+                              ),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  "Organizer Options",
+                                  style: TextStyle(
+                                    fontSize: screenHeight * 0.025,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                    fontFamily: "Poppins",
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: screenHeight * 0.01),
+                            ProfileOptionTile(
+                                icon: Icons.pages_rounded,
+                                title: "Landing page",
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          OrganizerProfilePage(
+                                        organizerId: userId,
+                                        organizerName: "$firstName $lastName",
+                                        organizerImage: profilePicture,
+                                        bio:
+                                            "Welcome", // You can replace this later with a real one
+                                        activities: [], // Replace with actual activity list when available
+                                      ),
+                                    ),
+                                  );
+                                }),
+                            ProfileOptionTile(
+                              icon: Icons.create,
+                              title: "Create Reels",
+                              onTap: () {},
+                            ),
+                            ProfileOptionTile(
+                              icon: Icons.list_sharp,
+                              title: "My listings",
+                              onTap: () async {
+                                final box = await Hive.openBox('authBox');
                       final userType = box.get('userType');
                       final providerId = box.get('providerId');
 
@@ -258,13 +287,17 @@ class _UserInfoState extends State<UserInfo> {
                       }
 
                       Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => MyListingsPage()),
-                      );
-                    },
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => MyListingsPage()),
+                                );
+                              },
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
-
                   SizedBox(height: screenHeight * 0.01),
 
                   Padding(
@@ -292,7 +325,12 @@ class _UserInfoState extends State<UserInfo> {
                     title: "Security & Privacy",
                     subtitle: "Change your security and privacy settings",
                     onTap: () {
-                      // handle tap
+                      // Import your route file
+
+                      Navigator.push(
+                        context,
+                        SecurityPageRoute(child: const SecurityPrivacyPage()),
+                      );
                     },
                   ),
                   //payment methods option
@@ -307,12 +345,15 @@ class _UserInfoState extends State<UserInfo> {
                   ),
 
                   //appearance options
-                  ProfileOptionTile(
-                    icon: Icons.dark_mode,
-                    title: "Appearance",
-                    subtitle: "Light",
-                    onTap: () {
-                      // handle tap
+                  AppearanceToggleTile(
+                    isDarkMode: isDarkMode,
+                    onChanged: (value) {
+                      setState(() => isDarkMode = value);
+
+                      // TODO: Here you'd update the actual app theme
+                      // Example:
+                      // Provider.of<ThemeProvider>(context, listen: false)
+                      //     .setTheme(value ? ThemeMode.dark : ThemeMode.light);
                     },
                   ),
 
@@ -396,36 +437,6 @@ class _UserInfoState extends State<UserInfo> {
                     padding: EdgeInsets.only(
                       left: screenWidth * 0.05,
                       top: screenHeight * 0.02,
-                    ),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Membership number",
-                        style: TextStyle(
-                          fontSize: screenHeight * 0.020,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                          fontFamily: "Poppins",
-                        ),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(
-                      left: screenWidth * 0.05,
-                      top: screenHeight * 0.02,
-                    ),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "P122312802",
-                        style: TextStyle(
-                          fontSize: screenHeight * 0.015,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                          fontFamily: "Poppins",
-                        ),
-                      ),
                     ),
                   ),
                 ],
