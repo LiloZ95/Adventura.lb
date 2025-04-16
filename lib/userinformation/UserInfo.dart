@@ -243,7 +243,20 @@ class _UserInfoState extends State<UserInfo> {
                   ProfileOptionTile(
                     icon: Icons.report,
                     title: "My listings",
-                    onTap: () {
+                    onTap: () async {
+                      final box = await Hive.openBox('authBox');
+                      final userType = box.get('userType');
+                      final providerId = box.get('providerId');
+
+                      if (userType != 'provider' || providerId == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text(
+                                  "Only providers can access My Listings.")),
+                        );
+                        return;
+                      }
+
                       Navigator.push(
                         context,
                         MaterialPageRoute(

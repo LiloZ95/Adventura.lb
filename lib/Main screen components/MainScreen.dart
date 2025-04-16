@@ -41,7 +41,7 @@ class _MainScreenState extends State<MainScreen>
   String selectedLocation = "Tripoli";
   String firstName = "";
   String lastName = "";
-  bool isProvider = true;
+  bool isProvider = false;
   List<Map<String, dynamic>> limitedEvents = [];
   final ScrollController _scrollController = ScrollController();
   Timer? _scrollStopTimer;
@@ -85,6 +85,8 @@ class _MainScreenState extends State<MainScreen>
     userId = box.get('userId') ?? '';
     firstName = box.get('firstName') ?? '';
     lastName = box.get('lastName') ?? '';
+    isProvider =
+        box.get('userType') == 'provider' && box.get('providerId') != null;
 
     // Load profile bytes based on userId
     Uint8List? cachedBytes = box.get('profileImageBytes_$userId');
@@ -642,86 +644,87 @@ class _MainScreenState extends State<MainScreen>
                         right: 20,
                         child: Column(
                           children: [
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => TicketScanner(),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                width: screenWidth * 0.14,
-                                height: 55,
-                                decoration: BoxDecoration(
-                                  color: Color.fromRGBO(137, 69, 247, 1),
-                                  borderRadius: BorderRadius.circular(50),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.8),
-                                      blurRadius: 6,
-                                      offset: Offset(0, 3),
+                            if (!isLoading && isProvider) ...[
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => TicketScanner(),
                                     ),
-                                  ],
-                                ),
-                                child: Center(
-                                  child: Image.asset(
-                                    'assets/Icons/qr-code.png',
-                                    width: screenWidth * 0.08,
-                                    height: screenWidth * 0.08,
-                                    fit: BoxFit
-                                        .contain, // ✅ Forces it to stay inside the 30x30 box
+                                  );
+                                },
+                                child: Container(
+                                  width: screenWidth * 0.14,
+                                  height: 55,
+                                  decoration: BoxDecoration(
+                                    color: Color.fromRGBO(137, 69, 247, 1),
+                                    borderRadius: BorderRadius.circular(50),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.8),
+                                        blurRadius: 6,
+                                        offset: Offset(0, 3),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: Image.asset(
+                                      'assets/Icons/qr-code.png',
+                                      width: screenWidth * 0.08,
+                                      height: screenWidth * 0.08,
+                                      fit: BoxFit
+                                          .contain, // ✅ Forces it to stay inside the 30x30 box
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            SizedBox(height: 8),
-                            GestureDetector(
-                              onTap: () async {
-                                final box = await Hive.openBox('authBox');
-                                final userType = box.get('userType');
-                                final providerId = box.get('providerId');
+                              SizedBox(height: 8),
+                              GestureDetector(
+                                onTap: () async {
+                                  final box = await Hive.openBox('authBox');
+                                  final userType = box.get('userType');
+                                  final providerId = box.get('providerId');
 
-                                if (userType != 'provider' ||
-                                    providerId == null) {
-                                  showAppSnackBar(context,
-                                      "Only providers can create listings.");
-                                  return;
-                                }
+                                  if (userType != 'provider' ||
+                                      providerId == null) {
+                                    showAppSnackBar(context,
+                                        "Only providers can create listings.");
+                                    return;
+                                  }
 
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          CreateListingPage()),
-                                );
-                              },
-                              child: Container(
-                                width: screenWidth * 0.14,
-                                height: 55,
-                                decoration: BoxDecoration(
-                                  color: AppColors.blue,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.8),
-                                      blurRadius: 6,
-                                      offset: Offset(0, 3),
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            CreateListingPage()),
+                                  );
+                                },
+                                child: Container(
+                                  width: screenWidth * 0.14,
+                                  height: 55,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.blue,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.8),
+                                        blurRadius: 6,
+                                        offset: Offset(0, 3),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: Image.asset(
+                                      'assets/Icons/add.png',
+                                      width: screenWidth * 0.08,
+                                      height: screenWidth * 0.08,
+                                      fit: BoxFit.contain,
                                     ),
-                                  ],
-                                ),
-                                child: Center(
-                                  child: Image.asset(
-                                    'assets/Icons/add.png',
-                                    width: screenWidth * 0.08,
-                                    height: screenWidth * 0.08,
-                                    fit: BoxFit
-                                        .contain, // ✅ Forces it to stay inside the 30x30 box
                                   ),
                                 ),
                               ),
-                            ),
+                            ]
                           ],
                         ),
                       ),

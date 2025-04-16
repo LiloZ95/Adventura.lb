@@ -40,8 +40,27 @@ class _MyListingsPageState extends State<MyListingsPage> {
         _loading = false;
       });
     } else {
-      print("❌ providerId is null.");
-      setState(() => _loading = false);
+      print("❌ providerId is null. This user is not a provider.");
+      setState(() {
+        _loading = false;
+      });
+
+      // Optional: Show a dialog or redirect
+      Future.delayed(Duration.zero, () {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text("Access Denied"),
+            content: Text("Only providers can view listings."),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("OK"),
+              )
+            ],
+          ),
+        );
+      });
     }
   }
 

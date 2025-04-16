@@ -52,7 +52,7 @@ Widget _buildCard(Map<String, dynamic> card) {
 
   return Card(
     color: Colors.white,
-    margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+    margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
     elevation: 4,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     child: Container(

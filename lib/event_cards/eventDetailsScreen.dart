@@ -628,9 +628,14 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   Widget _buildBottomBar(double screenWidth, List<String> images) {
     final box = Hive.box('authBox');
+    final userType = box.get("userType");
     final providerId = box.get("providerId");
-    final isOwnActivity = providerId != null &&
+    final isOwnActivity = userType == 'provider' &&
+        providerId != null &&
         widget.activity["provider_id"].toString() == providerId.toString();
+    print("👤 userType from Hive: $userType");
+    print("🏢 providerId from Hive: $providerId");
+    print("📌 Activity's provider_id: ${widget.activity["provider_id"]}");
 
     return Container(
       decoration: BoxDecoration(

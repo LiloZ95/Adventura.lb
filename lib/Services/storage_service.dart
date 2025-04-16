@@ -32,8 +32,7 @@ class StorageService {
     await box.put("accessToken", accessToken);
     await box.put("refreshToken", refreshToken);
     await box.put("userId", userId);
-    await box.put("isLoggedIn", true);    
-    
+    await box.put("isLoggedIn", true);
 
     // Verify if data is saved correctly
     String? savedUserId = box.get("userId");
@@ -184,6 +183,9 @@ class StorageService {
     await box.delete("userId");
     await box.delete('profileImageBytes_$userId');
     await box.delete('profilePictureUrl_$userId');
+    await box.delete("providerId");
+    await box.delete("userType");
+
     await box.put("isLoggedIn", false);
 
     // Clear Shared Preferences
