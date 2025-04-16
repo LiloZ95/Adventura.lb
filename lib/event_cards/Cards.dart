@@ -1,7 +1,9 @@
 import 'dart:ui';
+import 'package:adventura/Services/interaction_service.dart';
 import 'package:adventura/event_cards/eventDetailsScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/utils.dart';
+import 'package:hive/hive.dart';
 
 String? _calculateDuration(String? from, String? to) {
   if (from == null || to == null) return null;
@@ -64,7 +66,27 @@ Widget EventCard({
   });
 
   return GestureDetector(
-    onTap: () {
+    onTap: () async {
+      try {
+        var box = await Hive.openBox('authBox');
+        int? userId;
+        final storedUserId = box.get('userId');
+        if (storedUserId != null) {
+          userId = int.tryParse(storedUserId.toString()); // 👈 safely convert
+        }
+
+        if (userId != null) {
+          await InteractionService.logInteraction(
+            userId: userId,
+            activityId: activity["activity_id"],
+            type: "view",
+          );
+          print("🟢 Success interaction");
+        }
+      } catch (e) {
+        print("🔴 Failed to log view interaction: $e");
+      }
+
       Navigator.of(context).push(
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 800),
@@ -73,8 +95,7 @@ Widget EventCard({
           transitionsBuilder: (_, animation, __, child) {
             final curvedAnimation = CurvedAnimation(
               parent: animation,
-              curve: Curves
-                  .easeOutExpo, // Feel free to try easeInOutCubic or easeInOutBack
+              curve: Curves.easeOutExpo,
             );
 
             return FadeTransition(
@@ -155,6 +176,43 @@ Widget EventCard({
                     ),
                   ),
                 ),
+// 🔥 Trending Badge
+                if (activity["is_trending"] == true)
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        gradient:
+                            LinearGradient(colors: [Colors.orange, Colors.red]),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 4,
+                            offset: Offset(2, 2),
+                          )
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.whatshot, size: 16, color: Colors.white),
+                          SizedBox(width: 4),
+                          Text(
+                            "Trending",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
                 // 🕒 Duration Badge
                 // if (duration != null)

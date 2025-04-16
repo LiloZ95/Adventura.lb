@@ -1,5 +1,5 @@
 import 'package:adventura/Services/booking_service.dart';
-import 'package:adventura/widgets/payment_modal.dart';
+import 'package:adventura/Services/interaction_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:adventura/colors.dart';
@@ -349,7 +349,6 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                               return;
                             }
 
-                            // ✅ DEBUG LOG
                             print("🟢 Proceed tapped - sending booking");
 
                             final success = await BookingService.createBooking(
@@ -364,6 +363,13 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                               print("✅ Booking confirmed");
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text("✅ Booking successful")),
+                              );
+
+                              // 👇 Log the 'purchase' interaction
+                              await InteractionService.logInteraction(
+                                userId: clientId,
+                                activityId: widget.activityId,
+                                type: "purchase",
                               );
 
                               // TODO: Navigate to success screen

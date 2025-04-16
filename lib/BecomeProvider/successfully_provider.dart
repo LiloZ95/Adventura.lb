@@ -1,4 +1,4 @@
-import 'package:adventura/Main%20screen%20components/MainScreen.dart';
+import 'package:adventura/HomeControllerScreen.dart';
 import 'package:flutter/material.dart';
 
 class ProviderWelcomeScreen extends StatefulWidget {
@@ -115,12 +115,10 @@ class _ProviderWelcomeScreenState extends State<ProviderWelcomeScreen>
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
+                    Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(
-                          builder: (context) => MainScreen(
-                                onScrollChanged: (bool visible) {},
-                              )),
+                      MaterialPageRoute(builder: (_) => HomeControllerScreen()),
+                      (route) => false,
                     );
                   },
                   style: ElevatedButton.styleFrom(

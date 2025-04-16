@@ -199,7 +199,7 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      return jsonDecode(utf8.decode(response.bodyBytes));
     } else {
       throw Exception("Failed to get response from bot");
     }

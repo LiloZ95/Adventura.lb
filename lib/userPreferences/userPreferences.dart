@@ -1,8 +1,8 @@
 import 'dart:convert';
+import 'package:adventura/HomeControllerScreen.dart';
 import 'package:adventura/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../Main screen components/MainScreen.dart';
 import 'package:adventura/config.dart';
 import 'package:hive/hive.dart';
 import 'package:adventura/widgets/bouncing_dots_loader.dart';
@@ -89,12 +89,10 @@ class _EventSelectionScreenState extends State<EventSelectionScreen> {
 
     if (response.statusCode == 200) {
       print("✅ Preferences saved successfully!");
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(
-            builder: (context) => MainScreen(
-                  onScrollChanged: (bool visible) {},
-                )),
+        MaterialPageRoute(builder: (_) => HomeControllerScreen()),
+        (route) => false,
       );
     } else {
       print("❌ Failed to save preferences. Server response: ${response.body}");

@@ -1,95 +1,139 @@
-require("dotenv").config(); // ✅ Load environment variables at the top
-// const socialAuthRoutes = require('./routes/socialAuthRoutes');
+// ===========================================================
+// ✅ Load Environment Variables & Modules
+// ===========================================================
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const bodyParser = require("body-parser");
 const path = require("path");
-const { connectDB } = require("./db/db.js");
-const userRoutes = require("./routes/userRoutes"); // Import user routes
-const { sequelize } = require("./models"); // ✅ Import from index.js
-const recommendationRoutes = require("./routes/recommendationRoutes.js");
-const { authenticateToken } = require("./middleware/auth.js");
-const Client = require("./models/client"); // Import Client model
-const { getUserById } = require("./controllers/userController");
-const categoryRoutes = require("./routes/categoryRoutes"); // Import category routes
-const activityRoutes = require("./routes/activityRoutes");
-const eventRoutes = require("./routes/eventRoutes"); // ✅ Import event routes
-const availabilityRoutes = require('./routes/availabilityRoutes');
-const cron = require("node-cron"); // Import cron for scheduling tasks
-const { deactivatePastEvents } = require("./controllers/activityController");
+const cron = require("node-cron");
 
+// ===========================================================
+// ✅ Database & ORM Setup
+// ===========================================================
+const { connectDB } = require("./db/db.js");
+const { sequelize } = require("./models");
+
+// ===========================================================
+// ✅ Cron Tasks
+// ===========================================================
+const { deactivatePastEvents } = require("./controllers/activityController");
+const updateTrendingActivities = require("./controllers/trendingUpdater");
+
+// Run once on server boot
+// updateTrendingActivities();
+// deactivatePastEvents();
+
+// Schedule periodic jobs
+cron.schedule("0 * * * *", () => {
+  console.log("⏰ [Cron] Cleaning expired one-time events...");
+  deactivatePastEvents();
+});
+
+cron.schedule("0 */6 * * *", () => {
+  console.log("🔥 [Cron] Updating trending activities...");
+  updateTrendingActivities();
+});
+
+// ===========================================================
+// ✅ Initialize Express App
+// ===========================================================
 const app = express();
 
-// ✅ Middleware
+// ===========================================================
+// ✅ Middleware Setup
+// ===========================================================
 app.use(bodyParser.json());
 app.use(cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 app.use(helmet());
 app.use(express.json());
 
-// ✅ Ensure database connection before setting up routes
-connectDB()
-	.then(async () => {
-		try {
-			await sequelize.sync({ alter: false, force: false });
-			console.log("✅ Database synced with updated models.");
-		} catch (err) {
-			console.error("❌ Error syncing database:", err);
-		}
-	})
-	.catch((err) => {
-		console.error("❌ Error connecting to the database:", err);
-	});
-
-// ✅ Register Routes
-app.use("/users", userRoutes);
-app.use("/categories", categoryRoutes); // Add category routes
-app.get("/users/profile", authenticateToken, getUserById); // ✅ Correct authentication usage
-app.use("/recommendations", recommendationRoutes);
-
-// ✅ Serve static files from 'public/images'
+// ===========================================================
+// ✅ Static File Serving
+// ===========================================================
 app.use("/images", express.static(path.join(__dirname, "public/images")));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// ===========================================================
+// ✅ Route Imports
+// ===========================================================
+const userRoutes = require("./routes/userRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
+const activityRoutes = require("./routes/activityRoutes");
+const eventRoutes = require("./routes/eventRoutes");
+const recommendationRoutes = require("./routes/recommendationRoutes");
+const interactionRoutes = require("./routes/interactionRoutes");
+const availabilityRoutes = require("./routes/availabilityRoutes");
+const bookingRoutes = require("./routes/bookingRoutes");
+const adminRoutes = require('./routes/adminRoutes');
+
+// const socialAuthRoutes = require('./routes/socialAuthRoutes'); // optional
+
+// ===========================================================
+// ✅ Register API Routes
+// ===========================================================
+const { authenticateToken } = require("./middleware/auth.js");
+const { getUserById } = require("./controllers/userController");
+
+app.use("/users", userRoutes);
+app.get("/users/profile", authenticateToken, getUserById);
+app.use("/categories", categoryRoutes);
 app.use("/activities", activityRoutes);
-
-// ✅ Event routes should be registered after activity routes to avoid conflicts
-app.use("/events", eventRoutes);  // ✅ Add event routes
-
+app.use("/events", eventRoutes); // ✅ Place after activities to avoid path collisions
+app.use("/recommendations", recommendationRoutes);
+app.use("/api", interactionRoutes); // Interaction endpoints
 app.use("/availability", availabilityRoutes);
+app.use("/booking", bookingRoutes);
+app.use('/admin', adminRoutes); // ← important to keep this prefix!
 
-// ✅ Global Error Handling Middleware (Prevents Crashes)
+// app.use("/users", socialAuthRoutes); // Optional social login routes
+
+// ===========================================================
+// ✅ Global Error Handler
+// ===========================================================
 app.use((err, req, res, next) => {
-	console.error("❌ Server Error:", err);
-	res.status(500).json({ error: "Internal server error" });
+  console.error("❌ Server Error:", err);
+  res.status(500).json({ error: "Internal server error" });
 });
-// app.use('/users', socialAuthRoutes);
-// Run every hour at minute 0
-cron.schedule("0 * * * *", () => {
-	console.log("⏰ [Cron] Running scheduled cleanup for expired one-time events...");
-	deactivatePastEvents();
-});
-deactivatePastEvents(); // Run once at boot
 
+// ===========================================================
+// ✅ Database Connection & Sync
+// ===========================================================
+connectDB()
+  .then(async () => {
+    try {
+      await sequelize.sync({ alter: false, force: false });
+      console.log("✅ Database synced with updated models.");
+    } catch (err) {
+      console.error("❌ Error syncing database:", err);
+    }
+  })
+  .catch((err) => {
+    console.error("❌ Error connecting to the database:", err);
+  });
+
+// ===========================================================
 // ✅ Start Server
+// ===========================================================
 const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || "0.0.0.0"; // ✅ Use ENV for flexibility
+const HOST = process.env.HOST || "0.0.0.0";
 
-app.listen(PORT, HOST, async () => {
-	console.log(`🚀 Server running on http://${HOST}:${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`🚀 Server running on http://${HOST}:${PORT}`);
 });
 
-// ✅ Handle Unexpected Errors
+// ===========================================================
+// ✅ Handle Fatal Errors Gracefully
+// ===========================================================
 process.on("uncaughtException", (err) => {
-	console.error("❌ Uncaught Exception:", err);
+  console.error("❌ Uncaught Exception:", err);
 });
 
 process.on("unhandledRejection", (reason, promise) => {
-	console.error("❌ Unhandled Promise Rejection:", reason);
+  console.error("❌ Unhandled Promise Rejection:", reason);
 });
-
-const bookingRoutes = require("./routes/bookingRoutes");
-app.use("/booking", bookingRoutes);

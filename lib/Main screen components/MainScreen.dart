@@ -180,7 +180,6 @@ class _MainScreenState extends State<MainScreen>
     print("✅ MainScreen build() called");
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
-    double statusBarHeight = MediaQuery.of(context).padding.top;
 
     return Scaffold(
       backgroundColor: Colors.white,

@@ -15,8 +15,8 @@ class HomeControllerScreen extends StatefulWidget {
   _HomeControllerScreenState createState() => _HomeControllerScreenState();
 }
 
-class _HomeControllerScreenState extends State<HomeControllerScreen> with TickerProviderStateMixin {
-
+class _HomeControllerScreenState extends State<HomeControllerScreen>
+    with TickerProviderStateMixin {
   int _selectedIndex = 0;
   late final List<Widget> _screens;
   final ScrollController _scrollController = ScrollController();
@@ -71,7 +71,14 @@ class _HomeControllerScreenState extends State<HomeControllerScreen> with Ticker
       SearchScreen(onScrollChanged: _handleScrollChanged),
       MyBookingsPage(onScrollChanged: _handleScrollChanged),
       Placeholder(),
-      ReelsPlayer(onScrollChanged: _handleScrollChanged),
+      ReelsPlayer(
+        onScrollChanged: _handleScrollChanged,
+        onBackToMainTab: () {
+          setState(() {
+            _selectedIndex = 0; // 👈 back to Main tab
+          });
+        },
+      ),
     ];
 
     _fadeController = AnimationController(
@@ -108,33 +115,35 @@ class _HomeControllerScreenState extends State<HomeControllerScreen> with Ticker
           ),
 
           // Floating Nav Bar on top with full transparency
-          AnimatedPositioned(
-            duration: Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            left: 16,
-            right: 16,
-            bottom: 20,
-            child: AnimatedOpacity(
+          if (_selectedIndex != 4)
+            AnimatedPositioned(
               duration: Duration(milliseconds: 300),
-              opacity: _isNavBarVisible ? 1.0 : 0.6,
-              child: AnimatedContainer(
+              curve: Curves.easeInOut,
+              left: 16,
+              right: 16,
+              bottom: 20,
+              child: AnimatedOpacity(
                 duration: Duration(milliseconds: 300),
-                height: _isNavBarVisible ? 65 : 55,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(
+                opacity: _isNavBarVisible ? 1.0 : 0.6,
+                child: AnimatedContainer(
+                  duration: Duration(milliseconds: 300),
+                  height: _isNavBarVisible ? 65 : 55,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(
                         sigmaX: _isNavBarVisible ? 0 : 6,
-                        sigmaY: _isNavBarVisible ? 0 : 6),
-                    child: BottomNavBar(
-                      selectedIndex: _selectedIndex,
-                      onTap: _onTabTapped,
+                        sigmaY: _isNavBarVisible ? 0 : 6,
+                      ),
+                      child: BottomNavBar(
+                        selectedIndex: _selectedIndex,
+                        onTap: _onTabTapped,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );

@@ -1,12 +1,13 @@
+import 'package:adventura/HomeControllerScreen.dart';
 import 'package:adventura/OrderDetail/ViewTicket.dart';
 import 'package:flutter/material.dart';
-import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 
 class PurchaseConfirmationPage extends StatefulWidget {
   const PurchaseConfirmationPage({Key? key}) : super(key: key);
 
   @override
-  State<PurchaseConfirmationPage> createState() => _PurchaseConfirmationPageState();
+  State<PurchaseConfirmationPage> createState() =>
+      _PurchaseConfirmationPageState();
 }
 
 class _PurchaseConfirmationPageState extends State<PurchaseConfirmationPage>
@@ -108,7 +109,11 @@ class _PurchaseConfirmationPageState extends State<PurchaseConfirmationPage>
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    icon: Icon(Icons.qr_code_rounded, size: screenWidth * 0.06, color: Colors.white,),
+                    icon: Icon(
+                      Icons.qr_code_rounded,
+                      size: screenWidth * 0.06,
+                      color: Colors.white,
+                    ),
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -129,7 +134,8 @@ class _PurchaseConfirmationPageState extends State<PurchaseConfirmationPage>
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
+                      padding:
+                          EdgeInsets.symmetric(vertical: screenHeight * 0.02),
                     ),
                     label: Text(
                       "View E-Ticket",
@@ -150,7 +156,8 @@ class _PurchaseConfirmationPageState extends State<PurchaseConfirmationPage>
                     onPressed: () {
                       Navigator.pushAndRemoveUntil(
                         context,
-                        MaterialPageRoute(builder: (context) => MainScreen(onScrollChanged: (bool visible) {},)),
+                        MaterialPageRoute(
+                            builder: (_) => HomeControllerScreen()),
                         (route) => false,
                       );
                     },
@@ -159,7 +166,8 @@ class _PurchaseConfirmationPageState extends State<PurchaseConfirmationPage>
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
+                      padding:
+                          EdgeInsets.symmetric(vertical: screenHeight * 0.02),
                     ),
                     label: Text(
                       "Go To Home",

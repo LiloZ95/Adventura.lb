@@ -55,7 +55,8 @@ class _SlideTransitionCardState extends State<SlideTransitionCard>
   }
 
   void _handleCardTap() async {
-    int activityId = widget.card['cardId'];
+    final int? activityId = widget.card['cardId'];
+    if (activityId == null) return;
 
     final activities = await ActivityService.fetchActivitiesByIds([activityId]);
 
@@ -68,7 +69,7 @@ class _SlideTransitionCardState extends State<SlideTransitionCard>
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to load activity details")),
+        const SnackBar(content: Text("Failed to load activity details")),
       );
     }
   }
@@ -81,14 +82,7 @@ class _SlideTransitionCardState extends State<SlideTransitionCard>
         position: _offsetAnimation,
         child: FadeTransition(
           opacity: _fadeAnimation,
-          child: ActivityCard(
-            name: widget.card['name'],
-            description: widget.card['description'],
-            price: widget.card['price'],
-            duration: widget.card['duration'],
-            seats: widget.card['seats'],
-            location: widget.card['location'],
-          ),
+          child: ActivityCard(card: widget.card), // ✅ simplified
         ),
       ),
     );

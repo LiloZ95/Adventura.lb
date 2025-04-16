@@ -40,20 +40,6 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyC6B3CMjT_eOSG_wceU-TNJejRgdNSNIiM"/>
 
-        <meta-data android:name="com.facebook.sdk.ApplicationId"
-            android:value="@string/facebook_app_id"/>
-        <activity android:name="com.facebook.FacebookActivity"
-            android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
-            android:label="@string/app_name" />
-        <provider android:authorities="${applicationId}.flutter.facebook_auth.fileprovider"
-                android:name="androidx.core.content.FileProvider"
-                android:exported="false"
-                android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/path_provider_paths"/>
-        </provider>
-
 
     </application>
 </manifest>
