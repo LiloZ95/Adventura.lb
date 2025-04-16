@@ -1,4 +1,6 @@
 // controllers/userController.js
+require("dotenv").config();
+
 const bcrypt = require("bcryptjs"); // Use bcryptjs instead of bcrypt
 const jwt = require("jsonwebtoken");
 const { sequelize } = require("../db/db.js"); // Import Sequelize instance
@@ -9,6 +11,7 @@ const Provider = require("../models/Provider"); // Import Provider model
 const otpStore = {}; // Temporary storage for OTPs (replace with Redis or DB in production)
 const { QueryTypes } = require("sequelize");
 const { distributeUser } = require("../distributeUsers.js");
+const nodemailer = require("nodemailer");
 
 const refreshTokens = new Set(); // Store refresh tokens (replace with DB for production)
 const getProviderId = async (userId) => {
@@ -601,18 +604,62 @@ const getDashboard = (req, res) => {
 // ✅ OTP Handlers
 const sendOtp = async (req, res) => {
 	const { email, isForSignup } = req.body;
-	if (!isForSignup) {
-		const user = await User.findOne({ where: { email } });
-		if (!user) return res.status(404).json({ error: "User not found" });
+
+	try {
+		if (!isForSignup) {
+			const user = await User.findOne({ where: { email } });
+			if (!user) return res.status(404).json({ error: "User not found" });
+		}
+
+		const otp = Math.floor(100000 + Math.random() * 900000).toString();
+		otpStore[email] = { otp, expiresAt: Date.now() + 5 * 60 * 1000 };
+
+		const transporter = nodemailer.createTransport({
+			host: process.env.SMTP_HOST,
+			port: process.env.SMTP_PORT,
+			secure: true,
+			auth: {
+				user: process.env.EMAIL,
+				pass: process.env.EMAIL_PASSWORD,
+			},
+		});
+
+		const subject = isForSignup
+			? "Welcome to Adventura! Verify Your Email"
+			: "Adventura Password Reset Request";
+
+		const actionText = isForSignup
+			? "sign up for Adventura"
+			: "reset your Adventura password";
+
+		const htmlContent = `
+			<div style="font-family: Arial, sans-serif; color: #333;">
+				<h2>${subject}</h2>
+				<p>We received a request to ${actionText} using this email address.</p>
+				<p><strong>Your One-Time Password (OTP):</strong></p>
+				<p style="font-size: 24px; font-weight: bold;">${otp}</p>
+				<p>This OTP will expire in <strong>5 minutes</strong>.</p>
+				<p>If you didn't request this, please ignore this message.</p>
+				<p>— The Adventura Team</p>
+			</div>
+		`;
+
+		await transporter.sendMail({
+			from: `"Adventura" <${process.env.EMAIL}>`,
+			to: email,
+			subject,
+			html: htmlContent,
+		});
+
+		console.log(`🔐 OTP sent to ${email}: ${otp}`);
+		res.status(200).json({ success: true, message: "OTP sent successfully" });
+	} catch (error) {
+		console.error("❌ Error sending OTP:", error);
+		res.status(500).json({ error: "Failed to send OTP" });
 	}
-	const otp = Math.floor(100000 + Math.random() * 900000).toString();
-	otpStore[email] = { otp, expiresAt: Date.now() + 5 * 60 * 1000 };
-	console.log(`🔐 OTP for ${email}: ${otp}`);
-	// Skipping email logic for brevity
-	res.status(200).json({ success: true, message: "OTP sent successfully" });
 };
 
-const resendOtp = sendOtp; // Logic is the same
+const resendOtp = sendOtp;
 
 const verifyOtp = async (req, res) => {
 	const {
