@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'dart:typed_data';
 import 'dart:convert';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:adventura/Services/profile_service.dart';
 import 'package:adventura/event_cards/Cards.dart';
 import 'package:adventura/colors.dart';
@@ -21,8 +22,15 @@ import 'package:intl/intl.dart';
 
 class MainScreen extends StatefulWidget {
   final Function(bool) onScrollChanged;
+  final Function(int) onTabSwitch;
+  final Function(String) setSearchFilterMode;
 
-  const MainScreen({Key? key, required this.onScrollChanged}) : super(key: key);
+  const MainScreen({
+    Key? key,
+    required this.onScrollChanged,
+    required this.onTabSwitch,
+    required this.setSearchFilterMode,
+  }) : super(key: key);
 
   @override
   _MainScreenState createState() => _MainScreenState();
@@ -377,30 +385,61 @@ class _MainScreenState extends State<MainScreen>
                                                 Box box = Hive.box('authBox');
                                                 Uint8List? userBytes = box.get(
                                                     'profileImageBytes_$userId');
-                                                ImageProvider<Object>
-                                                    imageProvider;
 
                                                 if (userBytes != null) {
-                                                  imageProvider =
-                                                      MemoryImage(userBytes);
+                                                  return CircleAvatar(
+                                                    radius: 20,
+                                                    backgroundColor:
+                                                        Colors.transparent,
+                                                    backgroundImage:
+                                                        MemoryImage(userBytes),
+                                                  );
                                                 } else {
-                                                  imageProvider = AssetImage(
-                                                      "assets/images/default_user.png");
+                                                  return Container(
+                                                    width: 40,
+                                                    height: 40,
+                                                    decoration: BoxDecoration(
+                                                      shape: BoxShape.circle,
+                                                      color: Colors
+                                                          .white, // Light background helps with contrast
+                                                      border: Border.all(
+                                                        color: Colors.grey
+                                                            .shade300, // Soft border
+                                                        width: 1.2,
+                                                      ),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: Colors.black12,
+                                                          blurRadius: 2,
+                                                          offset: Offset(0,
+                                                              1.5), // Slight lift
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    child: Center(
+                                                      child: Icon(
+                                                        LucideIcons.user,
+                                                        size: 30,
+                                                        color: Colors.black,
+                                                      ),
+                                                    ),
+                                                  );
                                                 }
-
-                                                return CircleAvatar(
-                                                  backgroundColor:
-                                                      Colors.grey.shade300,
-                                                  backgroundImage:
-                                                      imageProvider,
-                                                );
                                               }
-                                              return CircleAvatar(
-                                                backgroundColor:
-                                                    Colors.grey.shade300,
-                                                child: Icon(Icons.person,
-                                                    color: Colors.black,
-                                                    size: 30),
+
+                                              // While loading the box
+                                              return Container(
+                                                width: 40,
+                                                height: 40,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color: Colors.transparent,
+                                                ),
+                                                child: Icon(
+                                                  Icons.person,
+                                                  size: 26,
+                                                  color: Colors.grey.shade400,
+                                                ),
                                               );
                                             },
                                           ),
@@ -432,16 +471,10 @@ class _MainScreenState extends State<MainScreen>
                                   ),
                                   TextButton(
                                     onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => SearchScreen(
-                                            filterMode: "limited_events_only",
-                                            onScrollChanged:
-                                                widget.onScrollChanged,
-                                          ),
-                                        ),
-                                      );
+                                      widget.setSearchFilterMode(
+                                          "limited_events_only");
+                                      widget.onTabSwitch(
+                                          1); // Switch to Search tab
                                     },
                                     child: Text(
                                       "See All",
@@ -574,15 +607,8 @@ class _MainScreenState extends State<MainScreen>
                                   ),
                                   TextButton(
                                     onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => SearchScreen(
-                                            onScrollChanged:
-                                                widget.onScrollChanged,
-                                          ),
-                                        ),
-                                      );
+                                      widget.onTabSwitch(
+                                          1); // 👈 Switch to Search tab
                                     },
                                     child: Text(
                                       "See All",
@@ -620,12 +646,16 @@ class _MainScreenState extends State<MainScreen>
                                   )
                                 : Column(
                                     children: [
-                                      ...recommendedActivities.map((activity) {
-                                        return EventCard(
-                                          context: context,
-                                          activity: activity,
-                                        );
-                                      }).toList(),
+                                      ...recommendedActivities
+                                          .where((activity) =>
+                                              activity['availability_status'] ==
+                                              true)
+                                          .map((activity) => EventCard(
+                                                context: context,
+                                                activity: activity,
+                                              ))
+                                          .toList(),
+
                                       SizedBox(
                                           height: MediaQuery.of(context)
                                                   .size

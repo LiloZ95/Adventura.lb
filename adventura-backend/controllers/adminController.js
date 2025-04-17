@@ -110,18 +110,41 @@ const getTopGender = async (req, res) => {
 };
 */
 // Monthly Revenue Trends
-const getMonthlyRevenue = async (req, res) => {
+const getRevenueByType = async (req, res) => {
+  const { type = 'monthly' } = req.query;
+
+  let groupBy, label;
+  switch (type) {
+    case 'daily':
+      groupBy = `TO_CHAR(payment_date, 'YYYY-MM-DD')`;
+      label = 'day';
+      break;
+    case 'weekly':
+      groupBy = `TO_CHAR(DATE_TRUNC('week', payment_date), 'IYYY-IW')`; // ISO week
+      label = 'week';
+      break;
+    case 'yearly':
+      groupBy = `TO_CHAR(payment_date, 'YYYY')`;
+      label = 'year';
+      break;
+    case 'monthly':
+    default:
+      groupBy = `TO_CHAR(payment_date, 'YYYY-MM')`;
+      label = 'month';
+      break;
+  }
+
   try {
-    const revenueMonthly = await sequelize.query(`
-      SELECT TO_CHAR(payment_date, 'YYYY-MM') AS month, SUM(amount) AS revenue
+    const data = await sequelize.query(`
+      SELECT ${groupBy} AS ${label}, SUM(amount) AS revenue
       FROM payment
-      GROUP BY month
-      ORDER BY month ASC
+      GROUP BY ${label}
+      ORDER BY ${label} ASC
     `, {
       type: sequelize.QueryTypes.SELECT
     });
 
-    res.json(revenueMonthly);
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -172,7 +195,27 @@ const modifyUser = async (req, res) => {
       res.status(500).json({ error: 'Internal server error' });
     }
   };
-
+  const getTopClients = async (req, res) => {
+    try {
+      const topClients = await sequelize.query(`
+        SELECT 
+          u.first_name || ' ' || u.last_name AS client_name,
+          COUNT(b.booking_id) AS booking_count
+        FROM client c
+        JOIN "USER" u ON u.user_id = c.user_id
+        JOIN booking b ON b.client_id = c.client_id
+        GROUP BY client_name
+        ORDER BY booking_count DESC
+        LIMIT 5;
+      `, { type: sequelize.QueryTypes.SELECT });
+  
+      res.json(topClients);
+    } catch (err) {
+      console.error("Error fetching top clients:", err);
+      res.status(500).json({ error: err.message });
+    }
+  };
+  
 
   const getTopProviders = async (req, res) => {
     try {
@@ -185,12 +228,75 @@ const modifyUser = async (req, res) => {
         JOIN activities a ON a.provider_id = p.provider_id
         GROUP BY provider_name
         ORDER BY activity_count DESC
-        LIMIT 3;
+        LIMIT 5;
       `, { type: sequelize.QueryTypes.SELECT });
   
       res.json(topProviders);
     } catch (err) {
       console.error("Error fetching top providers:", err);
+      res.status(500).json({ error: err.message });
+    }
+  };
+  // In adminController.js or a similar file
+  const getTopCategories = async (req, res) => {
+    try {
+      const result = await sequelize.query(`
+        SELECT c.name AS category_name, COUNT(a.activity_id) AS activity_count
+        FROM category c
+        LEFT JOIN activities a ON a.category_id = c.category_id
+        GROUP BY c.name
+        ORDER BY activity_count DESC
+        LIMIT 5;
+      `, { type: sequelize.QueryTypes.SELECT });
+  
+      res.json(result);
+    } catch (err) {
+      console.error('Error in getTopCategories:', err);
+      res.status(500).json({ error: err.message });
+    }
+  };
+  const getTopCategoriesByRevenue = async (req, res) => {
+    try {
+      const data = await sequelize.query(`
+        SELECT 
+          c.name AS category_name,
+          SUM(p.amount) AS total_revenue
+        FROM payment p
+        JOIN booking b ON b.booking_id = p.booking_id
+        JOIN activities a ON a.activity_id = b.activity_id
+        JOIN category c ON c.category_id = a.category_id
+        WHERE p.payment_status = 'paid'
+        GROUP BY c.name
+        ORDER BY total_revenue DESC;
+      `, {
+        type: sequelize.QueryTypes.SELECT
+      });
+  
+      res.json(data);
+    } catch (err) {
+      console.error("Error in getTopCategoriesByRevenue:", err);
+      res.status(500).json({ error: err.message });
+    }
+  };
+  const getTopCitiesByRevenue = async (req, res) => {
+    try {
+      const data = await sequelize.query(`
+        SELECT 
+          a.location AS city,
+          SUM(p.amount) AS total_revenue
+        FROM payment p
+        JOIN booking b ON b.booking_id = p.booking_id
+        JOIN activities a ON a.activity_id = b.activity_id
+        GROUP BY city
+        ORDER BY total_revenue DESC
+        LIMIT 5;
+      `, {
+        type: sequelize.QueryTypes.SELECT
+      });
+  
+      res.json(data);
+    } catch (err) {
+      console.error("Error fetching top cities by revenue:", err);
       res.status(500).json({ error: err.message });
     }
   };
@@ -200,6 +306,7 @@ const modifyUser = async (req, res) => {
 module.exports = {
     getAllUsers,
     modifyUser,
+    getTopCategoriesByRevenue,
     deleteUser,
     getAllActivities,
     modifyActivity,
@@ -208,7 +315,10 @@ module.exports = {
     getSummaryStats,
     getTopProviders,
     getBestActivity,
+    getTopClients,
+    getTopCitiesByRevenue,
    // getTopGender,
-    getMonthlyRevenue
+    getRevenueByType,
+    getTopCategories
   };
   
