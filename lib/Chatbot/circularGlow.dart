@@ -34,32 +34,31 @@ class _CircularGlowBorderState extends State<CircularGlowBorder>
   }
 
   @override
-Widget build(BuildContext context) {
-  return AnimatedBuilder(
-    animation: _controller,
-    builder: (_, __) {
-      return Stack(
-        alignment: Alignment.center,
-        children: [
-          // Glow behind
-          Positioned.fill(
-            child: IgnorePointer(
-              child: CustomPaint(
-                painter: _GlowPainter(
-                  opacity: _opacity.value,
-                  angle: _controller.value * 6.28319,
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (_, __) {
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            // Glow behind
+            Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(
+                  painter: _GlowPainter(
+                    opacity: _opacity.value,
+                    angle: _controller.value * 6.28319,
+                  ),
                 ),
               ),
             ),
-          ),
-          // Directly return the child (no inner container)
-          widget.child,
-        ],
-      );
-    },
-  );
-}
-
+            // Directly return the child (no inner container)
+            widget.child,
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _GlowPainter extends CustomPainter {
@@ -84,11 +83,12 @@ class _GlowPainter extends CustomPainter {
         transform: GradientRotation(angle),
       ).createShader(rect)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 5.5  // ✅ very tight line
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4); // ✅ very minimal blur
+      ..strokeWidth = 4 // ✅ very tight line
+      ..maskFilter =
+          const MaskFilter.blur(BlurStyle.normal, 2); // ✅ very minimal blur
 
     final rrect = RRect.fromRectAndRadius(
-      rect.deflate(5),  // ✅ barely shrinks the glow to hug the card
+      rect.deflate(5), // ✅ barely shrinks the glow to hug the card
       Radius.circular(20),
     );
 
@@ -99,4 +99,3 @@ class _GlowPainter extends CustomPainter {
   bool shouldRepaint(covariant _GlowPainter oldDelegate) =>
       oldDelegate.opacity != opacity || oldDelegate.angle != angle;
 }
-
