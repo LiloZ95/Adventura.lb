@@ -322,19 +322,19 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
                                       children: [
                                         buildQuickChip("❓ What is Adventura?",
                                             "What is Adventura?"),
-                                        buildQuickChip("🗓 How do I book?",
+                                        buildQuickChip("📆 How do I book?",
                                             "How do I book an activity?"),
                                         buildQuickChip(
-                                            "🧭 Suggest something random",
-                                            "I want to discover something fun"),
-                                        buildQuickChip("🥾 Hiking near me",
-                                            "Show me hiking activities near me"),
+                                            "📍 What locations do you support",
+                                            "What locations do you support"),
+                                        buildQuickChip("🚗 Car Events near me",
+                                            "Show me some car events"),
                                         buildQuickChip(
-                                            "🌊 Sea trips in Batroun",
-                                            "Can you suggest some sea trips in Batroun?"),
+                                            "🌊 Sea trips in Tripoli",
+                                            "Can you suggest some sea trips in Tripoli?"),
                                         buildQuickChip(
-                                            "💰 Do you have group discounts?",
-                                            "Do you offer group discounts?"),
+                                            "💰 how can i become a organizer?",
+                                            "how can i become a organizer?"),
                                       ],
                                     ),
                                   ],
