@@ -3,7 +3,10 @@ import 'dart:io';
 import 'package:adventura/BecomeProvider/WelcomePage.dart';
 import 'package:adventura/MyListings/Mylisting.dart';
 import 'package:adventura/OrganizerProfile/OrganizerProfile.dart';
+import 'package:adventura/userinformation/widgets/Agreements.dart';
+import 'package:adventura/userinformation/widgets/RateUs.dart';
 import 'package:adventura/userinformation/widgets/Security&Privacy.dart';
+import 'package:adventura/userinformation/widgets/report_bug_page.dart';
 import 'package:adventura/userinformation/widgets/theme_button.dart';
 import 'package:adventura/userinformation/widgets/custom_page_route.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +19,8 @@ import 'dart:convert';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:adventura/userinformation/widgets/profileOptionTile.dart';
 import 'package:hive/hive.dart';
+import 'package:adventura/userinformation/widgets/PaymentMethod.dart';
+import 'package:adventura/userinformation/widgets/PersonalInformition.dart';
 
 class UserInfo extends StatefulWidget {
   @override
@@ -326,7 +331,11 @@ class _UserInfoState extends State<UserInfo> {
                     title: "Security & Privacy",
                     subtitle: "Change your security and privacy settings",
                     onTap: () {
-                      // Import your route file
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => SecurityPrivacyPage()),
+                      );
 
                       Navigator.push(
                         context,
@@ -341,7 +350,11 @@ class _UserInfoState extends State<UserInfo> {
                     subtitle:
                         "Manage saved cards and bank accounts that are linked to this account",
                     onTap: () {
-                      // handle tap
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => AddPaymentMethodPage()),
+                      );
                     },
                   ),
 
@@ -351,7 +364,11 @@ class _UserInfoState extends State<UserInfo> {
                     title: "Personal Details",
                     subtitle: "Update your personal informatin",
                     onTap: () {
-                      // handle tap
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => PersonalDetailsPage()),
+                      );
                     },
                   ),
 
@@ -381,7 +398,11 @@ class _UserInfoState extends State<UserInfo> {
                     icon: Icons.warning,
                     title: "Our Agreements",
                     onTap: () {
-                      // handle tap
+                       Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => ProviderAgreementPage()),
+                      );
                     },
                   ),
                   //rate us options
@@ -390,7 +411,11 @@ class _UserInfoState extends State<UserInfo> {
                     title: "Rate Us",
                     subtitle: "Write a review in App store",
                     onTap: () {
-                      // handle tap
+                     Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => RateUsPage()),
+                      );
                     },
                   ),
                   //report bugs
@@ -398,7 +423,11 @@ class _UserInfoState extends State<UserInfo> {
                     icon: Icons.bug_report,
                     title: "Report a bug",
                     onTap: () {
-                      // handle tap
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => ReportBugPage()),
+                      );
                     },
                   ),
                   //delete account option
@@ -529,56 +558,106 @@ class _UserInfoState extends State<UserInfo> {
   }
 
   // ✅ Delete Account Confirmation Dialog
-  void _showDeleteConfirmationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text(
-            "⚠️ Confirm Account Deletion",
-            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-          ),
-          content: Text(
-            "Are you sure you want to delete your account? This action is irreversible.",
-            style: TextStyle(fontSize: 16),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                print("❌ User canceled account deletion.");
-                Navigator.pop(dialogContext);
-              },
-              child: Text("Cancel", style: TextStyle(color: Colors.grey)),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(dialogContext); // ✅ Close dialog first
-
-                print("🚨 User confirmed account deletion.");
-
-                bool success = await UserService.deleteUser(context);
-                if (success) {
-                  if (context.mounted) {
-                    // ✅ Check if the widget is still in the tree
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (context) => LoginPage()),
-                      (route) => false,
-                    );
-                  }
-                } else {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Failed to delete account.")),
-                    );
-                  }
-                }
-              },
-              child: Text("Delete", style: TextStyle(color: Colors.red)),
+ void _showDeleteConfirmationDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    barrierDismissible: false, // Prevent closing by tapping outside
+    builder: (BuildContext dialogContext) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+        contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+        title: Row(
+          children: const [
+            Icon(Icons.warning_amber_rounded, color: Colors.blue),
+            SizedBox(width: 8),
+            Text(
+              "Confirm Deletion",
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: Colors.blue,
+              ),
             ),
           ],
-        );
-      },
-    );
-  }
+        ),
+        content: const Text(
+          "Are you sure you want to delete your account?\nThis action is permanent and cannot be undone.",
+          style: TextStyle(
+            fontSize: 15,
+            fontFamily: 'Poppins',
+            color: Colors.black87,
+          ),
+        ),
+        actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        actionsAlignment: MainAxisAlignment.spaceBetween,
+        actions: [
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Colors.grey),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            onPressed: () {
+              print("❌ User canceled account deletion.");
+              Navigator.pop(dialogContext);
+            },
+            child: const Text(
+              "Cancel",
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+
+              print("🚨 User confirmed account deletion.");
+              bool success = await UserService.deleteUser(context);
+
+              if (success) {
+                if (context.mounted) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginPage()),
+                    (route) => false,
+                  );
+                }
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Failed to delete account."),
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text(
+              "Delete",
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
+
 }
