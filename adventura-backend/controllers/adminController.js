@@ -301,6 +301,38 @@ const modifyUser = async (req, res) => {
     }
   };
   
+  const getPayments = async (req, res) => {
+    const { status } = req.query;
+  
+    try {
+      const payments = await sequelize.query(
+        `
+        SELECT 
+          p.payment_id,
+          p.amount,
+          p.payment_date,
+          p.payment_status,
+          b.booking_id,
+          b.client_id,
+          u.first_name || ' ' || u.last_name AS client_name
+        FROM payment p
+        JOIN booking b ON p.booking_id = b.booking_id
+        JOIN client c ON c.client_id = b.client_id
+        JOIN "USER" u ON u.user_id = c.user_id
+        ${status ? "WHERE p.payment_status = :status" : ""}
+        ORDER BY p.payment_date DESC
+        `,
+        {
+          replacements: status ? { status } : {},
+          type: sequelize.QueryTypes.SELECT
+        }
+      );
+  
+      res.json(payments);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  };
   
   
 module.exports = {
@@ -319,6 +351,7 @@ module.exports = {
     getTopCitiesByRevenue,
    // getTopGender,
     getRevenueByType,
+    getPayments,
     getTopCategories
   };
   

@@ -18,5 +18,6 @@ router.get('/top-providers', adminController.getTopProviders);
 router.get('/top-categories', adminController.getTopCategories);
 router.get('/top-categories-revenue', adminController.getTopCategoriesByRevenue);
 router.get('/top-cities-revenue', adminController.getTopCitiesByRevenue);
+router.get('/transactions', adminController.getPayments);
 
 module.exports = router;
