@@ -350,11 +350,11 @@ class _UserInfoState extends State<UserInfo> {
                     title: "Security & Privacy",
                     subtitle: "Change your security and privacy settings",
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => SecurityPrivacyPage()),
-                      );
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //       builder: (context) => SecurityPrivacyPage()),
+                      // );
 
                       Navigator.push(
                         context,

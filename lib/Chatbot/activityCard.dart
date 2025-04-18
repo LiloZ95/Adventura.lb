@@ -8,12 +8,12 @@ class ActivityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String name = card['name'] ?? 'No Name';
-    final String description = card['description'] ?? '';
-    final double price = (card['price'] ?? 0).toDouble();
-    final int seats = card['seats'] ?? 0;
-    final String location = card['location'] ?? 'Unknown';
-    final String dateLabel = card['date_label'] ?? 'TBA';
+    // final String name = card['name'] ?? 'No Name';
+    // final String description = card['description'] ?? '';
+    // final double price = (card['price'] ?? 0).toDouble();
+    // final int seats = card['seats'] ?? 0;
+    // final String location = card['location'] ?? 'Unknown';
+    // final String dateLabel = card['date_label'] ?? 'TBA';
     final bool isTrending = card['is_trending'] ?? false;
 
     return isTrending

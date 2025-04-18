@@ -1,4 +1,10 @@
+import 'dart:convert';
+
+import 'package:adventura/Services/provider_service.dart';
+import 'package:adventura/config.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'successfully_provider.dart';
@@ -6,7 +12,8 @@ import 'successfully_provider.dart';
 class BusinessInfoStep extends StatefulWidget {
   final VoidCallback onBack;
 
-  const BusinessInfoStep({super.key, required this.onBack, required void Function() onNext});
+  const BusinessInfoStep(
+      {super.key, required this.onBack, required void Function() onNext});
 
   @override
   State<BusinessInfoStep> createState() => _BusinessInfoStepState();
@@ -22,16 +29,16 @@ class _BusinessInfoStepState extends State<BusinessInfoStep> {
   final TextEditingController _tiktokController = TextEditingController();
   final TextEditingController _facebookController = TextEditingController();
 
-  File? _logoImage;
+  XFile? _logoImage;
 
   Future<void> pickLogoImage() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (picked != null) {
-      setState(() => _logoImage = File(picked.path));
+      setState(() => _logoImage = XFile(picked.path));
     }
   }
 
-  void _handleNext() {
+  void _handleNext() async {
     if (_formKey.currentState!.validate()) {
       if (_logoImage == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -39,18 +46,28 @@ class _BusinessInfoStepState extends State<BusinessInfoStep> {
         );
         return;
       }
-      Navigator.of(context).push(
-        PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 600),
-          pageBuilder: (_, __, ___) => const ProviderWelcomeScreen(),
-          transitionsBuilder: (_, animation, __, child) {
-            return FadeTransition(
-              opacity: animation,
-              child: child,
-            );
-          },
-        ),
+
+      final error = await ProviderService.submitFullProviderRequest(
+        businessName: _businessNameController.text,
+        description: _descriptionController.text,
+        businessEmail: _emailController.text,
+        businessCity: _cityController.text,
+        logoFile: _logoImage!,
+        instagram: _instagramController.text,
+        tiktok: _tiktokController.text,
+        facebook: _facebookController.text,
       );
+
+      if (error == null) {
+        Navigator.of(context).pushReplacement(MaterialPageRoute(
+          builder: (_) => const ProviderWelcomeScreen(),
+        ));
+        await Hive.box('providerFlow').clear();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error)),
+        );
+      }
     }
   }
 
@@ -120,31 +137,29 @@ class _BusinessInfoStepState extends State<BusinessInfoStep> {
             buildLabel("Business Logo"),
             const SizedBox(height: 8),
             GestureDetector(
-              onTap: pickLogoImage,
-              child: Center(
-                child: _logoImage == null
-                    ? CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.grey.shade200,
-                        child: const Icon(Icons.add_photo_alternate_outlined,
-                            size: 32, color: Colors.grey),
-                      )
-                    : CircleAvatar(
-                        radius: 50,
-                        backgroundImage: FileImage(_logoImage!),
-                      ),
-              ),
-            ),
+                onTap: pickLogoImage,
+                child: Center(
+                  child: buildLogoPreview(),
+                )),
             const SizedBox(height: 24),
 
             // Social Media (optional)
             buildLabel("Social Media Links", optional: true),
             const SizedBox(height: 8),
-            buildSocialField(_instagramController, hint: "Instagram", leading: Icons.camera_alt_outlined, leadingColor: Color(0xFFE1306C)),
+            buildSocialField(_instagramController,
+                hint: "Instagram",
+                leading: Icons.camera_alt_outlined,
+                leadingColor: Color(0xFFE1306C)),
             const SizedBox(height: 10),
-            buildSocialField(_tiktokController, hint: "TikTok", leading: Icons.music_note, leadingColor: Color(0xFF010101)),
+            buildSocialField(_tiktokController,
+                hint: "TikTok",
+                leading: Icons.music_note,
+                leadingColor: Color(0xFF010101)),
             const SizedBox(height: 10),
-            buildSocialField(_facebookController, hint: "Facebook", leading: Icons.facebook, leadingColor: Color(0xFF4267B2)),
+            buildSocialField(_facebookController,
+                hint: "Facebook",
+                leading: Icons.facebook,
+                leadingColor: Color(0xFF4267B2)),
             const SizedBox(height: 24),
 
             // Navigation Buttons
@@ -217,8 +232,40 @@ class _BusinessInfoStepState extends State<BusinessInfoStep> {
     );
   }
 
+  Widget buildLogoPreview() {
+    if (_logoImage == null) {
+      return CircleAvatar(
+        radius: 50,
+        backgroundColor: Colors.grey.shade200,
+        child: const Icon(Icons.add_photo_alternate_outlined,
+            size: 32, color: Colors.grey),
+      );
+    }
+
+    return FutureBuilder(
+      future: _logoImage!.readAsBytes(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done &&
+            snapshot.hasData) {
+          return CircleAvatar(
+            radius: 50,
+            backgroundImage: MemoryImage(snapshot.data!),
+          );
+        } else {
+          return const CircleAvatar(
+            radius: 50,
+            child: CircularProgressIndicator(),
+          );
+        }
+      },
+    );
+  }
+
   Widget buildTextField(TextEditingController controller,
-      {required String hint, int maxLines = 1, IconData? icon, bool required = true}) {
+      {required String hint,
+      int maxLines = 1,
+      IconData? icon,
+      bool required = true}) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
@@ -227,7 +274,8 @@ class _BusinessInfoStepState extends State<BusinessInfoStep> {
           : null,
       style: const TextStyle(fontFamily: 'poppins'),
       decoration: InputDecoration(
-        prefixIcon: icon != null ? Icon(icon, size: 20, color: Colors.blue) : null,
+        prefixIcon:
+            icon != null ? Icon(icon, size: 20, color: Colors.blue) : null,
         hintText: hint,
         hintStyle: const TextStyle(fontFamily: 'poppins', color: Colors.grey),
         border: OutlineInputBorder(
@@ -249,13 +297,16 @@ class _BusinessInfoStepState extends State<BusinessInfoStep> {
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: Colors.red, width: 1.8),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }
 
   Widget buildSocialField(TextEditingController controller,
-      {required String hint, required IconData leading, required Color leadingColor}) {
+      {required String hint,
+      required IconData leading,
+      required Color leadingColor}) {
     return TextFormField(
       controller: controller,
       validator: (value) => null,
@@ -276,7 +327,8 @@ class _BusinessInfoStepState extends State<BusinessInfoStep> {
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: Colors.blue, width: 1.8),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }

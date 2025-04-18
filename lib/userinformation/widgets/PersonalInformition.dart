@@ -1,11 +1,11 @@
 import 'dart:convert';
+import 'package:adventura/config.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:adventura/Services/auth_service.dart';
 
-const String baseUrl = 'https://your-api-url.com'; // Replace with your backend URL
 
 class PersonalDetailsPage extends StatefulWidget {
   const PersonalDetailsPage({super.key});

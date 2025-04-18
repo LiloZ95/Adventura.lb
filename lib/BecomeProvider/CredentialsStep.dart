@@ -1,7 +1,7 @@
 import 'package:adventura/Services/provider_service.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 
 class CredentialsStep extends StatefulWidget {
   final VoidCallback onNext;
@@ -151,24 +151,29 @@ class _CredentialsStepState extends State<CredentialsStep> {
                           if (_govIDImage == null || _selfieImage == null) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                  content: Text(
-                                      "Please upload required documents.")),
+                                content:
+                                    Text("Please upload required documents."),
+                              ),
                             );
                             return;
                           }
 
-                          final error =
-                              await ProviderService.uploadProviderDocuments(
-                            govId: _govIDImage!,
-                            selfie: _selfieImage!,
-                            certificate: _certificateImage,
-                          );
+                          try {
+                            final box = await Hive.openBox('providerFlow');
+                            await box.put('govIdPath', _govIDImage!.path);
+                            await box.put('selfiePath', _selfieImage!.path);
 
-                          if (error == null) {
-                            widget.onNext();
-                          } else {
-                            ScaffoldMessenger.of(context)
-                                .showSnackBar(SnackBar(content: Text(error)));
+                            if (_certificateImage != null) {
+                              await box.put(
+                                  'certificatePath', _certificateImage!.path);
+                            }
+
+                            widget.onNext(); // ✅ Go to next step
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text("Something went wrong: $e")),
+                            );
                           }
                         }
                       : null,

@@ -27,11 +27,11 @@ const ProviderRequest = sequelize.define(
 		},
 		gov_id_url: {
 			type: DataTypes.STRING,
-			allowNull: false,
+			allowNull: true,
 		},
 		selfie_url: {
 			type: DataTypes.STRING,
-			allowNull: false,
+			allowNull: true,
 		},
 		certificate_url: {
 			type: DataTypes.STRING,

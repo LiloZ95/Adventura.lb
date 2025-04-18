@@ -231,12 +231,12 @@ class _CancelBookingScreenState extends State<CancelBookingScreen> {
                               width: double.infinity,
                               child: ElevatedButton(
                                 onPressed: () async {
-                                  final reason = selectedReason == 4
-                                      ? reasonController.text.trim()
-                                      : reasons[selectedReason ?? 0];
+                                  // final reason = selectedReason == 4
+                                  //     ? reasonController.text.trim()
+                                  //     : reasons[selectedReason ?? 0];
 
-                                  final bookingId = widget
-                                      .bookingId; // ✅ already passed from parent
+                                  // final bookingId = widget
+                                  //     .bookingId; // ✅ already passed from parent
 
                                   final response = await http.put(
                                     Uri.parse(
