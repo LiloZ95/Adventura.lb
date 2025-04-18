@@ -1,8 +1,10 @@
+import 'package:adventura/userinformation/widgets/theme_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:adventura/main_api.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+ // ✅ NEW import
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,15 +16,15 @@ void main() async {
     print("⚠️ Could not load .env file: $e");
   }
 
-  // ✅ Initialize Hive for both web & mobile
   await Hive.initFlutter();
-  await Hive.openBox('authBox'); // Open Hive storage
+  await Hive.openBox('authBox');
   await Hive.openBox('chatMessages');
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => MainApi()),
+        ChangeNotifierProvider(create: (context) => ThemeController()), // ✅ NEW provider
       ],
       child: MyApp(),
     ),
@@ -32,14 +34,16 @@ void main() async {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Consumer<MainApi>(
-        builder: (context, mainApi, child) {
-          return mainApi
-              .initialScreen; // ✅ Redirect to correct screen based on login status
-        },
-      ),
+    return Consumer2<MainApi, ThemeController>(
+      builder: (context, mainApi, themeController, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData.light(),
+          darkTheme: ThemeData.dark(),
+          themeMode: themeController.currentTheme, // ✅ Control theme globally
+          home: mainApi.initialScreen,
+        );
+      },
     );
   }
 }

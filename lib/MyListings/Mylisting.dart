@@ -3,14 +3,12 @@ import 'package:adventura/event_cards/Cards.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/services/activity_service.dart';
 import 'package:hive/hive.dart';
-
 import 'widgets/expired_listings_modal.dart';
 
 class MyListingsPage extends StatefulWidget {
   final bool cameFromCreation;
 
-  const MyListingsPage({Key? key, this.cameFromCreation = false})
-      : super(key: key);
+  const MyListingsPage({Key? key, this.cameFromCreation = false}) : super(key: key);
 
   @override
   _MyListingsPageState createState() => _MyListingsPageState();
@@ -45,17 +43,16 @@ class _MyListingsPageState extends State<MyListingsPage> {
         _loading = false;
       });
 
-      // Optional: Show a dialog or redirect
       Future.delayed(Duration.zero, () {
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
-            title: Text("Access Denied"),
-            content: Text("Only providers can view listings."),
+            title: const Text("Access Denied"),
+            content: const Text("Only providers can view listings."),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text("OK"),
+                child: const Text("OK"),
               )
             ],
           ),
@@ -68,15 +65,11 @@ class _MyListingsPageState extends State<MyListingsPage> {
     final confirmed = await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Confirm Delete"),
-        content: Text("Are you sure you want to delete this listing?"),
+        title: const Text("Confirm Delete"),
+        content: const Text("Are you sure you want to delete this listing?"),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text("Cancel")),
-          TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text("Delete")),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Delete")),
         ],
       ),
     );
@@ -84,14 +77,13 @@ class _MyListingsPageState extends State<MyListingsPage> {
     if (confirmed == true) {
       final success = await ActivityService.deleteActivity(activityId);
       if (success) {
-        // ✅ Re-fetch from server so both UI and modal are up-to-date
-        await loadListings(); // re-fetch main active listings
+        await loadListings(); // Refresh data
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Listing archived (moved to expired).")),
+          const SnackBar(content: Text("Listing archived (moved to expired).")),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to delete listing.")),
+          const SnackBar(content: Text("Failed to delete listing.")),
         );
       }
     }
@@ -99,6 +91,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return WillPopScope(
       onWillPop: () async {
         if (widget.cameFromCreation) {
@@ -112,11 +106,14 @@ class _MyListingsPageState extends State<MyListingsPage> {
         return true;
       },
       child: Scaffold(
+        backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF6F6F6),
         appBar: AppBar(
+          backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
+          elevation: 0.5,
+          centerTitle: true,
           leading: widget.cameFromCreation
               ? IconButton(
-                  icon: const Icon(Icons.arrow_back,
-                      color: Color.fromARGB(255, 0, 0, 0)),
+                  icon: Icon(Icons.arrow_back, color: isDarkMode ? Colors.white : Colors.black),
                   onPressed: () {
                     Navigator.pushAndRemoveUntil(
                       context,
@@ -126,23 +123,18 @@ class _MyListingsPageState extends State<MyListingsPage> {
                   },
                 )
               : null,
-          title: const Text(
+          title: Text(
             "My Listings",
             style: TextStyle(
               fontFamily: "Poppins",
-              color: Color.fromARGB(255, 0, 0, 0),
+              color: isDarkMode ? Colors.white : Colors.black,
               fontWeight: FontWeight.w600,
               fontSize: 20,
             ),
           ),
-          centerTitle: true,
-          backgroundColor: Colors.white,
-          elevation: 0.5,
         ),
-        backgroundColor: const Color(0xFFF6F6F6),
         body: Column(
           children: [
-            // 🔹 Expired Listings Button
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
               child: Align(
@@ -162,16 +154,17 @@ class _MyListingsPageState extends State<MyListingsPage> {
                 ),
               ),
             ),
-
-            // 🔹 Listings content
             Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _myListings.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
                             "No listings found.",
-                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: isDarkMode ? Colors.white70 : Colors.grey,
+                            ),
                           ),
                         )
                       : ListView.builder(
@@ -182,36 +175,25 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
                             return TweenAnimationBuilder(
                               tween: Tween<double>(begin: 0.95, end: 1.0),
-                              duration:
-                                  Duration(milliseconds: 400 + index * 80),
+                              duration: Duration(milliseconds: 400 + index * 80),
                               curve: Curves.easeOutBack,
                               builder: (context, scale, child) {
-                                return Transform.scale(
-                                    scale: scale, child: child);
+                                return Transform.scale(scale: scale, child: child);
                               },
                               child: Padding(
                                 padding: const EdgeInsets.only(bottom: 20),
                                 child: Stack(
                                   clipBehavior: Clip.none,
                                   children: [
-                                    // 🎯 The card itself
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        EventCard(
-                                            context: context,
-                                            activity: activity),
-                                      ],
-                                    ),
-
-                                    // 🗑️ Delete button with elevated glassy style
+                                    EventCard(context: context, activity: activity),
                                     Positioned(
                                       top: 13,
                                       right: 24,
                                       child: GestureDetector(
-                                        onTap: () => _confirmAndDelete(index,
-                                            activity["activity_id"].toString()),
+                                        onTap: () => _confirmAndDelete(
+                                          index,
+                                          activity["activity_id"].toString(),
+                                        ),
                                         child: Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
@@ -224,21 +206,17 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                               end: Alignment.bottomRight,
                                             ),
                                             border: Border.all(
-                                                color: Colors.white
-                                                    .withOpacity(0.6),
-                                                width: 1),
+                                                color: Colors.white.withOpacity(0.6), width: 1),
                                             shape: BoxShape.circle,
                                             boxShadow: [
                                               BoxShadow(
-                                                color: Colors.black
-                                                    .withOpacity(0.2),
+                                                color: Colors.black.withOpacity(0.2),
                                                 blurRadius: 10,
-                                                offset: Offset(0, 4),
+                                                offset: const Offset(0, 4),
                                               ),
                                             ],
                                           ),
-                                          child: const Icon(Icons.delete,
-                                              size: 20, color: Colors.red),
+                                          child: const Icon(Icons.delete, size: 20, color: Colors.red),
                                         ),
                                       ),
                                     ),

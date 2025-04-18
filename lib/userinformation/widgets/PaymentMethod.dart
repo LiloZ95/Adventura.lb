@@ -31,23 +31,26 @@ class _AddPaymentMethodPageState extends State<AddPaymentMethodPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
         elevation: 0.5,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: Colors.black87),
+          icon: Icon(Icons.arrow_back_ios_new,
+              size: 20, color: isDarkMode ? Colors.white : Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           "Add Payment Method",
           style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.bold,
             fontSize: 18,
-            color: Colors.black87,
+            color: isDarkMode ? Colors.white : Colors.black87,
           ),
         ),
       ),
@@ -57,7 +60,7 @@ class _AddPaymentMethodPageState extends State<AddPaymentMethodPage> {
           padding: const EdgeInsets.all(20),
           child: Center(
             child: Card(
-              color: Colors.grey[100], // ✅ Grey background for the form card
+              color: isDarkMode ? const Color(0xFF2C2C2C) : Colors.grey[100],
               elevation: 12,
               shadowColor: Colors.black.withOpacity(0.1),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -68,32 +71,37 @@ class _AddPaymentMethodPageState extends State<AddPaymentMethodPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         "Select Card Type",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Poppins',
                           fontSize: 16,
-                          color: Colors.black,
+                          color: isDarkMode ? Colors.white : Colors.black,
                         ),
                       ),
                       const SizedBox(height: 12),
                       Row(
                         children: cardTypes.map((type) {
+                          final isSelected = cardType == type;
                           return GestureDetector(
                             onTap: () => setState(() => cardType = type),
                             child: Container(
                               margin: const EdgeInsets.only(right: 12),
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                               decoration: BoxDecoration(
-                                color: cardType == type ? Colors.blue : Colors.white,
+                                color: isSelected
+                                    ? Colors.blue
+                                    : (isDarkMode ? Colors.black : Colors.white),
                                 border: Border.all(color: Colors.blue, width: 1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 type,
                                 style: TextStyle(
-                                  color: cardType == type ? Colors.white : Colors.blue,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.blue,
                                   fontFamily: 'Poppins',
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -108,6 +116,7 @@ class _AddPaymentMethodPageState extends State<AddPaymentMethodPage> {
                         controller: nameController,
                         hint: "Your name",
                         icon: LucideIcons.user,
+                        isDarkMode: isDarkMode,
                       ),
                       const SizedBox(height: 16),
                       _buildInputField(
@@ -121,6 +130,7 @@ class _AddPaymentMethodPageState extends State<AddPaymentMethodPage> {
                           LengthLimitingTextInputFormatter(19),
                           _CardNumberInputFormatter()
                         ],
+                        isDarkMode: isDarkMode,
                       ),
                       const SizedBox(height: 16),
                       Row(
@@ -137,6 +147,7 @@ class _AddPaymentMethodPageState extends State<AddPaymentMethodPage> {
                                 LengthLimitingTextInputFormatter(5),
                                 _ExpiryDateInputFormatter()
                               ],
+                              isDarkMode: isDarkMode,
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -152,6 +163,7 @@ class _AddPaymentMethodPageState extends State<AddPaymentMethodPage> {
                                 FilteringTextInputFormatter.digitsOnly,
                               ],
                               obscureText: true,
+                              isDarkMode: isDarkMode,
                             ),
                           ),
                         ],
@@ -199,6 +211,7 @@ class _AddPaymentMethodPageState extends State<AddPaymentMethodPage> {
   Widget _buildInputField({
     required String label,
     required TextEditingController controller,
+    required bool isDarkMode,
     String? hint,
     IconData? icon,
     TextInputType? keyboardType,
@@ -210,10 +223,10 @@ class _AddPaymentMethodPageState extends State<AddPaymentMethodPage> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w500,
             fontFamily: 'Poppins',
-            color: Colors.black,
+            color: isDarkMode ? Colors.white : Colors.black,
           ),
         ),
         const SizedBox(height: 8),
@@ -222,25 +235,39 @@ class _AddPaymentMethodPageState extends State<AddPaymentMethodPage> {
           obscureText: obscureText,
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
-          style: const TextStyle(fontFamily: 'Poppins'),
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            color: isDarkMode ? Colors.white : Colors.black,
+          ),
           decoration: InputDecoration(
             prefixIcon: icon != null ? Icon(icon, size: 20, color: Colors.blue) : null,
             hintText: hint,
-            hintStyle: const TextStyle(fontFamily: 'Poppins'),
+            hintStyle: TextStyle(
+              fontFamily: 'Poppins',
+              color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+            ),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
             contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.blue.withOpacity(0.4), width: 1),
+              borderSide: BorderSide(
+                color: Colors.blue.withOpacity(0.4),
+                width: 1,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Colors.blue, width: 2),
+              borderSide: const BorderSide(
+                color: Colors.blue,
+                width: 2,
+              ),
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.blue.withOpacity(0.3)),
+              borderSide: BorderSide(
+                color: Colors.blue.withOpacity(0.3),
+              ),
             ),
           ),
           validator: (value) {

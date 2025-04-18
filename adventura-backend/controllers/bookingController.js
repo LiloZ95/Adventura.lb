@@ -1,7 +1,6 @@
 // const bookingService = require("../services/bookingService");
 
-const { Activity, Booking, availability, Client, User } = require("../models");
-const { Op } = require("sequelize");
+const { Activity, Booking, availability, Client, User, Notification  } = require("../models");
 
 const getUserBookings = async (req, res) => {
 	try {
@@ -147,9 +146,14 @@ const createBooking = async (req, res) => {
 		availabilitySlot.available_seats -= 1;
 		await availabilitySlot.save();
 
-		res
-			.status(201)
-			.json({ message: "Booking successful", booking: newBooking });
+		await Notification.create({
+			user_id: client_id,
+			title: "Booking Successful",
+			description: `Your booking for "${activity.name}" on ${booking_date} at ${slot} was successful.`,
+			icon: "book",
+		  });
+
+		res.status(201).json({ message: "Booking successful", booking: newBooking });
 	} catch (error) {
 		console.error("❌ Booking error:", error);
 		console.error("🪵 Full stack:", error.stack);
@@ -176,6 +180,39 @@ const updateBookingStatus = async (req, res) => {
 		res.status(500).json({ message: "Server error" });
 	}
 };
+const cancelBooking = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const { reason } = req.body;
+
+		const booking = await Booking.findByPk(id, {
+			include: [{ model: Activity, as: "activity" }],
+		});
+
+		if (!booking) {
+			return res.status(404).json({ message: "Booking not found" });
+		}
+
+		booking.status = "cancelled";
+		booking.cancelled_at = new Date();
+		booking.cancellation_reason = reason;
+		await booking.save();
+
+		// Send success response early
+		res.status(200).json({ message: "Booking cancelled successfully" });
+
+		// Create notification
+		await Notification.create({
+			user_id: booking.client_id,
+			title: "Booking Cancelled",
+			description: `Your booking for "${booking.activity.name}" on ${booking.booking_date} is cancelled.`,
+			icon_type: "cancel", // 👈 correct field name and value
+		});
+	} catch (error) {
+		console.error("❌ Error cancelling booking:", error);
+		res.status(500).json({ message: "Server error" });
+	}
+};
 
 module.exports = {
 	checkAvailability,
@@ -183,4 +220,5 @@ module.exports = {
 	getBookingById,
 	updateBookingStatus,
 	getUserBookings,
+	cancelBooking // ✅ this MUST be here
 };
