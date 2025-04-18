@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:adventura/Services/auth_service.dart';
 
-const String baseUrl = 'https://your-api-url.com'; // 🔁 Replace with your backend URL
+const String baseUrl = 'https://your-api-url.com'; // Replace with your backend URL
 
 class PersonalDetailsPage extends StatefulWidget {
   const PersonalDetailsPage({super.key});
@@ -91,26 +91,38 @@ class _PersonalDetailsPageState extends State<PersonalDetailsPage> {
     required TextEditingController controller,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
+    required bool isDarkMode,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(fontFamily: 'Poppins', color: Colors.blue)),
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            color: Colors.blue,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
           readOnly: !isEditing,
           keyboardType: keyboardType,
-          style: const TextStyle(fontFamily: 'Poppins'),
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            color: isDarkMode ? Colors.white : Colors.black,
+          ),
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: Colors.blue),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
             hintText: 'Enter $label',
-            hintStyle: const TextStyle(fontFamily: 'Poppins'),
-            contentPadding:
-                const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+            hintStyle: TextStyle(
+              fontFamily: 'Poppins',
+              color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+            ),
+            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(color: Colors.blue.withOpacity(0.4)),
@@ -129,24 +141,32 @@ class _PersonalDetailsPageState extends State<PersonalDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F8),
+      backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : const Color(0xFFF2F4F8),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "Personal Details",
           style: TextStyle(
-              fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 18),
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: isDarkMode ? Colors.white : Colors.black,
+          ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
         elevation: 0.5,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+          icon: Icon(Icons.arrow_back_ios_new,
+              color: isDarkMode ? Colors.white : Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(LucideIcons.pencil, color: Colors.grey),
+            icon: Icon(LucideIcons.pencil,
+                color: isDarkMode ? Colors.white70 : Colors.grey),
             onPressed: () => setState(() => isEditing = !isEditing),
           )
         ],
@@ -157,9 +177,10 @@ class _PersonalDetailsPageState extends State<PersonalDetailsPage> {
           key: _formKey,
           child: Card(
             elevation: 10,
-            color: Colors.white,
+            color: isDarkMode ? const Color(0xFF2C2C2C) : Colors.white,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24)),
+              borderRadius: BorderRadius.circular(24),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -168,6 +189,7 @@ class _PersonalDetailsPageState extends State<PersonalDetailsPage> {
                     label: "Full Name",
                     controller: fullNameController,
                     icon: LucideIcons.user,
+                    isDarkMode: isDarkMode,
                   ),
                   const SizedBox(height: 16),
                   buildField(
@@ -175,6 +197,7 @@ class _PersonalDetailsPageState extends State<PersonalDetailsPage> {
                     controller: emailController,
                     icon: LucideIcons.mail,
                     keyboardType: TextInputType.emailAddress,
+                    isDarkMode: isDarkMode,
                   ),
                   const SizedBox(height: 16),
                   buildField(
@@ -182,6 +205,7 @@ class _PersonalDetailsPageState extends State<PersonalDetailsPage> {
                     controller: phoneController,
                     icon: LucideIcons.phone,
                     keyboardType: TextInputType.phone,
+                    isDarkMode: isDarkMode,
                   ),
                   const SizedBox(height: 30),
                   if (isEditing)

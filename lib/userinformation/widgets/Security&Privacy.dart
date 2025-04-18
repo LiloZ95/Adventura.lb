@@ -43,23 +43,25 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage>
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: const Color(0xFFEAF2FB),
+        backgroundColor:
+            isDarkMode ? const Color(0xFF1F1F1F) : const Color(0xFFEAF2FB),
         body: SafeArea(
           child: Stack(
             children: [
-              // 🔙 Back Arrow (top-left)
               Positioned(
                 top: 10,
                 left: 10,
                 child: MouseRegion(
                   cursor: SystemMouseCursors.click,
                   child: IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.arrow_back_ios_new_rounded,
-                      color: Colors.blue,
+                      color: isDarkMode ? Colors.white : Colors.blue,
                       size: 24,
                     ),
                     tooltip: 'Back',
@@ -68,7 +70,6 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage>
                 ),
               ),
 
-              // 💠 Main Card
               Center(
                 child: FadeTransition(
                   opacity: _fadeAnimation,
@@ -83,29 +84,32 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage>
                           constraints: const BoxConstraints(maxWidth: 500),
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.85),
+                            color: isDarkMode
+                                ? Colors.white.withOpacity(0.06)
+                                : Colors.white.withOpacity(0.85),
                             borderRadius: BorderRadius.circular(30),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.blueGrey.withOpacity(0.1),
+                                color: Colors.black.withOpacity(0.05),
                                 blurRadius: 40,
                                 spreadRadius: 4,
                               ),
                             ],
                           ),
                           child: Column(
-                            mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Row(
+                              Row(
                                 children: [
                                   CircleAvatar(
                                     radius: 20,
-                                    backgroundColor: Colors.white,
-                                    child: Icon(Icons.shield_rounded,
+                                    backgroundColor: isDarkMode
+                                        ? Colors.white.withOpacity(0.1)
+                                        : Colors.white,
+                                    child: const Icon(Icons.shield_rounded,
                                         size: 20, color: Color(0xFF3B82F6)),
                                   ),
-                                  SizedBox(width: 10),
+                                  const SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
                                       "Security & Privacy",
@@ -125,6 +129,7 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage>
                                 controller: emailController,
                                 label: "New Email",
                                 icon: Icons.email_outlined,
+                                isDarkMode: isDarkMode,
                               ),
                               const SizedBox(height: 20),
 
@@ -134,6 +139,7 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage>
                                 visible: isPasswordVisible,
                                 toggle: () => setState(() =>
                                     isPasswordVisible = !isPasswordVisible),
+                                isDarkMode: isDarkMode,
                               ),
                               const SizedBox(height: 20),
 
@@ -143,6 +149,7 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage>
                                 visible: isConfirmVisible,
                                 toggle: () => setState(() =>
                                     isConfirmVisible = !isConfirmVisible),
+                                isDarkMode: isDarkMode,
                               ),
                               const SizedBox(height: 30),
 
@@ -171,21 +178,22 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage>
     required TextEditingController controller,
     required String label,
     required IconData icon,
+    required bool isDarkMode,
   }) {
     return Focus(
       onFocusChange: (_) => setState(() {}),
       child: TextField(
         controller: controller,
-        style: const TextStyle(
-          color: Colors.black87,
+        style: TextStyle(
+          color: isDarkMode ? Colors.white : Colors.black87,
           fontSize: 16,
           fontFamily: 'Poppins',
         ),
         cursorColor: Colors.blueAccent,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(
-            color: Colors.grey,
+          labelStyle: TextStyle(
+            color: isDarkMode ? Colors.grey[400] : Colors.grey,
             fontWeight: FontWeight.w500,
             fontSize: 14,
           ),
@@ -201,7 +209,9 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage>
                 )
               : null,
           filled: true,
-          fillColor: Colors.white.withOpacity(0.8),
+          fillColor: isDarkMode
+              ? Colors.white.withOpacity(0.05)
+              : Colors.white.withOpacity(0.8),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           enabledBorder: OutlineInputBorder(
@@ -226,22 +236,23 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage>
     required String label,
     required bool visible,
     required VoidCallback toggle,
+    required bool isDarkMode,
   }) {
     return Focus(
       onFocusChange: (_) => setState(() {}),
       child: TextField(
         controller: controller,
         obscureText: !visible,
-        style: const TextStyle(
-          color: Colors.black87,
+        style: TextStyle(
+          color: isDarkMode ? Colors.white : Colors.black87,
           fontSize: 16,
           fontFamily: 'Poppins',
         ),
         cursorColor: Colors.blueAccent,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(
-            color: Colors.grey,
+          labelStyle: TextStyle(
+            color: isDarkMode ? Colors.grey[400] : Colors.grey,
             fontWeight: FontWeight.w500,
             fontSize: 14,
           ),
@@ -255,7 +266,9 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage>
             ),
           ),
           filled: true,
-          fillColor: Colors.white.withOpacity(0.8),
+          fillColor: isDarkMode
+              ? Colors.white.withOpacity(0.05)
+              : Colors.white.withOpacity(0.8),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           enabledBorder: OutlineInputBorder(

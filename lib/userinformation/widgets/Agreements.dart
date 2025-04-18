@@ -21,37 +21,45 @@ class _ProviderAgreementPageState extends State<ProviderAgreementPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F8),
+      backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : const Color(0xFFF2F4F8),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "Provider Terms & Conditions",
           style: TextStyle(
-              fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 18),
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: isDarkMode ? Colors.white : Colors.black,
+          ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
         elevation: 1,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.blue),
+          icon: Icon(Icons.arrow_back_ios_new, color: Colors.blue),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Card(
+          color: isDarkMode ? const Color(0xFF2C2C2C) : Colors.white,
           elevation: 10,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
               children: [
-                const Text(
+                Text(
                   "By submitting this application to become a provider on the Adventura platform, you agree to the following terms:",
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
+                    color: isDarkMode ? Colors.white : Colors.black,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -115,12 +123,22 @@ class _ProviderAgreementPageState extends State<ProviderAgreementPage> {
                     Checkbox(
                       value: isAccepted,
                       activeColor: Colors.blue,
+                      checkColor: Colors.white,
+                      fillColor: MaterialStateProperty.resolveWith((states) {
+                        if (states.contains(MaterialState.selected)) {
+                          return Colors.blue;
+                        }
+                        return isDarkMode ? Colors.white54 : Colors.black54;
+                      }),
                       onChanged: (val) => setState(() => isAccepted = val!),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         "I have read and agree to Adventura’s Provider Terms & Conditions.",
-                        style: TextStyle(fontFamily: 'Poppins'),
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          color: isDarkMode ? Colors.white : Colors.black,
+                        ),
                       ),
                     )
                   ],
@@ -169,6 +187,8 @@ class _AgreementPoint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),
       child: Column(
@@ -186,10 +206,10 @@ class _AgreementPoint extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             content,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Poppins',
               fontSize: 13.5,
-              color: Colors.black87,
+              color: isDarkMode ? Colors.white70 : Colors.black87,
             ),
           ),
         ],

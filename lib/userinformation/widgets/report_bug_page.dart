@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:image_picker/image_picker.dart';
@@ -15,6 +14,7 @@ class _ReportBugPageState extends State<ReportBugPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController descriptionController = TextEditingController();
   String selectedType = 'UI Bug';
+  File? selectedImage;
 
   final List<Map<String, dynamic>> bugTypes = [
     {'label': 'UI Bug', 'icon': LucideIcons.layoutDashboard},
@@ -23,7 +23,6 @@ class _ReportBugPageState extends State<ReportBugPage> {
     {'label': 'Payment', 'icon': LucideIcons.creditCard},
     {'label': 'Other', 'icon': LucideIcons.moreHorizontal},
   ];
-  File? selectedImage;
 
   Future<void> pickImage() async {
     final picker = ImagePicker();
@@ -50,156 +49,27 @@ class _ReportBugPageState extends State<ReportBugPage> {
     });
   }
 
-  Widget buildBugTypeDropdown() {
-    return DropdownButtonFormField<String>(
-      value: selectedType,
-      decoration: InputDecoration(
-        labelText: "Type of issue",
-        labelStyle: const TextStyle(fontFamily: 'Poppins'),
-        filled: true,
-        fillColor: Colors.grey[100],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-      ),
-      icon: const Icon(Icons.expand_more),
-      dropdownColor: Colors.white,
-      style: const TextStyle(fontFamily: 'Poppins', color: Colors.black),
-      items: bugTypes.map((type) {
-        return DropdownMenuItem<String>(
-          value: type['label'],
-          child: Row(
-            children: [
-              Icon(type['icon'], size: 18, color: Colors.blue),
-              const SizedBox(width: 8),
-              Text(type['label']),
-            ],
-          ),
-        );
-      }).toList(),
-      onChanged: (val) {
-        if (val != null) setState(() => selectedType = val);
-      },
-    );
-  }
-
-  Widget buildHeaderSection() {
-    return Column(
-      children: [
-        const Icon(LucideIcons.bug, size: 38, color: Colors.blue),
-        const SizedBox(height: 12),
-        const Text(
-          "Report a Bug",
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
-        ),
-        const SizedBox(height: 6),
-        const Text(
-          "Help us squash bugs by telling us what went wrong.",
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 14,
-            color: Colors.black54,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
-  Widget buildDescriptionBox() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextFormField(
-          controller: descriptionController,
-          maxLines: 5,
-          style: const TextStyle(fontFamily: 'Poppins'),
-          validator: (val) =>
-              val == null || val.isEmpty ? "Please describe the issue" : null,
-          decoration: InputDecoration(
-            hintText: "Describe what happened...",
-            hintStyle: const TextStyle(fontFamily: 'Poppins'),
-            filled: true,
-            fillColor: Colors.grey[100],
-            contentPadding: const EdgeInsets.all(16),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Align(
-          alignment: Alignment.centerRight,
-          child: Text(
-            "${descriptionController.text.length}/500",
-            style: const TextStyle(
-              fontSize: 12,
-              fontFamily: 'Poppins',
-              color: Colors.grey,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget buildScreenshotUploadPlaceholder() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          const Icon(LucideIcons.image, color: Colors.grey),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Text(
-              "Add screenshot (optional)",
-              style: TextStyle(fontFamily: 'Poppins'),
-            ),
-          ),
-          TextButton(
-            onPressed: pickImage, // ✅ THIS MAKES IT WORK!
-            child: const Text(
-              "Browse",
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w500,
-                color: Colors.blue,
-              ),
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F8),
+      backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : const Color(0xFFF3F4F8),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "Bug Report",
           style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.bold,
             fontSize: 18,
+            color: isDarkMode ? Colors.white : Colors.black,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
         elevation: 1,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+          icon: Icon(Icons.arrow_back_ios_new, color: isDarkMode ? Colors.white : Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -208,9 +78,8 @@ class _ReportBugPageState extends State<ReportBugPage> {
         child: Center(
           child: Card(
             elevation: 12,
-            color: Colors.white,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            color: isDarkMode ? const Color(0xFF2C2C2C) : Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Form(
@@ -218,13 +87,13 @@ class _ReportBugPageState extends State<ReportBugPage> {
                 child: ListView(
                   shrinkWrap: true,
                   children: [
-                    buildHeaderSection(),
+                    _buildHeaderSection(isDarkMode),
                     const SizedBox(height: 28),
-                    buildBugTypeDropdown(),
+                    _buildBugTypeDropdown(isDarkMode),
                     const SizedBox(height: 20),
-                    buildDescriptionBox(),
+                    _buildDescriptionBox(isDarkMode),
                     const SizedBox(height: 20),
-                    buildScreenshotUploadPlaceholder(),
+                    _buildScreenshotUploadPlaceholder(isDarkMode),
                     const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
@@ -254,6 +123,151 @@ class _ReportBugPageState extends State<ReportBugPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderSection(bool isDarkMode) {
+    return Column(
+      children: [
+        const Icon(LucideIcons.bug, size: 38, color: Colors.blue),
+        const SizedBox(height: 12),
+        Text(
+          "Report a Bug",
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+            color: isDarkMode ? Colors.white : Colors.black,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          "Help us squash bugs by telling us what went wrong.",
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 14,
+            color: isDarkMode ? Colors.grey[400] : Colors.black54,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBugTypeDropdown(bool isDarkMode) {
+    return DropdownButtonFormField<String>(
+      value: selectedType,
+      decoration: InputDecoration(
+        labelText: "Type of issue",
+        labelStyle: const TextStyle(fontFamily: 'Poppins'),
+        filled: true,
+        fillColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.grey[100],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+      ),
+      icon: Icon(Icons.expand_more, color: isDarkMode ? Colors.white : Colors.black),
+      dropdownColor: isDarkMode ? const Color(0xFF2C2C2C) : Colors.white,
+      style: TextStyle(
+        fontFamily: 'Poppins',
+        color: isDarkMode ? Colors.white : Colors.black,
+      ),
+      items: bugTypes.map((type) {
+        return DropdownMenuItem<String>(
+          value: type['label'],
+          child: Row(
+            children: [
+              Icon(type['icon'], size: 18, color: Colors.blue),
+              const SizedBox(width: 8),
+              Text(type['label']),
+            ],
+          ),
+        );
+      }).toList(),
+      onChanged: (val) {
+        if (val != null) setState(() => selectedType = val);
+      },
+    );
+  }
+
+  Widget _buildDescriptionBox(bool isDarkMode) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: descriptionController,
+          maxLines: 5,
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            color: isDarkMode ? Colors.white : Colors.black,
+          ),
+          validator: (val) =>
+              val == null || val.isEmpty ? "Please describe the issue" : null,
+          decoration: InputDecoration(
+            hintText: "Describe what happened...",
+            hintStyle: TextStyle(
+              fontFamily: 'Poppins',
+              color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+            ),
+            filled: true,
+            fillColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.grey[100],
+            contentPadding: const EdgeInsets.all(16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Align(
+          alignment: Alignment.centerRight,
+          child: Text(
+            "${descriptionController.text.length}/500",
+            style: TextStyle(
+              fontSize: 12,
+              fontFamily: 'Poppins',
+              color: isDarkMode ? Colors.grey[400] : Colors.grey,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildScreenshotUploadPlaceholder(bool isDarkMode) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF1F1F1F) : Colors.grey[100],
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Icon(LucideIcons.image, color: isDarkMode ? Colors.white70 : Colors.grey),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "Add screenshot (optional)",
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                color: isDarkMode ? Colors.white : Colors.black,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: pickImage,
+            child: const Text(
+              "Browse",
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w500,
+                color: Colors.blue,
+              ),
+            ),
+          )
+        ],
       ),
     );
   }
