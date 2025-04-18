@@ -133,6 +133,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     double screenHeight = MediaQuery.of(context).size.height;
     final double lat = widget.activity["latitude"] ?? 34.4381;
     final double lng = widget.activity["longitude"] ?? 35.8308;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
 
     List<dynamic> rawImages = widget.activity["activity_images"] ?? [];
     List<String> images = rawImages
@@ -146,7 +148,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor:  isDarkMode ? const Color(0xFF121212) : Colors.white,
+
       appBar: _buildAppBar(screenWidth),
       body: SingleChildScrollView(
         child: Padding(
@@ -170,7 +173,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
+                    color: isDarkMode ? const Color(0xFF121212) : Colors.white,
+
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -195,11 +199,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.location_on, size: 18, color: Colors.grey),
+                  Icon(Icons.location_on, size: 18, color: isDarkMode ? const Color(0xFF121212) : Colors.grey),
                   SizedBox(width: 4),
                   Text(
                     widget.activity["location"] ?? "Unknown Location",
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                    style: TextStyle(fontSize: 14, color:isDarkMode ? const Color(0xFF121212) : Colors.grey),
                   ),
                 ],
               ),
@@ -268,7 +272,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   },
                   child: CircleAvatar(
                     radius: 24,
-                    backgroundColor: Colors.grey.shade200,
+                    backgroundColor: isDarkMode ? const Color(0xFF121212) : Colors.grey,
                     child: ClipOval(
                       child: Builder(
                         builder: (context) {
@@ -284,7 +288,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
                                   Icon(Icons.person,
-                                      size: 28, color: Colors.grey),
+                                      size: 28, color: isDarkMode ? const Color(0xFF121212) : Colors.grey),
                             );
                           } else {
                             return Image.asset(

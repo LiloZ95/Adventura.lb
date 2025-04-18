@@ -1,5 +1,6 @@
-import 'dart:convert';
+// ✅ Updated OrganizerProfilePage with full dark mode support.
 
+import 'dart:convert';
 import 'package:adventura/config.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -27,7 +28,6 @@ class OrganizerProfilePage extends StatefulWidget {
   State<OrganizerProfilePage> createState() => _OrganizerProfilePageState();
 }
 
-
 class _OrganizerProfilePageState extends State<OrganizerProfilePage> {
   bool isFollowing = false;
   int followersCount = 0;
@@ -35,7 +35,7 @@ class _OrganizerProfilePageState extends State<OrganizerProfilePage> {
   @override
   void initState() {
     super.initState();
-    followersCount = 0; // You can replace this with a backend value
+    followersCount = 0;
   }
 
   void toggleFollow() {
@@ -71,39 +71,36 @@ class _OrganizerProfilePageState extends State<OrganizerProfilePage> {
     }
   }
 
-
-Future<String> fetchProviderProfilePicture(String userId) async {
-  final response = await http.get(
-    Uri.parse('$baseUrl/users/get-profile-picture/$userId'),
-  );
-
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    return data['image'] ?? "";
-  } else {
-    print("❌ Failed to fetch provider image: ${response.body}");
-    return "";
+  Future<String> fetchProviderProfilePicture(String userId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/users/get-profile-picture/$userId'),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['image'] ?? "";
+    } else {
+      return "";
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
     final themeColor = Colors.blueAccent;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: isDarkMode ? const Color(0xFF121212) : Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
         elevation: 0.4,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+          icon: Icon(Icons.arrow_back_ios_new, color: isDarkMode ? Colors.white : Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           "Organizer Profile",
           style: TextStyle(
-            color: Colors.black,
+            color: isDarkMode ? Colors.white : Colors.black,
             fontWeight: FontWeight.w600,
             fontFamily: 'Poppins',
           ),
@@ -111,20 +108,17 @@ Future<String> fetchProviderProfilePicture(String userId) async {
         centerTitle: true,
         actions: [
           PopupMenuButton<int>(
-            icon: const Icon(LucideIcons.moreVertical, color: Colors.black),
+            icon: Icon(LucideIcons.moreVertical, color: isDarkMode ? Colors.white : Colors.black),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             onSelected: onMoreOptionSelected,
             itemBuilder: (context) => [
               PopupMenuItem(
-                
                 value: 0,
                 child: Row(
                   children: const [
-                    
                     Icon(Icons.notifications_active, color: Colors.blue, size: 20),
                     SizedBox(width: 10),
-                    Text("Allow Notifications",
-                    style: TextStyle(fontFamily: "poppins"),),
+                    Text("Allow Notifications", style: TextStyle(fontFamily: "poppins")),
                   ],
                 ),
               ),
@@ -134,8 +128,7 @@ Future<String> fetchProviderProfilePicture(String userId) async {
                   children: const [
                     Icon(Icons.flag, color: Colors.blue, size: 20),
                     SizedBox(width: 10),
-                    Text("Report",
-                    style: TextStyle(fontFamily: "poppins"),),
+                    Text("Report", style: TextStyle(fontFamily: "poppins")),
                   ],
                 ),
               ),
@@ -145,8 +138,7 @@ Future<String> fetchProviderProfilePicture(String userId) async {
                   children: const [
                     Icon(Icons.block, color: Colors.blue, size: 20),
                     SizedBox(width: 10),
-                    Text("Block Organizer",
-                    style: TextStyle(fontFamily: "poppins"),),
+                    Text("Block Organizer", style: TextStyle(fontFamily: "poppins")),
                   ],
                 ),
               ),
@@ -159,19 +151,19 @@ Future<String> fetchProviderProfilePicture(String userId) async {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
           child: Column(
             children: [
-              // Profile Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
+                    if (!isDarkMode)
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
                   ],
                 ),
                 child: Column(
@@ -186,19 +178,20 @@ Future<String> fetchProviderProfilePicture(String userId) async {
                     const SizedBox(height: 16),
                     Text(
                       widget.organizerName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
                         fontFamily: 'Poppins',
+                        color: isDarkMode ? Colors.white : Colors.black,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       widget.bio,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey,
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey,
                         fontFamily: 'Poppins',
                         height: 1.5,
                       ),
@@ -207,14 +200,14 @@ Future<String> fetchProviderProfilePicture(String userId) async {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildStat("Events", widget.activities.length.toString()),
+                        _buildStat("Events", widget.activities.length.toString(), isDarkMode),
                         Container(
                           width: 1,
                           height: 24,
                           color: Colors.grey[300],
                           margin: const EdgeInsets.symmetric(horizontal: 24),
                         ),
-                        _buildStat("Followers", followersCount.toString()),
+                        _buildStat("Followers", followersCount.toString(), isDarkMode),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -269,11 +262,8 @@ Future<String> fetchProviderProfilePicture(String userId) async {
                   ],
                 ),
               ),
-
               const SizedBox(height: 32),
-
-              // Upcoming Events
-              const Align(
+              Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   "Upcoming Events",
@@ -281,6 +271,7 @@ Future<String> fetchProviderProfilePicture(String userId) async {
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     fontFamily: 'Poppins',
+                    color: isDarkMode ? Colors.white : Colors.black,
                   ),
                 ),
               ),
@@ -305,23 +296,24 @@ Future<String> fetchProviderProfilePicture(String userId) async {
     );
   }
 
-  Widget _buildStat(String label, String value) {
+  Widget _buildStat(String label, String value, bool isDarkMode) {
     return Column(
       children: [
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 18,
             fontFamily: 'Poppins',
+            color: isDarkMode ? Colors.white : Colors.black,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
-            color: Colors.grey,
+            color: isDarkMode ? Colors.grey[400] : Colors.grey,
             fontFamily: 'Poppins',
           ),
         ),

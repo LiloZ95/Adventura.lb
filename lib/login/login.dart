@@ -1,5 +1,6 @@
 import 'package:adventura/HomeControllerScreen.dart';
 import 'package:adventura/Services/auth_service.dart';
+import 'package:adventura/login/FadeSlidePageRoute.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:adventura/OTP/ForgotPasswordScreen.dart';
 import 'package:adventura/signUp%20page/Signup.dart';
@@ -420,7 +421,7 @@ class _LoginPageState extends State<LoginPage> {
                             children: [
                               TextSpan(
                                 text: "Create an account",
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: Colors.blue,
                                   fontFamily: 'Poppins',
                                   fontWeight: FontWeight.bold,
@@ -429,11 +430,10 @@ class _LoginPageState extends State<LoginPage> {
                                   ..onTap = () {
                                     Navigator.push(
                                       context,
-                                      MaterialPageRoute(
-                                          builder: (context) => SignUpPage()),
+                                      CinematicPageRoute(page: SignUpPage()),
                                     );
                                   },
-                              ),
+                              )
                             ],
                           ),
                         ),

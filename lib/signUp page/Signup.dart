@@ -1,5 +1,6 @@
 import 'package:adventura/HomeControllerScreen.dart';
 import 'package:adventura/Services/otp_service.dart';
+import 'package:adventura/login/FadeSlidePageRoute.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:ui';
@@ -389,10 +390,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                   recognizer: TapGestureRecognizer()
                                     ..onTap = () {
                                       Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) => LoginPage()),
-                                      );
+                                      context,
+                                      CinematicPageRoute(page: LoginPage()),
+                                    );
                                     },
                                 ),
                               ],

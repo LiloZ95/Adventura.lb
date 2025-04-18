@@ -5,6 +5,7 @@ class ProfileOptionTile extends StatelessWidget {
   final String title;
   final String? subtitle;
   final VoidCallback? onTap;
+  final bool isDarkMode; // ✅ Receive isDarkMode from parent
 
   const ProfileOptionTile({
     Key? key,
@@ -12,33 +13,42 @@ class ProfileOptionTile extends StatelessWidget {
     required this.title,
     this.subtitle,
     required this.onTap,
+    required this.isDarkMode, // ✅ Required now
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: Colors.black87),
+      leading: Icon(
+        icon,
+        color: isDarkMode ? Colors.white : Colors.black,
+      ),
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
-          color: Colors.black,
+          color: isDarkMode ? Colors.white : Colors.black,
           fontFamily: "Poppins",
-          fontWeight: FontWeight.bold, // If you want bold
+          fontWeight: FontWeight.bold,
         ),
       ),
-      // Show subtitle only if provided
-      subtitle: (subtitle == null)
+      subtitle: subtitle == null
           ? null
           : Text(
               subtitle!,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: isDarkMode
+                    ? Colors.white.withOpacity(0.8) // ✅ Brighter in dark mode
+                    : Colors.grey[700],
                 fontFamily: "Poppins",
               ),
             ),
-      trailing: const Icon(Icons.arrow_forward_ios, color: Colors.black),
+      trailing: Icon(
+        Icons.arrow_forward_ios,
+        color: isDarkMode ? Colors.white : Colors.black,
+        size: 16,
+      ),
       onTap: onTap,
     );
   }

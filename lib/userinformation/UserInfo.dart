@@ -3,9 +3,13 @@ import 'dart:io';
 import 'package:adventura/BecomeProvider/WelcomePage.dart';
 import 'package:adventura/MyListings/Mylisting.dart';
 import 'package:adventura/OrganizerProfile/OrganizerProfile.dart';
+import 'package:adventura/userinformation/widgets/Agreements.dart';
+import 'package:adventura/userinformation/widgets/RateUs.dart';
 import 'package:adventura/userinformation/widgets/Security&Privacy.dart';
+import 'package:adventura/userinformation/widgets/report_bug_page.dart';
 import 'package:adventura/userinformation/widgets/theme_button.dart';
 import 'package:adventura/userinformation/widgets/custom_page_route.dart';
+import 'package:adventura/userinformation/widgets/theme_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/login/login.dart';
 import 'package:adventura/Services/profile_service.dart';
@@ -16,6 +20,9 @@ import 'dart:convert';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:adventura/userinformation/widgets/profileOptionTile.dart';
 import 'package:hive/hive.dart';
+import 'package:adventura/userinformation/widgets/PaymentMethod.dart';
+import 'package:adventura/userinformation/widgets/PersonalInformition.dart';
+import 'package:provider/provider.dart';
 
 class UserInfo extends StatefulWidget {
   @override
@@ -29,7 +36,7 @@ class _UserInfoState extends State<UserInfo> {
   late String profilePicture;
   bool isLoading = true;
   late String userType = "null";
-  bool isDarkMode = false; // Add this in your State class
+  // Add this in your State class
 
   @override
   void initState() {
@@ -63,9 +70,11 @@ class _UserInfoState extends State<UserInfo> {
   Widget build(BuildContext context) {
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor:
+          isDarkMode ? const Color(0xFF1F1F1F) : Colors.white, // 🌙
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(screenHeight * 0.12),
         child: Container(
@@ -74,12 +83,13 @@ class _UserInfoState extends State<UserInfo> {
             left: screenWidth * 0.05,
             right: screenWidth * 0.05,
           ),
-          color: Colors.white,
+          color: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
           child: Row(
             children: [
               // ✅ Back Arrow
               IconButton(
-                icon: Icon(Icons.arrow_back, color: Colors.black),
+                icon: Icon(Icons.arrow_back,
+                    color: isDarkMode ? Colors.white : Colors.black),
                 onPressed: () => Navigator.pop(context),
               ),
               Expanded(
@@ -90,7 +100,7 @@ class _UserInfoState extends State<UserInfo> {
                     fontSize: screenHeight * 0.03,
                     fontWeight: FontWeight.bold,
                     fontFamily: "Poppins",
-                    color: Colors.black,
+                    color: isDarkMode ? Colors.white : Colors.black,
                   ),
                 ),
               ),
@@ -133,12 +143,18 @@ class _UserInfoState extends State<UserInfo> {
                         Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.black, width: 2),
+                            border: Border.all(
+                                color: isDarkMode ? Colors.white : Colors.black,
+                                width: 2),
                           ),
                           child: CircleAvatar(
-                            backgroundColor: Colors.white,
+                            backgroundColor:
+                                isDarkMode ? Colors.black : Colors.white,
                             radius: 25,
-                            child: Icon(Icons.camera_alt, color: Colors.black),
+                            child: Icon(
+                              Icons.camera_alt,
+                              color: isDarkMode ? Colors.white : Colors.black,
+                            ),
                           ),
                         ),
                       ],
@@ -153,7 +169,7 @@ class _UserInfoState extends State<UserInfo> {
                     style: TextStyle(
                       fontSize: screenHeight * 0.025,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: isDarkMode ? Colors.white : Colors.black,
                       fontFamily: "Poppins",
                     ),
                   ),
@@ -167,7 +183,7 @@ class _UserInfoState extends State<UserInfo> {
                     style: TextStyle(
                       fontSize: screenHeight * 0.018,
                       fontWeight: FontWeight.w500,
-                      color: Colors.grey[700],
+                      color: isDarkMode ? Colors.white : Colors.grey[700],
                       fontFamily: "Poppins",
                     ),
                   ),
@@ -177,6 +193,8 @@ class _UserInfoState extends State<UserInfo> {
                   // ✅ Dotted-Border Button
                   if (userType != "provider")
                     buildBusinessAccountButton(
+                      isDarkMode: Theme.of(context).brightness ==
+                          Brightness.dark, // 👈 named
                       screenWidth: screenWidth,
                       onPressed: () {
                         Navigator.push(
@@ -238,7 +256,9 @@ class _UserInfoState extends State<UserInfo> {
                                   style: TextStyle(
                                     fontSize: screenHeight * 0.025,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.black,
+                                    color: isDarkMode
+                                        ? Colors.white
+                                        : Colors.black,
                                     fontFamily: "Poppins",
                                   ),
                                 ),
@@ -246,6 +266,7 @@ class _UserInfoState extends State<UserInfo> {
                             ),
                             SizedBox(height: screenHeight * 0.01),
                             ProfileOptionTile(
+                                isDarkMode: isDarkMode,
                                 icon: Icons.pages_rounded,
                                 title: "Landing page",
                                 onTap: () {
@@ -265,11 +286,13 @@ class _UserInfoState extends State<UserInfo> {
                                   );
                                 }),
                             ProfileOptionTile(
+                              isDarkMode: isDarkMode,
                               icon: Icons.create,
                               title: "Create Reels",
                               onTap: () {},
                             ),
                             ProfileOptionTile(
+                              isDarkMode: isDarkMode,
                               icon: Icons.list_sharp,
                               title: "My listings",
                               onTap: () async {
@@ -289,8 +312,8 @@ class _UserInfoState extends State<UserInfo> {
 
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(
-                                      builder: (context) => MyListingsPage()),
+                                  SecurityPageRoute(
+                                      child: const MyListingsPage()),
                                 );
                               },
                             ),
@@ -313,7 +336,7 @@ class _UserInfoState extends State<UserInfo> {
                         style: TextStyle(
                           fontSize: screenHeight * 0.025,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: isDarkMode ? Colors.white : Colors.black,
                           fontFamily: "Poppins",
                         ),
                       ),
@@ -322,11 +345,16 @@ class _UserInfoState extends State<UserInfo> {
                   SizedBox(height: screenHeight * 0.02),
                   //pivacy and security option
                   ProfileOptionTile(
+                    isDarkMode: isDarkMode,
                     icon: Icons.security,
                     title: "Security & Privacy",
                     subtitle: "Change your security and privacy settings",
                     onTap: () {
-                      // Import your route file
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => SecurityPrivacyPage()),
+                      );
 
                       Navigator.push(
                         context,
@@ -336,22 +364,30 @@ class _UserInfoState extends State<UserInfo> {
                   ),
                   //payment methods option
                   ProfileOptionTile(
+                    isDarkMode: isDarkMode,
                     icon: Icons.payment,
                     title: "Payment Methods",
                     subtitle:
                         "Manage saved cards and bank accounts that are linked to this account",
                     onTap: () {
-                      // handle tap
+                      Navigator.push(
+                        context,
+                        SecurityPageRoute(child: const AddPaymentMethodPage()),
+                      );
                     },
                   ),
 
                   //personal details option
                   ProfileOptionTile(
+                    isDarkMode: isDarkMode,
                     icon: Icons.person,
                     title: "Personal Details",
                     subtitle: "Update your personal informatin",
                     onTap: () {
-                      // handle tap
+                      Navigator.push(
+                        context,
+                        SecurityPageRoute(child: const PersonalDetailsPage()),
+                      );
                     },
                   ),
 
@@ -369,7 +405,7 @@ class _UserInfoState extends State<UserInfo> {
                         style: TextStyle(
                           fontSize: screenHeight * 0.025,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: isDarkMode ? Colors.white : Colors.black,
                           fontFamily: "Poppins",
                         ),
                       ),
@@ -378,31 +414,44 @@ class _UserInfoState extends State<UserInfo> {
                   //agreements sections
                   SizedBox(height: screenHeight * 0.02),
                   ProfileOptionTile(
+                    isDarkMode: isDarkMode,
                     icon: Icons.warning,
                     title: "Our Agreements",
                     onTap: () {
-                      // handle tap
+                      Navigator.push(
+                        context,
+                        SecurityPageRoute(child: const ProviderAgreementPage()),
+                      );
                     },
                   ),
                   //rate us options
                   ProfileOptionTile(
+                    isDarkMode: isDarkMode,
                     icon: Icons.star,
                     title: "Rate Us",
                     subtitle: "Write a review in App store",
                     onTap: () {
-                      // handle tap
+                      Navigator.push(
+                        context,
+                        SecurityPageRoute(child: const RateUsPage()),
+                      );
                     },
                   ),
                   //report bugs
                   ProfileOptionTile(
+                    isDarkMode: isDarkMode,
                     icon: Icons.bug_report,
                     title: "Report a bug",
                     onTap: () {
-                      // handle tap
+                      Navigator.push(
+                        context,
+                        SecurityPageRoute(child: const ReportBugPage()),
+                      );
                     },
                   ),
                   //delete account option
                   ProfileOptionTile(
+                    isDarkMode: isDarkMode,
                     icon: Icons.delete,
                     title: "Close Account",
                     subtitle: "Close your personal account",
@@ -414,6 +463,7 @@ class _UserInfoState extends State<UserInfo> {
                   ),
                   //logout
                   ProfileOptionTile(
+                    isDarkMode: isDarkMode,
                     icon: Icons.logout,
                     title: "Logout",
                     onTap: () async {
@@ -432,8 +482,10 @@ class _UserInfoState extends State<UserInfo> {
               ),
             ),
       floatingActionButton: AppearanceFAB(
-        isDarkMode: isDarkMode,
-        onToggle: () => setState(() => isDarkMode = !isDarkMode),
+        isDarkMode: Provider.of<ThemeController>(context).isDarkMode,
+        onToggle: () {
+          Provider.of<ThemeController>(context, listen: false).toggleTheme();
+        },
       ),
     );
   }
@@ -442,11 +494,12 @@ class _UserInfoState extends State<UserInfo> {
   Widget buildBusinessAccountButton({
     required double screenWidth,
     required VoidCallback onPressed,
+    required bool isDarkMode,
   }) {
     return InkWell(
       onTap: onPressed,
       child: DottedBorder(
-        color: Colors.grey,
+        color: isDarkMode ? Colors.white : Colors.black,
         strokeWidth: 1.5,
         dashPattern: [5, 5],
         borderType: BorderType.RRect,
@@ -455,23 +508,26 @@ class _UserInfoState extends State<UserInfo> {
           width: screenWidth * 0.85,
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: Colors.grey[200],
-          ),
+              borderRadius: BorderRadius.circular(12),
+              color: isDarkMode ? Color(0xFF1F1F1F) : Colors.grey[200]),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Stack(
                 alignment: Alignment.bottomRight,
                 children: [
-                  Icon(Icons.business, size: 32, color: Colors.black),
+                  Icon(Icons.business,
+                      size: 32,
+                      color: isDarkMode ? Colors.white : Colors.black),
                   Positioned(
                     right: -2,
                     bottom: -2,
                     child: CircleAvatar(
                       radius: 8,
                       backgroundColor: Colors.green,
-                      child: Icon(Icons.add, size: 12, color: Colors.white),
+                      child: Icon(Icons.add,
+                          size: 12,
+                          color: isDarkMode ? Colors.white : Colors.black),
                     ),
                   ),
                 ],
@@ -483,7 +539,7 @@ class _UserInfoState extends State<UserInfo> {
                   fontFamily: "poppins",
                   fontSize: 13.5,
                   fontWeight: FontWeight.w500,
-                  color: Colors.black,
+                  color: isDarkMode ? Colors.white : Colors.black,
                 ),
               ),
             ],
@@ -532,34 +588,78 @@ class _UserInfoState extends State<UserInfo> {
   void _showDeleteConfirmationDialog(BuildContext context) {
     showDialog(
       context: context,
+      barrierDismissible: false, // Prevent closing by tapping outside
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: Text(
-            "⚠️ Confirm Account Deletion",
-            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+          title: Row(
+            children: const [
+              Icon(Icons.warning_amber_rounded, color: Colors.blue),
+              SizedBox(width: 8),
+              Text(
+                "Confirm Deletion",
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.blue,
+                ),
+              ),
+            ],
           ),
-          content: Text(
-            "Are you sure you want to delete your account? This action is irreversible.",
-            style: TextStyle(fontSize: 16),
+          content: const Text(
+            "Are you sure you want to delete your account?\nThis action is permanent and cannot be undone.",
+            style: TextStyle(
+              fontSize: 15,
+              fontFamily: 'Poppins',
+              color: Colors.black87,
+            ),
           ),
+          actionsPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          actionsAlignment: MainAxisAlignment.spaceBetween,
           actions: [
-            TextButton(
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.grey),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
               onPressed: () {
                 print("❌ User canceled account deletion.");
                 Navigator.pop(dialogContext);
               },
-              child: Text("Cancel", style: TextStyle(color: Colors.grey)),
+              child: const Text(
+                "Cancel",
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  color: Colors.grey,
+                ),
+              ),
             ),
-            TextButton(
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               onPressed: () async {
-                Navigator.pop(dialogContext); // ✅ Close dialog first
+                Navigator.pop(dialogContext);
 
                 print("🚨 User confirmed account deletion.");
-
                 bool success = await UserService.deleteUser(context);
+
                 if (success) {
                   if (context.mounted) {
-                    // ✅ Check if the widget is still in the tree
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(builder: (context) => LoginPage()),
@@ -569,12 +669,21 @@ class _UserInfoState extends State<UserInfo> {
                 } else {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Failed to delete account.")),
+                      const SnackBar(
+                        content: Text("Failed to delete account."),
+                      ),
                     );
                   }
                 }
               },
-              child: Text("Delete", style: TextStyle(color: Colors.red)),
+              child: const Text(
+                "Delete",
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
           ],
         );
