@@ -24,6 +24,7 @@ class _HomeControllerScreenState extends State<HomeControllerScreen>
   Timer? _scrollStopTimer;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+  String _searchFilterMode = ""; // 👈 Add this to hold the filter
 
   void _onTabTapped(int index) {
     if (_selectedIndex == index) return;
@@ -67,8 +68,19 @@ class _HomeControllerScreenState extends State<HomeControllerScreen>
     });
 
     _screens = [
-      MainScreen(onScrollChanged: _handleScrollChanged),
-      SearchScreen(onScrollChanged: _handleScrollChanged),
+      MainScreen(
+        onScrollChanged: _handleScrollChanged,
+        onTabSwitch: _onTabTapped,
+        setSearchFilterMode: (filter) {
+          setState(() {
+            _searchFilterMode = filter;
+          });
+        },
+      ),
+      SearchScreen(
+        filterMode: _searchFilterMode,
+        onScrollChanged: _handleScrollChanged,
+      ),
       MyBookingsPage(onScrollChanged: _handleScrollChanged),
       Placeholder(),
       ReelsPlayer(

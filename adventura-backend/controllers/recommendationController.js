@@ -250,7 +250,10 @@ async function getRecommendedActivities(userId) {
 
 		// ✅ Step 2: Fetch Recommended Activities (Grouped by `activity_id`)
 		const recommendedActivitiesRaw = await Activity.findAll({
-			where: { category_id: categoryIds },
+			where: {
+				category_id: categoryIds,
+				availability_status: true, // ✅ Only show available activities
+			},
 			include: [
 				{
 					model: ActivityImage,

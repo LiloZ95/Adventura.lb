@@ -4,14 +4,19 @@ require("dotenv").config();
 const bcrypt = require("bcryptjs"); // Use bcryptjs instead of bcrypt
 const jwt = require("jsonwebtoken");
 const { sequelize } = require("../db/db.js"); // Import Sequelize instance
+const { softDeleteActivity } = require("../controllers/activityController");
 const User = require("../models/User");
 const UserPfp = require("../models/UserPfp");
 const UserActivityInteraction = require("../models/UserActivityInteraction");
 const Provider = require("../models/Provider"); // Import Provider model
 const otpStore = {}; // Temporary storage for OTPs (replace with Redis or DB in production)
-const { QueryTypes } = require("sequelize");
+const { QueryTypes, where } = require("sequelize");
 const { distributeUser } = require("../distributeUsers.js");
 const nodemailer = require("nodemailer");
+const Client = require("../models/client.js");
+const Administrator = require("../models/Administrator.js");
+const Booking = require("../models/Booking");
+const Activity = require("../models/Activity");
 
 const refreshTokens = new Set(); // Store refresh tokens (replace with DB for production)
 const getProviderId = async (userId) => {
@@ -311,91 +316,86 @@ const deleteUser = async (req, res) => {
 
 	console.log(`🗑 Attempting to delete user with ID: ${id}`);
 	const transaction = await sequelize.transaction();
-	let deletionFailed = false;
 
 	try {
-		// Delete from provider table
-		try {
-			await sequelize.query(`DELETE FROM provider WHERE user_id = :id`, {
-				replacements: { id },
-				type: QueryTypes.DELETE,
-				transaction,
-			});
-			console.log(`✅ Deleted from provider for user ${id}`);
-		} catch (err) {
-			console.error(`❌ Failed to delete from provider:`, err.message);
-			deletionFailed = true;
-		}
-
-		// Delete from administrator table
-		try {
-			await sequelize.query(`DELETE FROM administrator WHERE user_id = :id`, {
-				replacements: { id },
-				type: QueryTypes.DELETE,
-				transaction,
-			});
-			console.log(`✅ Deleted from administrator for user ${id}`);
-		} catch (err) {
-			console.error(`❌ Failed to delete from administrator:`, err.message);
-			deletionFailed = true;
-		}
-
-		// Delete from client table
-		try {
-			await sequelize.query(`DELETE FROM client WHERE user_id = :id`, {
-				replacements: { id },
-				type: QueryTypes.DELETE,
-				transaction,
-			});
-			console.log(`✅ Deleted from client for user ${id}`);
-		} catch (err) {
-			console.error(`❌ Failed to delete from client:`, err.message);
-			deletionFailed = true;
-		}
-
-		// Delete from user_activity_interaction table using Sequelize model
-		try {
-			await UserActivityInteraction.destroy({
-				where: { user_id: id },
-				transaction,
-			});
-			console.log(`✅ Deleted from user_activity_interaction for user ${id}`);
-		} catch (err) {
-			console.error(
-				`❌ Failed to delete from user_activity_interaction:`,
-				err.message
-			);
-			deletionFailed = true;
-		}
-
-		// If any step failed, rollback
-		if (deletionFailed) {
-			console.warn("⚠️ One or more deletions failed. Rolling back...");
-			await transaction.rollback();
-			return res.status(500).json({
-				success: false,
-				error: "Failed to delete user from one or more related tables.",
-			});
-		}
-
-		// Delete from USER table
-		await User.destroy({
+		// 1️⃣ Handle client bookings
+		const client = await Client.findOne({
 			where: { user_id: id },
 			transaction,
 		});
-		console.log(`✅ User ${id} deleted from USER table.`);
+		if (client) {
+			const clientId = client.client_id;
+			console.log("→ Deleting bookings for client_id:", clientId);
+			await Booking.destroy({ where: { client_id: clientId }, transaction });
+			console.log("   ✅ Client bookings deleted");
+		}
+
+		// 2️⃣ Handle provider activity bookings & soft delete activities
+		const provider = await Provider.findOne({
+			where: { user_id: id },
+			transaction,
+		});
+		if (provider) {
+			const providerId = provider.provider_id;
+
+			const activities = await Activity.findAll({
+				where: { provider_id: providerId },
+				transaction,
+			});
+
+			const activityIds = activities.map((a) => a.activity_id);
+			if (activityIds.length > 0) {
+				console.log(
+					"→ Deleting bookings for provider's activities:",
+					activityIds
+				);
+				await Booking.destroy({
+					where: { activity_id: activityIds },
+					transaction,
+				});
+				console.log("   ✅ Provider's activity bookings deleted");
+
+				console.log("→ Soft-deleting provider's activities...");
+				for (const activity of activities) {
+					await activity.update(
+						{ availability_status: false },
+						{ transaction }
+					);
+					console.log(`   ⛔ Soft-deleted activity ID ${activity.activity_id}`);
+				}
+			}
+		}
+
+		// 3️⃣ Admins — informational only
+		const admin = await Administrator.findOne({
+			where: { user_id: id },
+			transaction,
+		});
+		if (admin) {
+			console.log("ℹ️ Admin account found. Proceeding with deletion.");
+		}
+
+		// 4️⃣ Delete from other tables
+		await Provider.destroy({ where: { user_id: id }, transaction });
+		await Administrator.destroy({ where: { user_id: id }, transaction });
+		await Client.destroy({ where: { user_id: id }, transaction });
+		await UserActivityInteraction.destroy({
+			where: { user_id: id },
+			transaction,
+		});
+		await User.destroy({ where: { user_id: id }, transaction });
 
 		await transaction.commit();
 		res.status(200).json({
 			success: true,
-			message: `User ${id} deleted successfully.`,
+			message: `User ${id} and all related data/bookings/activities deleted.`,
 		});
 	} catch (err) {
-		console.error("❌ Error during user deletion:", err.message);
+		console.error("❌ Error during user deletion:", err);
 		await transaction.rollback();
 		res.status(500).json({
 			success: false,
-			error: "Failed to delete user due to internal server error.",
+			error: err.message || "Server error during user deletion.",
 		});
 	}
 };
