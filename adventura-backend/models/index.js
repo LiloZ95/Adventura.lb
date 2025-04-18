@@ -1,5 +1,5 @@
 const { sequelize } = require("../db/db");
-
+const { DataTypes } = require("sequelize");
 const Activity = require("./Activity");
 const ActivityImage = require("./ActivityImage");
 const TripPlan = require("./TripPlan");
@@ -14,6 +14,10 @@ const Booking = require("./Booking");
 const Feature = require("./Feature");
 const availability = require("./Availability");
 const ActivityCategory = require('./ActivityCategory');
+const NotificationModel = require("./Notification");
+const UniversalNotificationModel = require("./UniversalNotification");
+const Notification = NotificationModel(sequelize, DataTypes);
+const UniversalNotification = UniversalNotificationModel(sequelize, DataTypes);
 
 // ✅ Define Relationships
 Activity.hasMany(ActivityImage, {
@@ -101,6 +105,9 @@ Client.belongsTo(User, {
   as: "user"
 });
 
+User.hasMany(Notification, { foreignKey: "user_id" });
+Notification.belongsTo(User, { foreignKey: "user_id" });
+
 // ✅ Sync DB
 sequelize
   .sync({ alter: { drop: false } })
@@ -123,5 +130,8 @@ module.exports = {
   User,
   Provider,
   availability,
-  ActivityCategory
+  ActivityCategory,
+  Notification,
+  UniversalNotification, // ✅ Include it here
+
 };

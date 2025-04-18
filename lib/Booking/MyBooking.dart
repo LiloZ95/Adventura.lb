@@ -176,7 +176,10 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                                       builder: (context) {
                                         return FractionallySizedBox(
                                           heightFactor: 0.8,
-                                          child: CancelBookingScreen(),
+                                          child: CancelBookingScreen(
+                                            bookingId: booking["bookingId"]
+                                                .replaceAll("#", ""),
+                                          ),
                                         );
                                       },
                                     );

@@ -1,60 +1,84 @@
+import 'package:adventura/Services/NotificationService.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 
-class NotificationScreen extends StatelessWidget {
-  // Sample notifications data
-  final List<Map<String, dynamic>> todayNotifications = [
-    {
-      "icon": Icons.receipt_long,
-      "title": "Booking Successfully",
-      "description": "Your trip has been booked successfully."
-    },
-    {
-      "icon": Icons.lock,
-      "title": "Password Update Successful",
-      "description": "Your password has been placed successfully."
-    },
-    {
-      "icon": Icons.person,
-      "title": "Account Setup Successfully",
-      "description": "Your account has been created."
-    },
-    {
-      "icon": Icons.local_offer,
-      "title": "Best Deal of the Day",
-      "description": "Buy 1 Get 1 Offer on selected product... hurry up"
-    },
-  ];
+class NotificationScreen extends StatefulWidget {
+  const NotificationScreen({Key? key}) : super(key: key);
 
-  final List<Map<String, dynamic>> yesterdayNotifications = [
-    {
-      "icon": Icons.credit_card,
-      "title": "Debit Card Added Successfully",
-      "description": "Your debit card has been added."
-    },
-    {
-      "icon": Icons.confirmation_num,
-      "title": "Get 20% Off On First Trip",
-      "description": "Your order has been placed successfully."
-    },
-  ];
+  @override
+  State<NotificationScreen> createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen> {
+  List<Map<String, dynamic>> notifications = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      final box = await Hive.openBox('authBox');
+      final userId = box.get('userId');
+
+      final userNotifs = await NotificationService.fetchNotifications(userId);
+      final universalNotifs =
+          await NotificationService.fetchUniversalNotifications();
+
+      // Merge and sort all notifications by created_at
+      final allNotifications = [...userNotifs, ...universalNotifs];
+
+      allNotifications.sort((a, b) {
+        final dateA =
+            DateTime.tryParse(a["created_at"] ?? "") ?? DateTime.now();
+        final dateB =
+            DateTime.tryParse(b["created_at"] ?? "") ?? DateTime.now();
+        return dateB.compareTo(dateA); // Most recent first
+      });
+
+      setState(() {
+        notifications = allNotifications;
+        isLoading = false;
+      });
+    } catch (e) {
+      print("❌ Error loading notifications: $e");
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  String formatDate(String timestamp) {
+    try {
+      final date = DateTime.parse(timestamp);
+      return DateFormat('MMM d, yyyy – hh:mm a').format(date);
+    } catch (e) {
+      return '';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // ✅ Full white background
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
           child: Column(
             children: [
-              // ✅ Header with Back Arrow & Centered Title
+              // Header
               Row(
                 children: [
                   IconButton(
-                    icon: Icon(Icons.arrow_back_ios_new, color: Colors.black),
+                    icon: const Icon(Icons.arrow_back_ios_new,
+                        color: Colors.black),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  Expanded(
+                  const Expanded(
                     child: Center(
                       child: Text(
                         "Notifications",
@@ -67,26 +91,29 @@ class NotificationScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(width: 48), // Keeps the title centered
+                  const SizedBox(width: 48),
                 ],
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-              // ✅ Notifications List
+              // Body
               Expanded(
-                child: ListView(
-                  children: [
-                    _buildSectionTitle("Today"),
-                    SizedBox(height: 12), // ✅ Extra space after "Today"
-                    ...todayNotifications.map((notification) => _buildNotificationItem(notification)).toList(),
-                    
-                    SizedBox(height: 20),
-                    
-                    _buildSectionTitle("Yesterday"),
-                    SizedBox(height: 12), // ✅ Extra space after "Yesterday"
-                    ...yesterdayNotifications.map((notification) => _buildNotificationItem(notification)).toList(),
-                  ],
-                ),
+                child: isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : notifications.isEmpty
+                        ? const Center(
+                            child: Text(
+                              "No notifications yet.",
+                              style: TextStyle(fontFamily: "Poppins"),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: notifications.length,
+                            itemBuilder: (context, index) {
+                              final notification = notifications[index];
+                              return _buildNotificationItem(notification);
+                            },
+                          ),
               ),
             ],
           ),
@@ -95,73 +122,110 @@ class NotificationScreen extends StatelessWidget {
     );
   }
 
-  // ✅ Section Title Widget
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          fontFamily: "Poppins",
-          color: Colors.black,
-        ),
-      ),
-    );
+  IconData _getNotificationIcon(String? type) {
+    switch (type) {
+      case 'book':
+        return Icons.receipt_long;
+      case 'cancel':
+        return Icons.cancel;
+      case 'password':
+        return Icons.lock;
+      case 'account':
+        return Icons.person;
+      case 'deal':
+        return Icons.local_offer;
+      case 'card':
+        return Icons.credit_card;
+      case 'ticket':
+        return Icons.confirmation_num;
+      default:
+        return Icons.notifications;
+    }
   }
 
-  // ✅ Static Notification Item (No Clickable Feature)
+  Color _getNotificationColor(String? iconType) {
+    switch (iconType) {
+      case 'book':
+        return const Color(0xFF4CAF50); // Green
+      case 'cancel':
+        return const Color(0xFFF44336); // Red
+      case 'password':
+        return const Color(0xFF3F51B5); // Indigo
+      case 'account':
+        return const Color(0xFF2196F3); // Blue
+      case 'offer':
+        return const Color(0xFFFF9800); // Orange
+      default:
+        return const Color.fromARGB(255, 134, 124, 224); // Default purple
+    }
+  }
+
   Widget _buildNotificationItem(Map<String, dynamic> notification) {
     return Column(
       children: [
         Row(
           children: [
-            // ✅ Circular Icon with White Icon & Purple Background
+            // Circular icon
             Container(
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: Color.fromARGB(255, 134, 124, 224), // ✅ Dark purple background
+                color: _getNotificationColor(notification["icon"]),
                 shape: BoxShape.circle,
               ),
-              child: Icon(notification["icon"], color: Colors.white, size: 24), // ✅ White Icon
+              child: Icon(
+                _getNotificationIcon(notification["icon"]),
+                color: Colors.white,
+                size: 24,
+              ),
             ),
-            SizedBox(width: 12),
 
-            // ✅ Notification Text
+            const SizedBox(width: 12),
+
+            // Text content
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    notification["title"]!,
-                    style: TextStyle(
+                    notification["title"] ?? '',
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                       fontFamily: "Poppins",
                       color: Colors.black,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    notification["description"]!,
-                    style: TextStyle(fontSize: 14, fontFamily: "Poppins", color: Colors.black54),
+                    notification["description"] ?? '',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontFamily: "Poppins",
+                      color: Colors.black54,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    formatDate(notification["created_at"] ?? ''),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontFamily: "Poppins",
+                      color: Colors.grey,
+                    ),
                   ),
                 ],
               ),
             ),
           ],
         ),
-        SizedBox(height: 8),
-
-        // ✅ Grey Divider Inside Card
+        const SizedBox(height: 8),
         Container(
           height: 2,
           color: Colors.grey[300],
-          margin: EdgeInsets.only(left: 30, right: 16),
+          margin: const EdgeInsets.only(left: 30, right: 16),
         ),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
       ],
     );
   }
