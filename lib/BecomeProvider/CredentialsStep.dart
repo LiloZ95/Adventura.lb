@@ -1,3 +1,4 @@
+import 'package:adventura/Services/provider_service.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -19,14 +20,14 @@ class CredentialsStep extends StatefulWidget {
 class _CredentialsStepState extends State<CredentialsStep> {
   bool _agreeToTerms = false;
 
-  File? _govIDImage;
-  File? _selfieImage;
-  File? _certificateImage;
+  XFile? _govIDImage;
+  XFile? _selfieImage;
+  XFile? _certificateImage;
 
-  Future<void> pickImage(Function(File) setImage) async {
+  Future<void> pickImage(Function(XFile) setImage) async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (picked != null) {
-      setImage(File(picked.path));
+      setImage(picked);
     }
   }
 
@@ -138,13 +139,39 @@ class _CredentialsStepState extends State<CredentialsStep> {
                     ),
                   ),
                   child: const Text("Back",
-                      style: TextStyle(color: Colors.red, fontFamily: 'poppins')),
+                      style:
+                          TextStyle(color: Colors.red, fontFamily: 'poppins')),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: _agreeToTerms ? widget.onNext : null,
+                  onPressed: _agreeToTerms
+                      ? () async {
+                          if (_govIDImage == null || _selfieImage == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      "Please upload required documents.")),
+                            );
+                            return;
+                          }
+
+                          final error =
+                              await ProviderService.uploadProviderDocuments(
+                            govId: _govIDImage!,
+                            selfie: _selfieImage!,
+                            certificate: _certificateImage,
+                          );
+
+                          if (error == null) {
+                            widget.onNext();
+                          } else {
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(SnackBar(content: Text(error)));
+                          }
+                        }
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[700],
                     disabledBackgroundColor: Colors.blue.shade200,
@@ -170,8 +197,8 @@ class _CredentialsStepState extends State<CredentialsStep> {
 
   Widget buildUploadSection(
     String title,
-    File? image,
-    Function(File) onImagePicked, {
+    XFile? image,
+    Function(XFile) onImagePicked, {
     bool optional = false,
   }) {
     return Column(
@@ -225,14 +252,24 @@ class _CredentialsStepState extends State<CredentialsStep> {
                               fontSize: 13)),
                     ],
                   )
-                : ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.file(
-                      image,
-                      height: 130,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
+                : FutureBuilder(
+                    future: image.readAsBytes(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.done &&
+                          snapshot.hasData) {
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.memory(
+                            snapshot.data!,
+                            height: 130,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        );
+                      } else {
+                        return const CircularProgressIndicator();
+                      }
+                    },
                   ),
           ),
         )

@@ -120,6 +120,7 @@ class AuthService {
           // ✅ Save user details
           await storageBox.put("firstName", user["first_name"]);
           await storageBox.put("lastName", user["last_name"]);
+          await storageBox.put("userEmail", user["email"]);
           await storageBox.put("profilePicture", user["profilePicture"] ?? "");
 
           String userType = user["user_type"] ?? "client";

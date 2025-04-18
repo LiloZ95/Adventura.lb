@@ -6,7 +6,6 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:adventura/Services/profile_service.dart';
 import 'package:adventura/event_cards/Cards.dart';
 import 'package:adventura/colors.dart';
-import 'package:adventura/search%20screen/searchScreen.dart';
 import 'package:adventura/utils.dart';
 import 'package:adventura/utils/snackbars.dart';
 import 'package:flutter/material.dart';

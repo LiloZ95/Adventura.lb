@@ -71,6 +71,7 @@ const interactionRoutes = require("./routes/interactionRoutes");
 const availabilityRoutes = require("./routes/availabilityRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
 const adminRoutes = require('./routes/adminRoutes');
+const providerRequestRoutes = require("./routes/providerRequestRoutes");
 
 // const socialAuthRoutes = require('./routes/socialAuthRoutes'); // optional
 
@@ -90,6 +91,7 @@ app.use("/api", interactionRoutes); // Interaction endpoints
 app.use("/availability", availabilityRoutes);
 app.use("/booking", bookingRoutes);
 app.use('/admin', adminRoutes); // ← important to keep this prefix!
+app.use("/api", providerRequestRoutes); // Provider request routes
 
 // app.use("/users", socialAuthRoutes); // Optional social login routes
 
