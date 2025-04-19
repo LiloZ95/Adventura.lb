@@ -1,12 +1,7 @@
-import 'dart:convert';
-
 import 'package:adventura/Services/provider_service.dart';
-import 'package:adventura/config.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import 'successfully_provider.dart';
 
 class BusinessInfoStep extends StatefulWidget {

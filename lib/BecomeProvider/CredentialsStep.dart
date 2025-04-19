@@ -1,4 +1,3 @@
-import 'package:adventura/Services/provider_service.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';

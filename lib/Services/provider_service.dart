@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:adventura/config.dart';
 import 'package:flutter/foundation.dart';
