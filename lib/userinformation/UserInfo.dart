@@ -36,7 +36,6 @@ class _UserInfoState extends State<UserInfo> {
   late String profilePicture;
   bool isLoading = true;
   late String userType = "null";
-  
 
   // Add this in your State class
 
@@ -51,7 +50,6 @@ class _UserInfoState extends State<UserInfo> {
     Box box = await Hive.openBox('authBox');
     userType =
         box.get("userType", defaultValue: "client"); // fallback to 'client'
-    userType = box.get("userType"); // 👈 Add this
 
     userId = box.get("userId", defaultValue: "");
     firstName = box.get("firstName", defaultValue: "");
@@ -588,14 +586,12 @@ class _UserInfoState extends State<UserInfo> {
 
   // ✅ Delete Account Confirmation Dialog
   void _showDeleteConfirmationDialog(BuildContext context) {
-    
     showDialog(
-    
       context: context,
       barrierDismissible: false, // Prevent closing by tapping outside
       builder: (BuildContext dialogContext) {
-           final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-        
+        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
         return AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -616,14 +612,12 @@ class _UserInfoState extends State<UserInfo> {
               ),
             ],
           ),
-          
           content: Text(
             "Are you sure you want to delete your account?\nThis action is permanent and cannot be undone.",
             style: TextStyle(
-              fontSize: 15,
-              fontFamily: 'Poppins',
-              color:  isDarkMode ? Colors.white : Colors.black87
-            ),
+                fontSize: 15,
+                fontFamily: 'Poppins',
+                color: isDarkMode ? Colors.white : Colors.black87),
           ),
           actionsPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
