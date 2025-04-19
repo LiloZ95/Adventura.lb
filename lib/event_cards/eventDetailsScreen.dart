@@ -1,5 +1,6 @@
 // Final version matching Figma layout exactly + polished bottom nav
 import 'dart:math';
+import 'dart:ui';
 import 'package:adventura/OrganizerProfile/OrganizerProfile.dart';
 import 'package:adventura/Services/activity_service.dart';
 import 'package:adventura/Services/interaction_service.dart';
@@ -10,6 +11,8 @@ import 'package:adventura/OrderDetail/Order.dart';
 import 'package:adventura/widgets/availability_modal.dart';
 import 'package:adventura/event_cards/widgets/readonly_location_map.dart';
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> activity;
@@ -35,65 +38,28 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.25),
       builder: (context) {
-        return AvailabilityModal(
-          activityId: widget.activity["activity_id"],
-          onDateSlotSelected: (String date, String slot) {
-            setState(() {
-              confirmedDate = date;
-              confirmedSlot = slot;
-            });
-          },
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
+          child: Material(
+            // ✅ <--- fix: wrap with Material
+            color: Colors.white.withOpacity(0.87),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            child: AvailabilityModal(
+              activityId: widget.activity["activity_id"],
+              onDateSlotSelected: (String date, String slot) {
+                setState(() {
+                  confirmedDate = date;
+                  confirmedSlot = slot;
+                });
+              },
+            ),
+          ),
         );
       },
     );
-  }
-
-  String _calculateDuration(String from, String to) {
-    try {
-      TimeOfDay fromTime = _parseTime(from);
-      TimeOfDay toTime = _parseTime(to);
-
-      final now = DateTime.now();
-      final fromDateTime = DateTime(
-          now.year, now.month, now.day, fromTime.hour, fromTime.minute);
-      final toDateTime =
-          DateTime(now.year, now.month, now.day, toTime.hour, toTime.minute);
-
-      Duration difference = toDateTime.difference(fromDateTime);
-
-      if (difference.inMinutes <= 0) {
-        return "Invalid duration";
-      }
-
-      int hours = difference.inHours;
-      int minutes = difference.inMinutes % 60;
-
-      if (hours > 0 && minutes > 0) return "$hours h $minutes min";
-      if (hours > 0) return "$hours hour${hours == 1 ? '' : 's'}";
-      return "$minutes min";
-    } catch (e) {
-      return "Invalid time format";
-    }
-  }
-
-  TimeOfDay _parseTime(String timeStr) {
-    final regex = RegExp(r'^(\d{1,2}):(\d{2}) (AM|PM)$');
-    final match = regex.firstMatch(timeStr.trim());
-
-    if (match == null) throw FormatException("Invalid time format");
-
-    int hour = int.parse(match.group(1)!);
-    int minute = int.parse(match.group(2)!);
-    final meridian = match.group(3);
-
-    if (meridian == "PM" && hour < 12) hour += 12;
-    if (meridian == "AM" && hour == 12) hour = 0;
-
-    return TimeOfDay(hour: hour, minute: minute);
   }
 
   @override
@@ -116,15 +82,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           .toList();
     }
 
-    final String? from = widget.activity["from_time"];
-    final String? to = widget.activity["to_time"];
-
-    if (from != null && to != null) {
-      final duration = _calculateDuration(from, to);
-      setState(() {
-        activityDuration = duration;
-      });
-    }
+    activityDuration = ActivityService.getDurationDisplay(widget.activity);
   }
 
   @override
@@ -134,7 +92,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final double lat = widget.activity["latitude"] ?? 34.4381;
     final double lng = widget.activity["longitude"] ?? 35.8308;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
 
     List<dynamic> rawImages = widget.activity["activity_images"] ?? [];
     List<String> images = rawImages
@@ -148,8 +105,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     }
 
     return Scaffold(
-      backgroundColor:  isDarkMode ? const Color(0xFF121212) : Colors.white,
-
+      backgroundColor: isDarkMode ? const Color(0xFF121212) : Colors.white,
       appBar: _buildAppBar(screenWidth),
       body: SingleChildScrollView(
         child: Padding(
@@ -174,7 +130,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: isDarkMode ? const Color(0xFF121212) : Colors.white,
-
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -199,11 +154,17 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.location_on, size: 18, color: isDarkMode ? const Color(0xFF121212) : Colors.grey),
+                  Icon(Icons.location_on,
+                      size: 18,
+                      color:
+                          isDarkMode ? const Color(0xFF121212) : Colors.grey),
                   SizedBox(width: 4),
                   Text(
                     widget.activity["location"] ?? "Unknown Location",
-                    style: TextStyle(fontSize: 14, color:isDarkMode ? const Color(0xFF121212) : Colors.grey),
+                    style: TextStyle(
+                        fontSize: 14,
+                        color:
+                            isDarkMode ? const Color(0xFF121212) : Colors.grey),
                   ),
                 ],
               ),
@@ -272,7 +233,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   },
                   child: CircleAvatar(
                     radius: 24,
-                    backgroundColor: isDarkMode ? const Color(0xFF121212) : Colors.grey,
+                    backgroundColor:
+                        isDarkMode ? const Color(0xFF121212) : Colors.grey,
                     child: ClipOval(
                       child: Builder(
                         builder: (context) {
@@ -288,7 +250,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
                                   Icon(Icons.person,
-                                      size: 28, color: isDarkMode ? const Color(0xFF121212) : Colors.grey),
+                                      size: 28,
+                                      color: isDarkMode
+                                          ? const Color(0xFF121212)
+                                          : Colors.grey),
                             );
                           } else {
                             return Image.asset(
@@ -598,6 +563,48 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Widget _buildAvailabilitySection() {
+    final type = widget.activity["listing_type"];
+    final startDate = widget.activity["start_date"];
+
+    if (type == "oneTime") {
+      if (startDate == null) {
+        print("⚠️ start_date is null or missing in activity map.");
+      } else {
+        try {
+          final parsed = DateTime.tryParse(startDate);
+
+          final formatted = parsed != null
+              ? "Event Date: ${DateFormat.yMMMd().format(parsed)}"
+              : "Event Date: $startDate";
+
+          return Row(
+            children: [
+              Icon(Icons.event, size: 18, color: Colors.grey),
+              SizedBox(width: 6),
+              Text(
+                formatted,
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+            ],
+          );
+        } catch (e) {
+          print("❌ Error parsing date: $e");
+        }
+      }
+
+      return Row(
+        children: [
+          Icon(Icons.event_busy, size: 18, color: Colors.red),
+          SizedBox(width: 6),
+          Text(
+            "No date provided",
+            style: TextStyle(fontSize: 14, color: Colors.red),
+          ),
+        ],
+      );
+    }
+
+    // fallback: recurrent logic
     return confirmedDate != null && confirmedSlot != null
         ? Row(
             children: [

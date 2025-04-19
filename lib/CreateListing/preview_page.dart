@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:adventura/colors.dart';
 import 'package:adventura/widgets/availability_modal.dart';
 import 'package:flutter/material.dart';
@@ -43,18 +45,27 @@ class _PreviewPageState extends State<PreviewPage> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      backgroundColor: Colors.transparent, // Needed for the blur to show
+      barrierColor: Colors.black.withOpacity(0.25), // Optional dim background
       builder: (context) {
-        return AvailabilityModal(
-          activityId: 0,
-          onDateSlotSelected: (String date, String slot) {
-            setState(() {
-              confirmedDate = date;
-              confirmedSlot = slot;
-            });
-          },
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
+          child: Material(
+            color: Colors.white.withOpacity(0.95), // Adjust opacity as needed
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            child: FractionallySizedBox(
+              heightFactor: 0.85, // Adjust based on how much space you want
+              child: AvailabilityModal(
+                activityId: 0,
+                onDateSlotSelected: (String date, String slot) {
+                  setState(() {
+                    confirmedDate = date;
+                    confirmedSlot = slot;
+                  });
+                },
+              ),
+            ),
+          ),
         );
       },
     );
@@ -98,11 +109,14 @@ class _PreviewPageState extends State<PreviewPage> {
                 ? Row(
                     children: [
                       Icon(Icons.calendar_today,
-                          size: 18, color: isDarkMode ? Colors.grey[300] : Colors.grey),
+                          size: 18,
+                          color: isDarkMode ? Colors.grey[300] : Colors.grey),
                       const SizedBox(width: 4),
                       Text(
                         "$confirmedDate at $confirmedSlot",
-                        style: TextStyle(fontSize: 14, color: isDarkMode ? Colors.grey[300] : Colors.grey),
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: isDarkMode ? Colors.grey[300] : Colors.grey),
                       ),
                       const SizedBox(width: 6),
                       TextButton(
@@ -129,11 +143,14 @@ class _PreviewPageState extends State<PreviewPage> {
             Row(
               children: [
                 Icon(Icons.location_on,
-                    size: 18, color: isDarkMode ? Colors.grey[300] : Colors.grey),
+                    size: 18,
+                    color: isDarkMode ? Colors.grey[300] : Colors.grey),
                 const SizedBox(width: 4),
                 Text(
                   widget.location,
-                  style: TextStyle(fontSize: 14, color: isDarkMode ? Colors.grey[300] : Colors.grey),
+                  style: TextStyle(
+                      fontSize: 14,
+                      color: isDarkMode ? Colors.grey[300] : Colors.grey),
                 ),
               ],
             ),
@@ -143,7 +160,9 @@ class _PreviewPageState extends State<PreviewPage> {
             _sectionTitle("Description", isDarkMode),
             const SizedBox(height: 4),
             Text(widget.description,
-                style: TextStyle(fontSize: 14, color: isDarkMode ? Colors.white70 : Colors.black87)),
+                style: TextStyle(
+                    fontSize: 14,
+                    color: isDarkMode ? Colors.white70 : Colors.black87)),
             const SizedBox(height: 12),
             _sectionTitle("Features", isDarkMode),
             const SizedBox(height: 6),
@@ -152,8 +171,12 @@ class _PreviewPageState extends State<PreviewPage> {
               runSpacing: 4,
               children: [
                 if (widget.ageAllowed != null && widget.ageAllowed!.isNotEmpty)
-                  _tag("Age: ${widget.ageAllowed}", gradient: [Colors.blue, Colors.indigo], isDarkMode: isDarkMode),
-                ...widget.features.map((tag) => _tag(tag, isDarkMode: isDarkMode)).toList(),
+                  _tag("Age: ${widget.ageAllowed}",
+                      gradient: [Colors.blue, Colors.indigo],
+                      isDarkMode: isDarkMode),
+                ...widget.features
+                    .map((tag) => _tag(tag, isDarkMode: isDarkMode))
+                    .toList(),
               ],
             ),
             const SizedBox(height: 16),
@@ -218,7 +241,8 @@ class _PreviewPageState extends State<PreviewPage> {
       return Padding(
         padding: const EdgeInsets.only(top: 8),
         child: Text("No trip plan added yet.",
-            style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black)),
+            style:
+                TextStyle(color: isDarkMode ? Colors.white70 : Colors.black)),
       );
     }
     return Column(
@@ -235,7 +259,8 @@ class _PreviewPageState extends State<PreviewPage> {
             const SizedBox(width: 8),
             Expanded(
               child: Divider(
-                  color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
+                  color:
+                      isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
                   thickness: 1),
             ),
           ],
@@ -277,8 +302,10 @@ class _PreviewPageState extends State<PreviewPage> {
               style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
           const SizedBox(height: 4),
           Text(title,
-              style:
-                  TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDarkMode ? Colors.white : Colors.black)),
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: isDarkMode ? Colors.white : Colors.black)),
         ],
       ),
     );
@@ -373,7 +400,8 @@ class _PreviewPageState extends State<PreviewPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text("Price",
-                  style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54)),
+                  style: TextStyle(
+                      color: isDarkMode ? Colors.white70 : Colors.black54)),
               const SizedBox(height: 2),
               Row(
                 children: [
@@ -386,7 +414,8 @@ class _PreviewPageState extends State<PreviewPage> {
                   ),
                   const SizedBox(width: 4),
                   Text("/${widget.priceType}",
-                      style: TextStyle(color: isDarkMode ? Colors.white60 : Colors.black54))
+                      style: TextStyle(
+                          color: isDarkMode ? Colors.white60 : Colors.black54))
                 ],
               ),
             ],
@@ -397,8 +426,10 @@ class _PreviewPageState extends State<PreviewPage> {
                 content: Text("This is just a preview."),
               ));
             },
-            icon: const Icon(Icons.local_activity_outlined, color: Colors.white, size: 20),
-            label: const Text("Book Ticket", style: TextStyle(color: Colors.white)),
+            icon: const Icon(Icons.local_activity_outlined,
+                color: Colors.white, size: 20),
+            label: const Text("Book Ticket",
+                style: TextStyle(color: Colors.white)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue,
               shape: RoundedRectangleBorder(

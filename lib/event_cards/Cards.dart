@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:adventura/Services/interaction_service.dart';
 import 'package:adventura/event_cards/eventDetailsScreen.dart';
+import 'package:adventura/Services/activity_service.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/utils.dart';
 import 'package:hive/hive.dart';
@@ -48,8 +49,7 @@ Widget EventCard({
   required Map<String, dynamic> activity,
 }) {
   String imagePath = getImageUrl(activity);
-  String? duration =
-      _calculateDuration(activity["from_time"], activity["to_time"]);
+  final duration = ActivityService.getDurationDisplay(activity);
 
   final List<dynamic> rawFeatures = activity["features"] ?? [];
   List<String> featureNames = rawFeatures
@@ -86,6 +86,7 @@ Widget EventCard({
       } catch (e) {
         print("🔴 Failed to log view interaction: $e");
       }
+      print("🧪 Activity data: ${activity}");
 
       Navigator.of(context).push(
         PageRouteBuilder(
@@ -213,31 +214,6 @@ Widget EventCard({
                       ),
                     ),
                   ),
-
-                // 🕒 Duration Badge
-                // if (duration != null)
-                //   Positioned(
-                //     top: 10,
-                //     right: 10,
-                //     child: Container(
-                //       padding:
-                //           EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                //       decoration: BoxDecoration(
-                //         color: Colors.black.withOpacity(0.6),
-                //         borderRadius: BorderRadius.circular(16),
-                //       ),
-                //       child: Row(
-                //         children: [
-                //           Icon(Icons.schedule, size: 14, color: Colors.white),
-                //           SizedBox(width: 4),
-                //           Text(
-                //             duration,
-                //             style: TextStyle(color: Colors.white, fontSize: 12),
-                //           ),
-                //         ],
-                //       ),
-                //     ),
-                //   ),
               ],
             ),
 

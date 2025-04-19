@@ -193,15 +193,17 @@ class _CreateListingPageState extends State<CreateListingPage> {
       "longitude": _mapLatLng!.longitude,
       "features": _selectedFeatures,
       "trip_plan": tripPlans,
-      "from_time": _fromTime != null ? _formatTime(_fromTime!) : "",
-      "to_time": _toTime != null ? _formatTime(_toTime!) : "",
+      "from_time": _fromTime != null ? _formatTime(_fromTime!) : null,
+      "to_time": _toTime != null ? _formatTime(_toTime!) : null,
       "listing_type": _selectedListingType.toString().split('.').last,
       // "repeat_weeks": _repeatWeeks,
       "start_date": _startDate?.toIso8601String().split("T")[0],
       "end_date": _endDate?.toIso8601String().split("T")[0] ??
           _startDate?.toIso8601String().split("T")[0],
       "repeat_days": _selectedWeekdays.toList(),
-      "duration_minutes": _selectedDuration?.inMinutes ?? 60,
+      "duration_minutes": isRecurrent
+          ? _selectedDuration?.inMinutes
+          : _calculateFallbackDurationInMinutes(_fromTime, _toTime),
     };
     if (_fromTime == null || _toTime == null) {
       showAppSnackBar(context, "⚠️ Please select start and end times.");
@@ -226,6 +228,19 @@ class _CreateListingPageState extends State<CreateListingPage> {
     } else {
       showAppSnackBar(context, "❌ Failed to create activity.");
     }
+  }
+
+  int? _calculateFallbackDurationInMinutes(TimeOfDay? from, TimeOfDay? to) {
+    if (from == null || to == null) return null;
+
+    final now = DateTime.now();
+    final fromDateTime =
+        DateTime(now.year, now.month, now.day, from.hour, from.minute);
+    final toDateTime =
+        DateTime(now.year, now.month, now.day, to.hour, to.minute);
+
+    final diff = toDateTime.difference(fromDateTime);
+    return diff.inMinutes > 0 ? diff.inMinutes : null;
   }
 
   // A reusable widget method for text fields
@@ -567,7 +582,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
                 hint: 'Ex: 20',
                 icon: Icons.event_seat,
               ),
-            const SizedBox(height: 8),
+              const SizedBox(height: 8),
               // ---------------------------------
               // Age Allowed
               // ---------------------------------

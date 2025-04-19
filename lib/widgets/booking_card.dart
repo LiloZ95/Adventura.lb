@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:adventura/Booking/MyBooking.dart';
 import 'package:adventura/OrderDetail/ViewTicket.dart';
 import 'package:adventura/config.dart';
@@ -27,129 +29,162 @@ class BookingCard extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.25),
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("Leave a Review",
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Poppins')),
-              SizedBox(height: 10),
-              // Activity Image + Details
-              Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.asset(imageUrl,
-                        width: 80, height: 80, fit: BoxFit.cover),
-                  ),
-                  SizedBox(width: 10),
-                  Column(
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
+          child: FractionallySizedBox(
+            heightFactor: 0.85,
+            child: Material(
+              color: Colors.white.withOpacity(0.95),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title,
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text(
+                        "Leave a Review",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Activity Image + Details
                       Row(
                         children: [
-                          Icon(Icons.location_on, size: 14, color: Colors.grey),
-                          SizedBox(width: 4),
-                          Text(location,
-                              style:
-                                  TextStyle(fontSize: 14, color: Colors.grey)),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.asset(
+                              imageUrl,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  const Icon(Icons.location_on,
+                                      size: 14, color: Colors.grey),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    location,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          )
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Rating Section
+                      Column(
+                        children: <Widget>[
+                          const Text(
+                            "Please give your rating with us",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Poppins',
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+                          StatefulBuilder(
+                            builder: (context, setState) {
+                              return Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(5, (index) {
+                                  return IconButton(
+                                    icon: Icon(
+                                      index < selectedRating
+                                          ? Icons.star
+                                          : Icons.star_border,
+                                      size: 32,
+                                      color: index < selectedRating
+                                          ? Colors.yellow
+                                          : Colors.grey,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        selectedRating = index + 1;
+                                      });
+                                    },
+                                  );
+                                }),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Comment Box
+                      SizedBox(
+                        width: double.infinity,
+                        height: 230,
+                        child: TextField(
+                          maxLines: 10,
+                          decoration: InputDecoration(
+                            hintText: "Add a Comment",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // Buttons
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text("Cancel",
+                                style: TextStyle(fontSize: 16)),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.pink,
+                            ),
+                            child: const Text("Submit",
+                                style: TextStyle(fontSize: 16)),
+                          ),
                         ],
                       ),
                     ],
-                  )
-                ],
-              ),
-              SizedBox(height: 10),
-              // Rating Section
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  SizedBox(
-                    width: double.infinity,
-                    child: Text(
-                      "Please give your rating with us",
-                      style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Poppins'),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  StatefulBuilder(
-                    builder: (context, setState) {
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(5, (index) {
-                          return IconButton(
-                            icon: Icon(
-                              index < selectedRating
-                                  ? Icons.star
-                                  : Icons.star_border,
-                              size: 32,
-                              color: index < selectedRating
-                                  ? Colors.yellow
-                                  : Colors.grey,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                selectedRating = index + 1;
-                              });
-                            },
-                          );
-                        }),
-                      );
-                    },
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
-              // Comment Box
-              SizedBox(
-                width: double.infinity,
-                height: 230,
-                child: TextField(
-                  maxLines: 10,
-                  decoration: InputDecoration(
-                    hintText: "Add a Comment",
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10)),
                   ),
                 ),
               ),
-              SizedBox(height: 40),
-              // Buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text("Cancel", style: TextStyle(fontSize: 16)),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text("Submit", style: TextStyle(fontSize: 16)),
-                    style:
-                        ElevatedButton.styleFrom(backgroundColor: Colors.pink),
-                  )
-                ],
-              )
-            ],
+            ),
           ),
         );
       },

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:adventura/config.dart';
@@ -61,73 +62,84 @@ class _CategorySelectorState extends State<CategorySelector> {
     final chosenCategory = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
+      backgroundColor: Colors.transparent, // So the blur effect is visible
+      barrierColor: Colors.black.withOpacity(0.25),
       builder: (BuildContext context) {
-        return FractionallySizedBox(
-          heightFactor: 0.6,
-          child: SafeArea(
-            child: Column(
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: categories.length,
-                    itemBuilder: (context, index) {
-                      final cat = categories[index];
-                      final isSelected =
-                          cat["id"] == widget.selectedCategory?["id"];
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
+          child: Material(
+            color: isDarkMode
+                ? const Color(0xFF1F1F1F).withOpacity(0.95)
+                : Colors.white.withOpacity(
+                    0.95), // Use .withOpacity(1.0) if you want no transparency
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            child: FractionallySizedBox(
+              heightFactor: 0.6,
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: categories.length,
+                        itemBuilder: (context, index) {
+                          final cat = categories[index];
+                          final isSelected =
+                              cat["id"] == widget.selectedCategory?["id"];
 
-                      return InkWell(
-                        onTap: () => Navigator.pop(context, cat),
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(
-                              vertical: 6, horizontal: 16),
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 12, horizontal: 16),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: isSelected
-                                  ? const Color.fromARGB(255, 63, 161, 241)
-                                  : isDarkMode
-                                      ? Colors.grey.shade700
-                                      : const Color(0xFFCFCFCF),
-                              width: 2,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            color: isSelected
-                                ? Colors.blue
-                                : isDarkMode
-                                    ? const Color(0xFF2C2C2C)
-                                    : Colors.white,
-                          ),
-                          child: Center(
-                            child: Text(
-                              cat["name"],
-                              style: TextStyle(
-                                fontFamily: 'poppins',
-                                fontSize: 16,
+                          return InkWell(
+                            onTap: () => Navigator.pop(context, cat),
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(
+                                  vertical: 6, horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 12, horizontal: 16),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: isSelected
+                                      ? const Color.fromARGB(255, 63, 161, 241)
+                                      : isDarkMode
+                                          ? Colors.grey.shade700
+                                          : const Color(0xFFCFCFCF),
+                                  width: 2,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
                                 color: isSelected
-                                    ? Colors.white
+                                    ? Colors.blue
                                     : isDarkMode
+                                        ? const Color(0xFF2C2C2C)
+                                        : Colors.white,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  cat["name"],
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 16,
+                                    color: isSelected
                                         ? Colors.white
-                                        : Colors.black,
+                                        : isDarkMode
+                                            ? Colors.white
+                                            : Colors.black,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         );

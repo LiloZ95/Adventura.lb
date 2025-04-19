@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart'; // ✅ Use Hive instead of StorageService
 import 'package:adventura/config.dart';
-import 'package:image_picker/image_picker.dart'; // ✅ Import the global config file
+import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart'; // ✅ Import the global config file
 
 class ActivityService {
   /// ✅ Create Activity
@@ -475,4 +477,54 @@ class ActivityService {
           : ["assets/Pictures/island.jpg"],
     };
   }
+
+  static String? getDurationDisplay(Map<String, dynamic> activity) {
+  final from = activity['from_time'];
+  final to = activity['to_time'];
+
+  print("🧪 getDurationDisplay → from_time: $from, to_time: $to");
+
+  if (from == null || to == null) {
+    print("⚠️ One of the times is null. Skipping duration display.");
+    return null;
+  }
+
+  try {
+    final regex = RegExp(r'^(\d{1,2}):(\d{2}) (AM|PM)$');
+
+    TimeOfDay parse(String timeStr) {
+      final match = regex.firstMatch(timeStr.trim());
+      if (match == null) throw FormatException("Invalid time format → $timeStr");
+      int hour = int.parse(match.group(1)!);
+      int minute = int.parse(match.group(2)!);
+      final meridian = match.group(3);
+      if (meridian == "PM" && hour < 12) hour += 12;
+      if (meridian == "AM" && hour == 12) hour = 0;
+      return TimeOfDay(hour: hour, minute: minute);
+    }
+
+    final now = DateTime.now();
+    final fromTime = parse(from);
+    final toTime = parse(to);
+
+    final start = DateTime(now.year, now.month, now.day, fromTime.hour, fromTime.minute);
+    final end = DateTime(now.year, now.month, now.day, toTime.hour, toTime.minute);
+    final diff = end.difference(start);
+
+    if (diff.inMinutes <= 0) {
+      print("❌ Duration is non-positive. Skipping badge.");
+      return null;
+    }
+
+    final h = diff.inHours;
+    final m = diff.inMinutes % 60;
+    if (h > 0 && m > 0) return "$h h $m min";
+    if (h > 0) return "$h hour${h == 1 ? '' : 's'}";
+    return "$m min";
+  } catch (e) {
+    print("❌ Error parsing duration: $e");
+    return null;
+  }
+}
+
 }

@@ -90,22 +90,28 @@ class _SearchScreenState extends State<SearchScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.25),
       builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-            return Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(32),
-                color: Colors.white,
-              ),
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
+          child: FractionallySizedBox(
+            heightFactor: 0.63, // ⬅️ adjust this as needed
+            child: Material(
+              color: Colors.white.withOpacity(0.95),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(32)),
               child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                padding: const EdgeInsets.all(16.0),
+                child: StatefulBuilder(
+                  builder: (BuildContext context, StateSetter setState) {
+                    return SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // ➕ Your existing content
+                          Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               TextButton(
@@ -132,257 +138,265 @@ class _SearchScreenState extends State<SearchScreen>
                                   ),
                                 ),
                               )
-                            ]),
-                        SizedBox(height: 16),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
 
-                        Text("Rating",
-                            style: TextStyle(
-                                fontFamily: 'poppins',
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold)),
-                        SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: List.generate(
-                            5,
-                            (index) {
-                              int rating = index + 1;
-                              return GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    selectedRatings.contains(rating)
-                                        ? selectedRatings.remove(rating)
-                                        : selectedRatings.add(rating);
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 8.0, horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    color: selectedRatings.contains(rating)
-                                        ? AppColors.blue
-                                        : Colors.white,
-                                    borderRadius: BorderRadius.circular(15),
-                                    border: Border.all(width: 0.3),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.star,
-                                        color: selectedRatings.contains(rating)
-                                            ? Colors.yellow
-                                            : Colors.grey,
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        "$rating",
-                                        style: TextStyle(
-                                          fontFamily: 'poppins',
+                          Text("Rating",
+                              style: TextStyle(
+                                  fontFamily: 'poppins',
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold)),
+                          SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: List.generate(
+                              5,
+                              (index) {
+                                int rating = index + 1;
+                                return GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      selectedRatings.contains(rating)
+                                          ? selectedRatings.remove(rating)
+                                          : selectedRatings.add(rating);
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8.0, horizontal: 12),
+                                    decoration: BoxDecoration(
+                                      color: selectedRatings.contains(rating)
+                                          ? AppColors.blue
+                                          : Colors.white,
+                                      borderRadius: BorderRadius.circular(15),
+                                      border: Border.all(width: 0.3),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.star,
                                           color:
                                               selectedRatings.contains(rating)
-                                                  ? Colors.white
-                                                  : Colors.black,
+                                                  ? Colors.yellow
+                                                  : Colors.grey,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          "$rating",
+                                          style: TextStyle(
+                                            fontFamily: 'poppins',
+                                            color:
+                                                selectedRatings.contains(rating)
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          SizedBox(height: 16),
+
+                          Text("Sort By",
+                              style: TextStyle(
+                                  fontFamily: 'poppins',
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold)),
+                          SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              "All",
+                              "Limited",
+                              "New",
+                              "Popular",
+                              "Nearby"
+                            ]
+                                .map((sortOption) => GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          selectedSorts.contains(sortOption)
+                                              ? selectedSorts.remove(sortOption)
+                                              : selectedSorts.add(sortOption);
+                                        });
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 8.0, horizontal: 12),
+                                        decoration: BoxDecoration(
+                                          color:
+                                              selectedSorts.contains(sortOption)
+                                                  ? AppColors.blue
+                                                  : Colors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(15),
+                                          border: Border.all(width: 0.3),
+                                        ),
+                                        child: Text(
+                                          sortOption,
+                                          style: TextStyle(
+                                            fontFamily: 'poppins',
+                                            fontSize: 16,
+                                            color: selectedSorts
+                                                    .contains(sortOption)
+                                                ? Colors.white
+                                                : Colors.black,
+                                          ),
                                         ),
                                       ),
-                                    ],
+                                    ))
+                                .toList(),
+                          ),
+                          SizedBox(height: 16),
+
+                          Text("Budget",
+                              style: TextStyle(
+                                  fontFamily: 'poppins',
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold)),
+                          SizedBox(height: 8),
+                          // Budget Fields
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: budgetMinController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    labelText: "Min",
+                                    labelStyle: TextStyle(
+                                        color: Colors.black, fontSize: 16),
+                                    focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                        borderSide:
+                                            BorderSide(color: Colors.black)),
+                                    border: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(20)),
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      budgetMin = double.tryParse(value)!;
+                                    });
+                                  },
+                                ),
+                              ),
+                              SizedBox(width: 16),
+                              Expanded(
+                                child: TextField(
+                                  controller: budgetMaxController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    labelText: "Max",
+                                    labelStyle: TextStyle(
+                                        color: Colors.black, fontSize: 16),
+                                    focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                        borderSide:
+                                            BorderSide(color: Colors.black)),
+                                    border: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(20)),
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      budgetMax = double.tryParse(value);
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 16),
+
+                          // Location Filter
+                          Text("Location",
+                              style: TextStyle(
+                                  fontFamily: 'poppins',
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold)),
+                          SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            value: selectedLocation,
+                            items: [
+                              "Tripoli",
+                              "Beirut",
+                              "Jbeil",
+                              "Jounieh",
+                              "all",
+                            ].map((location) {
+                              return DropdownMenuItem(
+                                value: location,
+                                child: Text(
+                                  location,
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 16,
                                   ),
                                 ),
                               );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                selectedLocation = value;
+                              });
                             },
+                            decoration: InputDecoration(
+                              labelText: "Location",
+                              labelStyle:
+                                  TextStyle(color: Colors.black, fontSize: 16),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: BorderSide(color: Colors.grey),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: BorderSide(color: Colors.black),
+                              ),
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 16),
 
-                        Text("Sort By",
-                            style: TextStyle(
-                                fontFamily: 'poppins',
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold)),
-                        SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            "All",
-                            "Limited",
-                            "New",
-                            "Popular",
-                            "Nearby"
-                          ]
-                              .map((sortOption) => GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedSorts.contains(sortOption)
-                                            ? selectedSorts.remove(sortOption)
-                                            : selectedSorts.add(sortOption);
-                                      });
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 8.0, horizontal: 12),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            selectedSorts.contains(sortOption)
-                                                ? AppColors.blue
-                                                : Colors.white,
-                                        borderRadius: BorderRadius.circular(15),
-                                        border: Border.all(width: 0.3),
-                                      ),
-                                      child: Text(
-                                        sortOption,
-                                        style: TextStyle(
-                                          fontFamily: 'poppins',
-                                          fontSize: 16,
-                                          color:
-                                              selectedSorts.contains(sortOption)
-                                                  ? Colors.white
-                                                  : Colors.black,
-                                        ),
-                                      ),
-                                    ),
-                                  ))
-                              .toList(),
-                        ),
-                        SizedBox(height: 16),
+                          SizedBox(height: 16),
 
-                        Text("Budget",
-                            style: TextStyle(
-                                fontFamily: 'poppins',
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold)),
-                        SizedBox(height: 8),
-                        // Budget Fields
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: budgetMinController,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  labelText: "Min",
-                                  labelStyle: TextStyle(
-                                      color: Colors.black, fontSize: 16),
-                                  focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                      borderSide:
-                                          BorderSide(color: Colors.black)),
-                                  border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(20)),
-                                ),
-                                onChanged: (value) {
-                                  setState(() {
-                                    budgetMin = double.tryParse(value)!;
-                                  });
-                                },
-                              ),
-                            ),
-                            SizedBox(width: 16),
-                            Expanded(
-                              child: TextField(
-                                controller: budgetMaxController,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  labelText: "Max",
-                                  labelStyle: TextStyle(
-                                      color: Colors.black, fontSize: 16),
-                                  focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                      borderSide:
-                                          BorderSide(color: Colors.black)),
-                                  border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(20)),
-                                ),
-                                onChanged: (value) {
-                                  setState(() {
-                                    budgetMax = double.tryParse(value);
-                                  });
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 16),
-
-                        // Location Filter
-                        Text("Location",
-                            style: TextStyle(
-                                fontFamily: 'poppins',
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold)),
-                        SizedBox(height: 8),
-                        DropdownButtonFormField<String>(
-                          value: selectedLocation,
-                          items: [
-                            "Tripoli",
-                            "Beirut",
-                            "Jbeil",
-                            "Jounieh",
-                            "all",
-                          ].map((location) {
-                            return DropdownMenuItem(
-                              value: location,
+                          // Apply Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _fetchResults(); // Trigger search when filters are applied
+                              },
                               child: Text(
-                                location,
+                                "Apply",
                                 style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 16,
+                                    fontSize: 18,
+                                    color: Colors.white,
+                                    fontFamily: 'poppins'),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.blue,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
                                 ),
+                                padding: EdgeInsets.symmetric(vertical: 20),
                               ),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              selectedLocation = value;
-                            });
-                          },
-                          decoration: InputDecoration(
-                            labelText: "Location",
-                            labelStyle:
-                                TextStyle(color: Colors.black, fontSize: 16),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20),
                             ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              borderSide: BorderSide(color: Colors.grey),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              borderSide: BorderSide(color: Colors.black),
-                            ),
-                          ),
-                        ),
-
-                        SizedBox(height: 16),
-
-                        // Apply Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _fetchResults(); // Trigger search when filters are applied
-                            },
-                            child: Text(
-                              "Apply",
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.white,
-                                  fontFamily: 'poppins'),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.blue,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              padding: EdgeInsets.symmetric(vertical: 20),
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                  )),
-            );
-          },
+                          )
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
         );
       },
     );

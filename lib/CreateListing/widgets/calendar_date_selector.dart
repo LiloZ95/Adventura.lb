@@ -86,14 +86,14 @@ class _CalendarDateSelectorState extends State<CalendarDateSelector> {
             timePickerTheme: TimePickerThemeData(
               backgroundColor:
                   isDarkMode ? const Color(0xFF1C1C1E) : Colors.white,
-              hourMinuteColor: MaterialStateColor.resolveWith((states) =>
-                  states.contains(MaterialState.selected)
+              hourMinuteColor: MaterialStateColor.resolveWith(
+                  (states) => states.contains(MaterialState.selected)
                       ? const Color(0xFF007AFF)
                       : isDarkMode
                           ? const Color(0xFF2C2C2E)
                           : const Color(0xFFF2F2F7)),
-              hourMinuteTextColor: MaterialStateColor.resolveWith((states) =>
-                  states.contains(MaterialState.selected)
+              hourMinuteTextColor: MaterialStateColor.resolveWith(
+                  (states) => states.contains(MaterialState.selected)
                       ? Colors.white
                       : isDarkMode
                           ? Colors.white
@@ -202,9 +202,10 @@ class _CalendarDateSelectorState extends State<CalendarDateSelector> {
               shape: BoxShape.circle,
             ),
           ),
-          rangeSelectionMode: widget.selectedListingType == ListingType.recurrent
-              ? RangeSelectionMode.enforced
-              : RangeSelectionMode.toggledOff,
+          rangeSelectionMode:
+              widget.selectedListingType == ListingType.recurrent
+                  ? RangeSelectionMode.enforced
+                  : RangeSelectionMode.toggledOff,
         ),
         const SizedBox(height: 10),
         if (_startDate != null)
@@ -264,7 +265,8 @@ class _CalendarDateSelectorState extends State<CalendarDateSelector> {
           ],
         ),
         const SizedBox(height: 20),
-        if (widget.selectedListingType == ListingType.recurrent && durationOptions.isNotEmpty) ...[
+        if (widget.selectedListingType == ListingType.recurrent &&
+            durationOptions.isNotEmpty) ...[
           DurationSelector(
             selectedDuration: widget.selectedDuration,
             availableDurations: durationOptions,
@@ -275,7 +277,7 @@ class _CalendarDateSelectorState extends State<CalendarDateSelector> {
             selectedDays: widget.selectedWeekdays,
             onChanged: widget.onWeekdaysChanged,
           ),
-        ],
+        ]
       ],
     );
   }

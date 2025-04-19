@@ -1,7 +1,102 @@
 import 'package:flutter/material.dart';
 
 const Map<int, List<Map<String, String>>> featuresByCategoryId = {
-  // [ ... same as yours ... ]
+  1: [
+    // Sea Trips
+    {"icon": "📶", "label": "WiFi"},
+    {"icon": "🚗", "label": "Parking"},
+    {"icon": "🛟", "label": "Life Jackets"},
+    {"icon": "🍽️", "label": "Food"},
+    {"icon": "🎵", "label": "Music"},
+    {"icon": "🗣️", "label": "Tour Guide"},
+  ],
+  2: [
+    // Picnic
+    {"icon": "🌳", "label": "Outdoor"},
+    {"icon": "👨‍👩‍👧", "label": "Family Friendly"},
+    {"icon": "🍽️", "label": "Food"},
+    {"icon": "🐾", "label": "Pets Allowed"},
+    {"icon": "🪑", "label": "Seating Available"},
+  ],
+  3: [
+    // Paragliding
+    {"icon": "🛡️", "label": "Safety Briefing"},
+    {"icon": "🎥", "label": "Video Recording"},
+    {"icon": "🪂", "label": "Certified Instructor"},
+    {"icon": "🚗", "label": "Parking"},
+    {"icon": "📶", "label": "WiFi"},
+  ],
+  4: [
+    // Sunsets
+    {"icon": "🌅", "label": "View Point"},
+    {"icon": "🧺", "label": "Picnic Setup"},
+    {"icon": "🎵", "label": "Music"},
+    {"icon": "📷", "label": "Photography Spot"},
+  ],
+  5: [
+    // Tours
+    {"icon": "🗣️", "label": "Guided Tour"},
+    {"icon": "📸", "label": "Photos Included"},
+    {"icon": "📶", "label": "WiFi"},
+    {"icon": "🚗", "label": "Transportation"},
+    {"icon": "👨‍👩‍👧", "label": "Family Friendly"},
+  ],
+  6: [
+    // Car Events
+    {"icon": "🏁", "label": "Race Tracks"},
+    {"icon": "🧯", "label": "Safety Equipment"},
+    {"icon": "🎵", "label": "Music"},
+    {"icon": "🚗", "label": "Parking"},
+    {"icon": "📸", "label": "Event Coverage"},
+  ],
+  7: [
+    // Festivals
+    {"icon": "🎵", "label": "Live Music"},
+    {"icon": "🍽️", "label": "Food Stalls"},
+    {"icon": "📶", "label": "WiFi"},
+    {"icon": "🪑", "label": "Seating Areas"},
+    {"icon": "👨‍👩‍👧", "label": "Family Friendly"},
+  ],
+  8: [
+    // Hikes
+    {"icon": "🥾", "label": "Trail Maps"},
+    {"icon": "🚰", "label": "Water Points"},
+    {"icon": "👨‍👩‍👧", "label": "Family Friendly"},
+    {"icon": "🌳", "label": "Outdoor"},
+    {"icon": "🧭", "label": "Guide Available"},
+  ],
+  9: [
+    // Snow Skiing
+    {"icon": "🎿", "label": "Equipment Rental"},
+    {"icon": "🧣", "label": "Warm Drinks"},
+    {"icon": "⛷️", "label": "Instructor"},
+    {"icon": "🚗", "label": "Parking"},
+    {"icon": "📶", "label": "WiFi"},
+  ],
+  10: [
+    // Boats
+    {"icon": "🛥️", "label": "Private Charter"},
+    {"icon": "🛟", "label": "Life Jackets"},
+    {"icon": "🍽️", "label": "Food"},
+    {"icon": "🎵", "label": "Music"},
+    {"icon": "📶", "label": "WiFi"},
+  ],
+  11: [
+    // Jetski
+    {"icon": "🛡️", "label": "Safety Gear"},
+    {"icon": "🧑‍🏫", "label": "Briefing Included"},
+    {"icon": "🎥", "label": "GoPro Mount"},
+    {"icon": "🚿", "label": "Shower Available"},
+    {"icon": "📶", "label": "WiFi"},
+  ],
+  12: [
+    // Museums
+    {"icon": "🎧", "label": "Audio Guide"},
+    {"icon": "📶", "label": "WiFi"},
+    {"icon": "🪑", "label": "Seating Available"},
+    {"icon": "👨‍👩‍👧", "label": "Family Friendly"},
+    {"icon": "🅿️", "label": "Nearby Parking"},
+  ],
 };
 
 class FeaturesSection extends StatelessWidget {

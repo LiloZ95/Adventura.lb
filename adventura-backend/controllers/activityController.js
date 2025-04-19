@@ -59,6 +59,8 @@ const createActivity = async (req, res) => {
 			listing_type,
 			duration_minutes,
 			repeat_days,
+			start_date,
+			end_date,
 		} = req.body;
 
 		console.log("🧠 [createActivity] req.user:", req.user);
@@ -98,6 +100,9 @@ const createActivity = async (req, res) => {
 				to_time,
 				provider_id,
 				listing_type,
+				duration_minutes,
+				start_date, 
+				end_date,
 			},
 			{ transaction: t }
 		);

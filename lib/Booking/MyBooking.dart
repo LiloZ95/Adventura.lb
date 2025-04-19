@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:adventura/Booking/CancelBooking.dart';
 import 'package:adventura/colors.dart';
 import 'package:flutter/material.dart';
@@ -169,16 +170,29 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                                     showModalBottomSheet(
                                       context: context,
                                       isScrollControlled: true,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.vertical(
-                                            top: Radius.circular(16)),
-                                      ),
+                                      backgroundColor: Colors
+                                          .transparent, // Important for blur to show
+                                      barrierColor:
+                                          Colors.black.withOpacity(0.25),
                                       builder: (context) {
-                                        return FractionallySizedBox(
-                                          heightFactor: 0.8,
-                                          child: CancelBookingScreen(
-                                            bookingId: booking["bookingId"]
-                                                .replaceAll("#", ""),
+                                        return BackdropFilter(
+                                          filter: ImageFilter.blur(
+                                              sigmaX: 15.0,
+                                              sigmaY:
+                                                  15.0), // Same blur as before
+                                          child: Material(
+                                            color: Colors.white.withOpacity(
+                                                0.95), // Adjust opacity here
+                                            borderRadius:
+                                                const BorderRadius.vertical(
+                                                    top: Radius.circular(16)),
+                                            child: FractionallySizedBox(
+                                              heightFactor: 0.8,
+                                              child: CancelBookingScreen(
+                                                bookingId: booking["bookingId"]
+                                                    .replaceAll("#", ""),
+                                              ),
+                                            ),
                                           ),
                                         );
                                       },
