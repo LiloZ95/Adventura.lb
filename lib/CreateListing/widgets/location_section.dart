@@ -23,47 +23,57 @@ class LocationSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: const [
+          children: [
             Text(
               'Location',
               style: TextStyle(
                 fontFamily: "poppins",
                 fontSize: 20,
-                color: Colors.black,
+                color: isDarkMode ? Colors.white : Colors.black,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(width: 8),
-            Expanded(child: Divider(color: Colors.grey)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Divider(
+                color: isDarkMode ? Colors.grey.shade600 : Colors.grey,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
         Container(
           height: 50,
           decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFFCFCFCF), width: 1),
+            border: Border.all(
+              color: isDarkMode ? Colors.grey.shade700 : const Color(0xFFCFCFCF),
+              width: 1,
+            ),
             borderRadius: BorderRadius.circular(8),
+            color: isDarkMode ? const Color(0xFF2C2C2C) : Colors.transparent,
           ),
           child: TextField(
             controller: locationController,
-            decoration: const InputDecoration(
-              contentPadding: EdgeInsets.symmetric(horizontal: 12),
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'poppins',
+              color: isDarkMode ? Colors.white : Colors.black,
+            ),
+            decoration: InputDecoration(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
               border: InputBorder.none,
               hintText: 'Add Location to Display',
               hintStyle: TextStyle(
-                color: Colors.grey,
+                color: isDarkMode ? Colors.grey.shade500 : Colors.grey,
                 fontSize: 14,
                 fontFamily: 'poppins',
               ),
-            ),
-            style: const TextStyle(
-              fontSize: 14,
-              fontFamily: 'poppins',
-              color: Colors.black,
             ),
           ),
         ),
@@ -81,12 +91,18 @@ class LocationSection extends StatelessWidget {
             height: 180,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey),
+              border: Border.all(
+                color: isDarkMode ? Colors.grey.shade700 : Colors.grey,
+              ),
               borderRadius: BorderRadius.circular(12),
+              color: isDarkMode ? const Color(0xFF1F1F1F) : Colors.transparent,
             ),
-            child: const Text(
+            child: Text(
               "No coordinates selected yet.",
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(
+                fontFamily: 'poppins',
+                color: isDarkMode ? Colors.grey.shade400 : Colors.grey,
+              ),
             ),
           ),
         const SizedBox(height: 8),
@@ -96,7 +112,10 @@ class LocationSection extends StatelessWidget {
             height: 40,
             child: ElevatedButton.icon(
               icon: const Icon(Icons.map_outlined),
-              label: Text(latLng != null ? "Edit Location" : "Pick Location"),
+              label: Text(
+                latLng != null ? "Edit Location" : "Pick Location",
+                style: const TextStyle(fontFamily: 'poppins'),
+              ),
               onPressed: onPickLocation,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,

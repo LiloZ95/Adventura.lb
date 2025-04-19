@@ -9,10 +9,11 @@ const Activities = () => {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [editingActivity, setEditingActivity] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sortConfig, setSortConfig] = useState({ key: '', direction: 'asc' });
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   useEffect(() => {
-    axios
-      .get(`${process.env.REACT_APP_API_URL}/admin/activities`)
+    axios.get(`${process.env.REACT_APP_API_URL}/admin/activities`)
       .then((res) => {
         setActivities(res.data);
         setFilteredActivities(res.data);
@@ -21,22 +22,44 @@ const Activities = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = activities.filter((activity) => {
+    let filtered = activities.filter((activity) => {
       const matchesSearch = activity.name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = categoryFilter ? activity.category?.name === categoryFilter : true;
       return matchesSearch && matchesCategory;
     });
-    setFilteredActivities(filtered);
-  }, [searchTerm, categoryFilter, activities]);
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this activity?')) {
-      try {
-        await axios.delete(`${process.env.REACT_APP_API_URL}/admin/activities/${id}`);
-        setActivities((prev) => prev.filter((act) => act.activity_id !== id));
-      } catch (err) {
-        alert('Error deleting activity');
-      }
+    if (sortConfig.key) {
+      filtered.sort((a, b) => {
+        const aVal = sortConfig.key === 'category' ? a.category?.name || '' : a[sortConfig.key];
+        const bVal = sortConfig.key === 'category' ? b.category?.name || '' : b[sortConfig.key];
+
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    setFilteredActivities(filtered);
+  }, [searchTerm, categoryFilter, activities, sortConfig]);
+
+  const toggleSort = (key) => {
+    setSortConfig((prev) => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const confirmDelete = (id) => {
+    setConfirmDeleteId(id);
+  };
+
+  const handleDelete = async () => {
+    try {
+      await axios.delete(`${process.env.REACT_APP_API_URL}/admin/activities/${confirmDeleteId}`);
+      setActivities((prev) => prev.filter((act) => act.activity_id !== confirmDeleteId));
+      setConfirmDeleteId(null);
+    } catch (err) {
+      alert('Error deleting activity');
     }
   };
 
@@ -71,7 +94,6 @@ const Activities = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="border p-2 rounded w-1/2"
         />
-
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
@@ -89,9 +111,13 @@ const Activities = () => {
           <tr>
             <th className="py-3 px-6 text-left">Name</th>
             <th className="py-3 px-6 text-left">Location</th>
-            <th className="py-3 px-6 text-left">Price</th>
+            <th className="py-3 px-6 text-left cursor-pointer" onClick={() => toggleSort('price')}>
+              Price {sortConfig.key === 'price' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </th>
             <th className="py-3 px-6 text-left">Seats</th>
-            <th className="py-3 px-6 text-left">Category</th>
+            <th className="py-3 px-6 text-left cursor-pointer" onClick={() => toggleSort('category')}>
+              Category {sortConfig.key === 'category' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </th>
             <th className="py-3 px-6 text-center">Actions</th>
           </tr>
         </thead>
@@ -112,7 +138,7 @@ const Activities = () => {
                 </button>
                 <button
                   className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded-full"
-                  onClick={() => handleDelete(activity.activity_id)}
+                  onClick={() => confirmDelete(activity.activity_id)}
                 >
                   🗑️ Delete
                 </button>
@@ -136,6 +162,23 @@ const Activities = () => {
           onSave={handleSave}
           initialData={editingActivity}
         />
+      )}
+
+      {confirmDeleteId && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <div className="bg-white p-6 rounded-lg w-[400px]">
+            <h3 className="text-lg font-semibold text-red-600 mb-4">Confirm Deletion</h3>
+            <p>Are you sure you want to delete this activity?</p>
+            <div className="flex justify-end mt-4 space-x-2">
+              <button onClick={() => setConfirmDeleteId(null)} className="px-4 py-1 bg-gray-200 rounded">
+                Cancel
+              </button>
+              <button onClick={handleDelete} className="px-4 py-1 bg-red-600 text-white rounded">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

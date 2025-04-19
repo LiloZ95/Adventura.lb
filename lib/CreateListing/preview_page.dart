@@ -48,7 +48,7 @@ class _PreviewPageState extends State<PreviewPage> {
       ),
       builder: (context) {
         return AvailabilityModal(
-          activityId: 0, // Dummy value for preview
+          activityId: 0,
           onDateSlotSelected: (String date, String slot) {
             setState(() {
               confirmedDate = date;
@@ -62,14 +62,20 @@ class _PreviewPageState extends State<PreviewPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final List<String> previewImages = widget.images.isNotEmpty
         ? widget.images
         : ["assets/Pictures/island.jpg"];
     final PageController _pageController = PageController();
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(title: const Text('Preview')),
+      backgroundColor: isDarkMode ? const Color(0xFF121212) : Colors.white,
+      appBar: AppBar(
+        title: const Text('Preview'),
+        backgroundColor: isDarkMode ? Colors.black : Colors.white,
+        foregroundColor: isDarkMode ? Colors.white : Colors.black,
+        elevation: 0.5,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(
@@ -80,23 +86,23 @@ class _PreviewPageState extends State<PreviewPage> {
             const SizedBox(height: 16),
             Text(
               widget.title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Poppins',
+                color: isDarkMode ? Colors.white : Colors.black,
               ),
             ),
             const SizedBox(height: 12),
             confirmedDate != null && confirmedSlot != null
                 ? Row(
                     children: [
-                      const Icon(Icons.calendar_today,
-                          size: 18, color: Colors.grey),
+                      Icon(Icons.calendar_today,
+                          size: 18, color: isDarkMode ? Colors.grey[300] : Colors.grey),
                       const SizedBox(width: 4),
                       Text(
                         "$confirmedDate at $confirmedSlot",
-                        style:
-                            const TextStyle(fontSize: 14, color: Colors.grey),
+                        style: TextStyle(fontSize: 14, color: isDarkMode ? Colors.grey[300] : Colors.grey),
                       ),
                       const SizedBox(width: 6),
                       TextButton(
@@ -122,46 +128,46 @@ class _PreviewPageState extends State<PreviewPage> {
             const SizedBox(height: 12),
             Row(
               children: [
-                const Icon(Icons.location_on, size: 18, color: Colors.grey),
+                Icon(Icons.location_on,
+                    size: 18, color: isDarkMode ? Colors.grey[300] : Colors.grey),
                 const SizedBox(width: 4),
                 Text(
                   widget.location,
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  style: TextStyle(fontSize: 14, color: isDarkMode ? Colors.grey[300] : Colors.grey),
                 ),
               ],
             ),
             const SizedBox(height: 20),
-            _buildTripPlan(widget.tripPlan),
+            _buildTripPlan(widget.tripPlan, isDarkMode),
             const SizedBox(height: 16),
-            _sectionTitle("Description"),
+            _sectionTitle("Description", isDarkMode),
             const SizedBox(height: 4),
             Text(widget.description,
-                style: const TextStyle(fontSize: 14, color: Colors.black87)),
+                style: TextStyle(fontSize: 14, color: isDarkMode ? Colors.white70 : Colors.black87)),
             const SizedBox(height: 12),
-            _sectionTitle("Features"),
+            _sectionTitle("Features", isDarkMode),
             const SizedBox(height: 6),
             Wrap(
-  spacing: 8,
-  runSpacing: 4,
-  children: [
-    if (widget.ageAllowed != null && widget.ageAllowed!.isNotEmpty)
-      _tag("Age: ${widget.ageAllowed}", gradient: [Colors.purple, Colors.deepPurple]),
-    ...widget.features.map((tag) => _tag(tag)).toList(),
-  ],
-),
-
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                if (widget.ageAllowed != null && widget.ageAllowed!.isNotEmpty)
+                  _tag("Age: ${widget.ageAllowed}", gradient: [Colors.blue, Colors.indigo], isDarkMode: isDarkMode),
+                ...widget.features.map((tag) => _tag(tag, isDarkMode: isDarkMode)).toList(),
+              ],
+            ),
             const SizedBox(height: 16),
-            _sectionTitle("Location"),
+            _sectionTitle("Location", isDarkMode),
             const SizedBox(height: 8),
-            _realGoogleMap(context),
+            _realGoogleMap(),
             const SizedBox(height: 16),
-            _sectionTitle("Organizer"),
-            _fakeOrganizer(),
+            _sectionTitle("Organizer", isDarkMode),
+            _fakeOrganizer(isDarkMode),
             const SizedBox(height: 32),
           ],
         ),
       ),
-      bottomNavigationBar: _bottomBar(context),
+      bottomNavigationBar: _bottomBar(context, isDarkMode),
     );
   }
 
@@ -185,29 +191,34 @@ class _PreviewPageState extends State<PreviewPage> {
     );
   }
 
-  Widget _tag(String text, {List<Color>? gradient}) {
+  Widget _tag(String text, {List<Color>? gradient, required bool isDarkMode}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: gradient != null ? LinearGradient(colors: gradient) : null,
-        color: gradient == null ? Colors.grey.shade300 : null,
+        color: gradient == null
+            ? (isDarkMode ? const Color(0xFF2C2C2E) : Colors.grey.shade300)
+            : null,
       ),
       child: Text(
         text,
         style: TextStyle(
-          color: gradient != null ? Colors.white : Colors.black,
+          color: gradient != null
+              ? Colors.white
+              : (isDarkMode ? Colors.white : Colors.black),
           fontWeight: FontWeight.w500,
         ),
       ),
     );
   }
 
-  Widget _buildTripPlan(List<Map<String, String>> tripPlan) {
+  Widget _buildTripPlan(List<Map<String, String>> tripPlan, bool isDarkMode) {
     if (tripPlan.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.only(top: 8),
-        child: Text("No trip plan added yet."),
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text("No trip plan added yet.",
+            style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black)),
       );
     }
     return Column(
@@ -215,13 +226,18 @@ class _PreviewPageState extends State<PreviewPage> {
       children: [
         Row(
           children: [
-            const Text("Trip plan",
+            Text("Trip plan",
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    fontFamily: 'Poppins')),
+                    fontFamily: 'Poppins',
+                    color: isDarkMode ? Colors.white : Colors.black)),
             const SizedBox(width: 8),
-            Expanded(child: Divider(color: Colors.grey.shade400, thickness: 1)),
+            Expanded(
+              child: Divider(
+                  color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
+                  thickness: 1),
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -234,7 +250,7 @@ class _PreviewPageState extends State<PreviewPage> {
             itemBuilder: (context, index) {
               if (index.isOdd) return _arrowConnector();
               final step = tripPlan[index ~/ 2];
-              return _tripCard(step["time"]!, step["description"]!);
+              return _tripCard(step["time"]!, step["description"]!, isDarkMode);
             },
           ),
         ),
@@ -242,13 +258,15 @@ class _PreviewPageState extends State<PreviewPage> {
     );
   }
 
-  Widget _tripCard(String time, String title) {
+  Widget _tripCard(String time, String title, bool isDarkMode) {
     return Container(
       margin: const EdgeInsets.only(right: 8, left: 8),
       padding: const EdgeInsets.only(left: 10, right: 30, top: 12, bottom: 12),
       decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF1C1C1E) : Colors.white,
         border: Border.all(
-            color: const Color.fromARGB(255, 51, 51, 51), width: 0.8),
+            color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
+            width: 0.8),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -256,11 +274,11 @@ class _PreviewPageState extends State<PreviewPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text("• $time",
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
           const SizedBox(height: 4),
           Text(title,
               style:
-                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDarkMode ? Colors.white : Colors.black)),
         ],
       ),
     );
@@ -278,7 +296,7 @@ class _PreviewPageState extends State<PreviewPage> {
     );
   }
 
-  Widget _realGoogleMap(BuildContext context) {
+  Widget _realGoogleMap() {
     return SizedBox(
       height: 180,
       child: gmap.GoogleMap(
@@ -294,16 +312,11 @@ class _PreviewPageState extends State<PreviewPage> {
         },
         zoomControlsEnabled: false,
         myLocationButtonEnabled: false,
-        onTap: (_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Google Maps is for preview only.")),
-          );
-        },
       ),
     );
   }
 
-  Widget _fakeOrganizer() {
+  Widget _fakeOrganizer(bool isDarkMode) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
@@ -311,8 +324,10 @@ class _PreviewPageState extends State<PreviewPage> {
         backgroundColor: Colors.grey.shade200,
         child: const Icon(Icons.person, size: 28, color: Colors.grey),
       ),
-      title: const Text("Preview Organizer"),
-      subtitle: const Text("Listing Preview · 5 Stars"),
+      title: Text("Preview Organizer",
+          style: TextStyle(color: isDarkMode ? Colors.white : Colors.black)),
+      subtitle: Text("Listing Preview · 5 Stars",
+          style: TextStyle(color: isDarkMode ? Colors.grey : Colors.black87)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -337,9 +352,10 @@ class _PreviewPageState extends State<PreviewPage> {
     );
   }
 
-  Widget _bottomBar(BuildContext context) {
+  Widget _bottomBar(BuildContext context, bool isDarkMode) {
     return Container(
       decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.15),
@@ -348,72 +364,67 @@ class _PreviewPageState extends State<PreviewPage> {
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-        child: Container(
-          color: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Text("Price",
+                  style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54)),
+              const SizedBox(height: 2),
+              Row(
                 children: [
-                  const Text("Price", style: TextStyle(color: Colors.black54)),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Text(
-                        "\$${widget.price}",
-                        style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue),
-                      ),
-                      const SizedBox(width: 4),
-                      Text("/${widget.priceType}",
-                          style: const TextStyle(
-                              color: Colors.black54, fontSize: 14))
-                    ],
+                  Text(
+                    "\$${widget.price}",
+                    style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue),
                   ),
+                  const SizedBox(width: 4),
+                  Text("/${widget.priceType}",
+                      style: TextStyle(color: isDarkMode ? Colors.white60 : Colors.black54))
                 ],
               ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text("This is just a preview."),
-                  ));
-                },
-                icon: const Icon(Icons.local_activity_outlined,
-                    color: Colors.white, size: 20),
-                label: const Text("Book Ticket",
-                    style: TextStyle(color: Colors.white)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 25, vertical: 18),
-                ),
-              )
             ],
           ),
-        ),
+          ElevatedButton.icon(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text("This is just a preview."),
+              ));
+            },
+            icon: const Icon(Icons.local_activity_outlined, color: Colors.white, size: 20),
+            label: const Text("Book Ticket", style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 18),
+            ),
+          )
+        ],
       ),
     );
   }
 
-  Widget _sectionTitle(String text) {
+  Widget _sectionTitle(String text, bool isDarkMode) {
     return Row(
       children: [
         Text(text,
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                fontFamily: 'Poppins')),
+                fontFamily: 'Poppins',
+                color: isDarkMode ? Colors.white : Colors.black)),
         const SizedBox(width: 8),
-        Expanded(child: Divider(color: Colors.grey.shade400, thickness: 1)),
+        Expanded(
+            child: Divider(
+                color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
+                thickness: 1)),
       ],
     );
   }

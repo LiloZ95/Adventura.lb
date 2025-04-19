@@ -20,21 +20,26 @@ class AgeSelector extends StatelessWidget {
       "21+",
     ];
 
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: const [
+          children: [
             Text(
               'Age Allowed',
               style: TextStyle(
                 fontFamily: 'poppins',
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
+                color: isDarkMode ? Colors.white : Colors.black,
               ),
             ),
-            SizedBox(width: 8),
-            Expanded(child: Divider(color: Colors.grey)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Divider(color: isDarkMode ? Colors.grey.shade600 : Colors.grey),
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -47,14 +52,21 @@ class AgeSelector extends StatelessWidget {
               label: Text(
                 age,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.black,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDarkMode ? Colors.white70 : Colors.black),
                   fontFamily: 'poppins',
                 ),
               ),
               selected: isSelected,
-              selectedColor: Colors.blue,
-              backgroundColor: const Color.fromARGB(255, 245, 245, 245),
+              selectedColor: const Color(0xFF007AFF),
+              backgroundColor:
+                  isDarkMode ? const Color(0xFF2C2C2E) : const Color(0xFFF5F5F5),
               onSelected: (_) => onChanged(age),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             );
           }).toList(),
         ),

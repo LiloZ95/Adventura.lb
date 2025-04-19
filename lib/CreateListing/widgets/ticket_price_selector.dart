@@ -16,22 +16,28 @@ class TicketPriceSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: const [
+          children: [
             Text(
               'Ticket Price',
               style: TextStyle(
                 fontFamily: "poppins",
                 fontSize: 20,
-                color: Colors.black,
+                color: isDarkMode ? Colors.white : Colors.black,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(width: 8),
-            Expanded(child: Divider(color: Colors.grey)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Divider(
+                color: isDarkMode ? Colors.grey.shade600 : Colors.grey,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -41,7 +47,10 @@ class TicketPriceSelector extends StatelessWidget {
               child: Container(
                 height: 50,
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey, width: 1),
+                  border: Border.all(
+                    color: isDarkMode ? Colors.grey.shade700 : Colors.grey,
+                    width: 1,
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -51,28 +60,28 @@ class TicketPriceSelector extends StatelessWidget {
                       child: TextField(
                         controller: controller,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
+                        style: TextStyle(
+                          fontFamily: 'poppins',
+                          fontSize: 15,
+                          color: isDarkMode ? Colors.white : Colors.black,
+                        ),
+                        decoration: InputDecoration(
                           border: InputBorder.none,
                           hintText: '0',
                           hintStyle: TextStyle(
                             fontFamily: 'poppins',
                             fontSize: 15,
-                            color: Colors.grey,
+                            color: isDarkMode ? Colors.grey.shade500 : Colors.grey,
                           ),
-                        ),
-                        style: const TextStyle(
-                          fontFamily: 'poppins',
-                          fontSize: 15,
-                          color: Colors.black,
                         ),
                       ),
                     ),
-                    const Text(
+                    Text(
                       '\$',
                       style: TextStyle(
                         fontFamily: 'poppins',
                         fontSize: 15,
-                        color: Colors.black,
+                        color: isDarkMode ? Colors.white : Colors.black,
                       ),
                     ),
                   ],
@@ -80,12 +89,12 @@ class TicketPriceSelector extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               '/',
               style: TextStyle(
                 fontFamily: 'poppins',
                 fontSize: 18,
-                color: Colors.grey,
+                color: isDarkMode ? Colors.grey.shade400 : Colors.grey,
               ),
             ),
             const SizedBox(width: 8),
@@ -93,24 +102,29 @@ class TicketPriceSelector extends StatelessWidget {
               height: 50,
               width: 100,
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey, width: 1),
+                border: Border.all(
+                  color: isDarkMode ? Colors.grey.shade700 : Colors.grey,
+                  width: 1,
+                ),
                 borderRadius: BorderRadius.circular(12),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   value: selectedType,
-                  icon: const Icon(Icons.arrow_drop_down, color: Colors.black),
+                  icon: Icon(Icons.arrow_drop_down,
+                      color: isDarkMode ? Colors.white : Colors.black),
                   isExpanded: true,
+                  dropdownColor: isDarkMode ? const Color(0xFF2C2C2C) : Colors.white,
                   items: types.map((String type) {
                     return DropdownMenuItem<String>(
                       value: type,
                       child: Text(
                         type,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'poppins',
                           fontSize: 15,
-                          color: Colors.black,
+                          color: isDarkMode ? Colors.white : Colors.black,
                         ),
                       ),
                     );
@@ -147,6 +161,8 @@ class InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -155,10 +171,10 @@ class InfoRow extends StatelessWidget {
         Expanded(
           child: Text(
             message,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'poppins',
               fontSize: 11,
-              color: Colors.blue,
+              color: isDarkMode ? Colors.lightBlueAccent : Colors.blue,
             ),
           ),
         ),

@@ -22,21 +22,28 @@ class WeekdaySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: const [
+          children: [
             Text(
               'Repeat On',
               style: TextStyle(
                 fontFamily: 'poppins',
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
+                color: isDarkMode ? Colors.white : Colors.black,
               ),
             ),
-            SizedBox(width: 8),
-            Expanded(child: Divider(color: Colors.grey)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Divider(
+                color: isDarkMode ? Colors.grey.shade600 : Colors.grey,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 10),
@@ -45,13 +52,29 @@ class WeekdaySelector extends StatelessWidget {
           children: weekdays.map((day) {
             final isSelected = selectedDays.contains(day);
             return ChoiceChip(
-              label: Text(day.substring(0, 3)),
+              label: Text(
+                day.substring(0, 3),
+                style: TextStyle(
+                  fontFamily: 'poppins',
+                  color: isSelected
+                      ? Colors.white
+                      : isDarkMode
+                          ? Colors.white70
+                          : Colors.black87,
+                ),
+              ),
               selected: isSelected,
               onSelected: (_) {
                 final updated = Set<String>.from(selectedDays);
                 isSelected ? updated.remove(day) : updated.add(day);
                 onChanged(updated);
               },
+              selectedColor: Colors.blue,
+              backgroundColor: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             );
           }).toList(),
         ),

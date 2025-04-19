@@ -23,6 +23,7 @@ class ImageSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       children: [
@@ -30,9 +31,12 @@ class ImageSelector extends StatelessWidget {
           width: double.infinity,
           height: screenHeight * 0.25,
           decoration: BoxDecoration(
-            color: Colors.transparent,
+            color: isDarkMode ? const Color(0xFF2C2C2C) : Colors.white,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey, width: 2),
+            border: Border.all(
+              color: isDarkMode ? Colors.grey.shade700 : Colors.grey,
+              width: 2,
+            ),
           ),
           child: Stack(
             children: [
@@ -44,16 +48,19 @@ class ImageSelector extends StatelessWidget {
                           IconButton(
                             icon: const Icon(Icons.add_photo_alternate_outlined),
                             iconSize: 48,
-                            color: Colors.grey[600],
+                            color: isDarkMode
+                                ? Colors.grey.shade400
+                                : Colors.grey[600],
                             onPressed: onPickImages,
                           ),
                           const SizedBox(height: 8),
-                          const Text(
+                          Text(
                             'Add Photos',
                             style: TextStyle(
                               fontFamily: 'poppins',
                               fontSize: 16,
-                              color: Colors.black54,
+                              color:
+                                  isDarkMode ? Colors.white : const Color(0xFF1F1F1F),
                             ),
                           ),
                         ],
@@ -81,9 +88,12 @@ class ImageSelector extends StatelessWidget {
                   child: TextButton(
                     onPressed: onClearImages,
                     style: TextButton.styleFrom(
-                      backgroundColor: Colors.grey[300],
+                      backgroundColor: isDarkMode
+                          ? Colors.grey.shade800
+                          : Colors.grey.shade300,
                       foregroundColor: Colors.blue,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -92,7 +102,12 @@ class ImageSelector extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    child: const Text("Clear All"),
+                    child: Text(
+                      "Clear All",
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.white : const Color(0xFF1F1F1F),
+                      ),
+                    ),
                   ),
                 ),
             ],

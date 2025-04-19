@@ -2,14 +2,24 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const Transactions = () => {
   const [payments, setPayments] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
   const [selected, setSelected] = useState([]);
   const [modalData, setModalData] = useState(null);
+
+  const statusMapping = {
+    all: null,
+    paid: 'confirmed',
+    failed: 'failed',
+    refunded: 'refunded'
+  };
+  
 
   useEffect(() => {
     axios.get(`${process.env.REACT_APP_API_URL}/admin/transactions`)
@@ -20,13 +30,29 @@ const Transactions = () => {
   }, []);
 
   useEffect(() => {
-    if (statusFilter === 'all') {
-      setFiltered(payments);
-    } else {
-      setFiltered(payments.filter(p => p.payment_status === statusFilter));
+    let result = [...payments];
+
+    if (statusFilter !== 'all') {
+      const mappedStatus = statusMapping[statusFilter] || statusFilter;
+      result = result.filter((p) => p.payment_status === mappedStatus);
     }
+    
+
+    if (searchQuery.trim()) {
+      result = result.filter(p =>
+        Object.values(p).some(val =>
+          String(val).toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      );
+    }
+
+    if (dateFilter.trim()) {
+      result = result.filter(p => p.payment_date.startsWith(dateFilter));
+    }
+
+    setFiltered(result);
     setSelected([]);
-  }, [statusFilter, payments]);
+  }, [statusFilter, searchQuery, dateFilter, payments]);
 
   const toggleSelect = (id) => {
     setSelected(prev =>
@@ -38,7 +64,14 @@ const Transactions = () => {
     const headers = ['Payment ID', 'Client', 'Amount', 'Date', 'Status', 'Booking ID'];
     const rows = filtered
       .filter(p => selected.includes(p.payment_id))
-      .map(p => [p.payment_id, p.client_name, `$${parseFloat(p.amount).toFixed(2)}`, p.payment_date, p.payment_status, p.booking_id]);
+      .map(p => [
+        p.payment_id,
+        p.client_name,
+        `$${parseFloat(p.amount).toFixed(2)}`,
+        p.payment_date,
+        p.payment_status,
+        p.booking_id
+      ]);
 
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -49,12 +82,20 @@ const Transactions = () => {
     const doc = new jsPDF();
     const rows = filtered
       .filter(p => selected.includes(p.payment_id))
-      .map(p => [p.payment_id, p.client_name, `$${parseFloat(p.amount).toFixed(2)}`, p.payment_date, p.payment_status, p.booking_id]);
+      .map(p => [
+        p.payment_id,
+        p.client_name,
+        `$${parseFloat(p.amount).toFixed(2)}`,
+        p.payment_date,
+        p.payment_status,
+        p.booking_id
+      ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       head: [['Payment ID', 'Client', 'Amount', 'Date', 'Status', 'Booking ID']],
       body: rows
     });
+
     doc.save('selected-transactions.pdf');
   };
 
@@ -62,8 +103,9 @@ const Transactions = () => {
     <div className="p-6">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">💸 Transactions</h2>
 
-      <div className="mb-4 flex gap-2 flex-wrap">
-        {['all', 'paid', 'failed', 'refunded'].map(status => (
+      {/* Filters and Actions */}
+      <div className="mb-4 flex flex-wrap gap-2 items-center">
+        {Object.keys(statusMapping).map(status => (
           <button
             key={status}
             className={`px-3 py-1 rounded ${
@@ -74,14 +116,35 @@ const Transactions = () => {
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </button>
         ))}
+
+        <input
+          type="text"
+          placeholder="Search..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          className="ml-auto px-3 py-1 border border-gray-300 rounded"
+        />
+
+        <input
+          type="date"
+          value={dateFilter}
+          onChange={e => setDateFilter(e.target.value)}
+          className="px-3 py-1 border border-gray-300 rounded"
+        />
+
         {selected.length > 0 && (
           <>
-            <button onClick={downloadCSV} className="px-3 py-1 rounded bg-green-600 text-white">Download CSV</button>
-            <button onClick={downloadPDF} className="px-3 py-1 rounded bg-red-600 text-white">Download PDF</button>
+            <button onClick={downloadCSV} className="px-3 py-1 rounded bg-green-600 text-white">
+              Download CSV
+            </button>
+            <button onClick={downloadPDF} className="px-3 py-1 rounded bg-red-600 text-white">
+              Download PDF
+            </button>
           </>
         )}
       </div>
 
+      {/* Table */}
       <div className="overflow-x-auto bg-white rounded-md shadow-md">
         <table className="min-w-full text-sm">
           <thead className="bg-blue-600 text-white">
@@ -89,13 +152,9 @@ const Transactions = () => {
               <th className="px-4 py-2">
                 <input
                   type="checkbox"
-                  onChange={e => {
-                    if (e.target.checked) {
-                      setSelected(filtered.map(p => p.payment_id));
-                    } else {
-                      setSelected([]);
-                    }
-                  }}
+                  onChange={e =>
+                    setSelected(e.target.checked ? filtered.map(p => p.payment_id) : [])
+                  }
                   checked={selected.length === filtered.length && filtered.length > 0}
                 />
               </th>
@@ -111,7 +170,9 @@ const Transactions = () => {
             {filtered.map((p, i) => (
               <tr
                 key={i}
-                className={`border-t hover:bg-gray-50 cursor-pointer ${selected.includes(p.payment_id) ? 'bg-blue-50' : ''}`}
+                className={`border-t hover:bg-gray-50 cursor-pointer ${
+                  selected.includes(p.payment_id) ? 'bg-blue-50' : ''
+                }`}
                 onClick={() => setModalData(p)}
               >
                 <td className="px-4 py-2">
@@ -134,7 +195,7 @@ const Transactions = () => {
         </table>
       </div>
 
-      {/* Modal View */}
+      {/* Modal */}
       {modalData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">

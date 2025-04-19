@@ -6,6 +6,7 @@ import Activities from './pages/Activities';
 import Users from './pages/Users';
 import AdvancedInsights from './pages/AdvancedInsights';
 import Transactions from './pages/Transactions';
+import Notifications from './pages/Notifications';
 function App() {
   return (
     <Router>
@@ -21,6 +22,7 @@ function App() {
             <Route path="/users" element={<Users />} />
             <Route path="/advanced-insights" element={<AdvancedInsights />} />
             <Route path="/transactions" element={<Transactions />} />
+            <Route path="/notifications" element={<Notifications />} />
           </Routes>
         </div>
       </div>
