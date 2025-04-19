@@ -16,23 +16,28 @@ class TitleSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: const [
+          children: [
             Text(
               'Title',
               style: TextStyle(
                 fontFamily: "poppins",
                 fontSize: 20,
-                color: Colors.black,
+                color: isDarkMode ? Colors.white : const Color(0xFF1F1F1F),
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(width: 8),
-            Expanded(child: Divider(color: Colors.grey)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Divider(
+                color: isDarkMode ? Colors.grey.shade600 : Colors.grey,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -40,8 +45,11 @@ class TitleSection extends StatelessWidget {
           width: screenWidth * 0.9,
           height: 50,
           decoration: BoxDecoration(
+            color: isDarkMode ? const Color(0xFF2C2C2C) : Colors.transparent,
             border: Border.all(
-              color: const Color.fromRGBO(167, 167, 167, 1),
+              color: isDarkMode
+                  ? Colors.grey.shade700
+                  : const Color.fromRGBO(167, 167, 167, 1),
               width: 1,
             ),
             borderRadius: BorderRadius.circular(12),
@@ -52,6 +60,11 @@ class TitleSection extends StatelessWidget {
                 controller: controller,
                 maxLength: 30,
                 onChanged: onChanged,
+                style: TextStyle(
+                  fontFamily: 'poppins',
+                  fontSize: screenWidth * 0.04,
+                  color: isDarkMode ? Colors.white : const Color(0xFF1F1F1F),
+                ),
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   counterText: '',
@@ -61,15 +74,12 @@ class TitleSection extends StatelessWidget {
                   ),
                   hintText: 'Enter title...',
                   hintStyle: TextStyle(
-                    color: const Color.fromRGBO(190, 188, 188, 0.87),
+                    color: isDarkMode
+                        ? Colors.grey.shade500
+                        : const Color.fromRGBO(190, 188, 188, 0.87),
                     fontFamily: "poppins",
                     fontSize: screenWidth * 0.04,
                   ),
-                ),
-                style: TextStyle(
-                  fontFamily: 'poppins',
-                  fontSize: screenWidth * 0.04,
-                  color: Colors.black,
                 ),
               ),
               Positioned(
@@ -80,7 +90,7 @@ class TitleSection extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'poppins',
                     fontSize: screenWidth * 0.03,
-                    color: Colors.grey,
+                    color: isDarkMode ? Colors.white70 : const Color(0xFF1F1F1F),
                   ),
                 ),
               ),

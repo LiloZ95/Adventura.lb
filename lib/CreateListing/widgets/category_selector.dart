@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:adventura/config.dart'; // adjust if needed
+import 'package:adventura/config.dart';
 
 class CategorySelector extends StatefulWidget {
   final Map<String, dynamic>? selectedCategory;
@@ -56,9 +56,12 @@ class _CategorySelectorState extends State<CategorySelector> {
   Future<void> _showBottomSheet(BuildContext context) async {
     if (isLoading) return;
 
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     final chosenCategory = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
       builder: (BuildContext context) {
         return FractionallySizedBox(
           heightFactor: 0.6,
@@ -70,7 +73,7 @@ class _CategorySelectorState extends State<CategorySelector> {
                   height: 4,
                   margin: const EdgeInsets.symmetric(vertical: 16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[400],
+                    color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
@@ -93,11 +96,17 @@ class _CategorySelectorState extends State<CategorySelector> {
                             border: Border.all(
                               color: isSelected
                                   ? const Color.fromARGB(255, 63, 161, 241)
-                                  : const Color(0xFFCFCFCF),
+                                  : isDarkMode
+                                      ? Colors.grey.shade700
+                                      : const Color(0xFFCFCFCF),
                               width: 2,
                             ),
                             borderRadius: BorderRadius.circular(12),
-                            color: isSelected ? Colors.blue : Colors.white,
+                            color: isSelected
+                                ? Colors.blue
+                                : isDarkMode
+                                    ? const Color(0xFF2C2C2C)
+                                    : Colors.white,
                           ),
                           child: Center(
                             child: Text(
@@ -105,7 +114,11 @@ class _CategorySelectorState extends State<CategorySelector> {
                               style: TextStyle(
                                 fontFamily: 'poppins',
                                 fontSize: 16,
-                                color: isSelected ? Colors.white : Colors.black,
+                                color: isSelected
+                                    ? Colors.white
+                                    : isDarkMode
+                                        ? Colors.white
+                                        : Colors.black,
                               ),
                             ),
                           ),
@@ -121,7 +134,6 @@ class _CategorySelectorState extends State<CategorySelector> {
       },
     );
 
-// ✅ Correctly handle selected category
     if (chosenCategory != null) {
       widget.onCategorySelected(chosenCategory);
     }
@@ -129,22 +141,28 @@ class _CategorySelectorState extends State<CategorySelector> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: const [
+          children: [
             Text(
               'Category',
               style: TextStyle(
                 fontFamily: "poppins",
                 fontSize: 20,
-                color: Colors.black,
+                color: isDarkMode ? Colors.white : const Color(0xFF1F1F1F),
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(width: 8),
-            Expanded(child: Divider(color: Colors.grey)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Divider(
+                color: isDarkMode ? Colors.grey.shade600 : Colors.grey,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -154,7 +172,9 @@ class _CategorySelectorState extends State<CategorySelector> {
             height: 50,
             decoration: BoxDecoration(
               border: Border.all(
-                color: const Color.fromRGBO(167, 167, 167, 1),
+                color: isDarkMode
+                    ? Colors.grey.shade700
+                    : const Color.fromRGBO(167, 167, 167, 1),
                 width: 1,
               ),
               borderRadius: BorderRadius.circular(12),
@@ -164,10 +184,12 @@ class _CategorySelectorState extends State<CategorySelector> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 isLoading
-                    ? const Text(
+                    ? Text(
                         'Loading...',
                         style: TextStyle(
-                            fontFamily: 'poppins', color: Colors.grey),
+                          fontFamily: 'poppins',
+                          color: isDarkMode ? Colors.grey : Colors.grey,
+                        ),
                       )
                     : Text(
                         widget.selectedCategory?['name'] ?? 'Select Category',
@@ -175,13 +197,17 @@ class _CategorySelectorState extends State<CategorySelector> {
                           fontFamily: "poppins",
                           fontSize: 15,
                           color: widget.selectedCategory == null
-                              ? const Color.fromRGBO(190, 188, 188, 0.87)
-                              : Colors.black,
+                              ? (isDarkMode
+                                  ? Colors.grey.shade500
+                                  : const Color.fromRGBO(190, 188, 188, 0.87))
+                              : (isDarkMode ? Colors.white : Colors.black),
                         ),
                       ),
-                const Icon(
+                Icon(
                   Icons.arrow_circle_up,
-                  color: Color.fromRGBO(190, 188, 188, 0.87),
+                  color: isDarkMode
+                      ? Colors.grey.shade400
+                      : const Color.fromRGBO(190, 188, 188, 0.87),
                 ),
               ],
             ),

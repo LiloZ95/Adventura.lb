@@ -49,12 +49,12 @@ class _TripPlanSectionState extends State<TripPlanSection>
   void animateAdd(int index) {
     widget.onAdd(index);
 
-    Future.delayed(Duration(milliseconds: 100), () {
+    Future.delayed(const Duration(milliseconds: 100), () {
       setState(() {
         _visibleMap[widget.controllers.length - 1] = false;
       });
 
-      Future.delayed(Duration(milliseconds: 150), () {
+      Future.delayed(const Duration(milliseconds: 150), () {
         setState(() {
           _visibleMap[widget.controllers.length - 1] = true;
         });
@@ -64,48 +64,39 @@ class _TripPlanSectionState extends State<TripPlanSection>
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title
         Row(
-          children: const [
+          children: [
             Text(
               'Trip Plan',
               style: TextStyle(
                 fontFamily: 'poppins',
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
+                color: isDarkMode ? Colors.white : Colors.black,
               ),
             ),
-            SizedBox(width: 8),
-            Expanded(child: Divider(color: Colors.grey)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Divider(
+                color: isDarkMode ? Colors.grey.shade600 : Colors.grey,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
-
-        // Reorderable horizontal list
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.only(right: 40), // add this line
+          padding: const EdgeInsets.only(right: 40),
           child: ReorderableWrap(
             spacing: 0,
             scrollDirection: Axis.horizontal,
             needsLongPressDraggable: true,
-            onReorder: (oldIndex, newIndex) {
-              final fromEditable = widget.isEditable[oldIndex];
-              final toEditable = widget.isEditable[newIndex];
-
-              if (fromEditable || toEditable) return;
-
-              setState(() {
-                final movedController = widget.controllers.removeAt(oldIndex);
-                widget.controllers.insert(newIndex, movedController);
-
-                final movedEditable = widget.isEditable.removeAt(oldIndex);
-                widget.isEditable.insert(newIndex, movedEditable);
-              });
-            },
+            onReorder: widget.onReorder ?? (oldIndex, newIndex) {},
             children: List.generate(widget.controllers.length, (index) {
               final isLast = index == widget.controllers.length - 1;
               final timeController = widget.controllers[index]['time']!;
@@ -129,15 +120,20 @@ class _TripPlanSectionState extends State<TripPlanSection>
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          // Card UI
+                          // Main Card
                           Container(
                             width: 180,
-                            constraints: const BoxConstraints(
-                              minHeight: 80,
-                            ),
+                            constraints: const BoxConstraints(minHeight: 80),
                             decoration: BoxDecoration(
-                              border: Border.all(color: const Color(0xFFCFCFCF)),
+                              border: Border.all(
+                                color: isDarkMode
+                                    ? Colors.grey.shade700
+                                    : const Color(0xFFCFCFCF),
+                              ),
                               borderRadius: BorderRadius.circular(12),
+                              color: isDarkMode
+                                  ? const Color(0xFF2C2C2C)
+                                  : Colors.white,
                             ),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
@@ -149,12 +145,22 @@ class _TripPlanSectionState extends State<TripPlanSection>
                                     controller: timeController,
                                     readOnly: !editable,
                                     keyboardType: TextInputType.number,
-                                    decoration: const InputDecoration(
+                                    style: TextStyle(
+                                      fontFamily: 'poppins',
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.black,
+                                    ),
+                                    decoration: InputDecoration(
                                       hintText: 'Time',
                                       isDense: true,
                                       border: InputBorder.none,
+                                      hintStyle: TextStyle(
+                                        color: isDarkMode
+                                            ? Colors.grey.shade500
+                                            : Colors.grey,
+                                      ),
                                     ),
-                                    style: const TextStyle(fontFamily: 'poppins'),
                                     onChanged: (value) {
                                       if (value.isNotEmpty) {
                                         final num = int.tryParse(value);
@@ -165,7 +171,8 @@ class _TripPlanSectionState extends State<TripPlanSection>
                                           final formatted =
                                               num.toString().padLeft(2, '0') +
                                                   ':00';
-                                          timeController.value = TextEditingValue(
+                                          timeController.value =
+                                              TextEditingValue(
                                             text: formatted,
                                             selection: TextSelection.collapsed(
                                                 offset: formatted.length),
@@ -175,20 +182,35 @@ class _TripPlanSectionState extends State<TripPlanSection>
                                     },
                                   ),
                                 ),
-                                const Divider(height: 1, color: Color(0xFFCFCFCF)),
+                                Divider(
+                                  height: 1,
+                                  color: isDarkMode
+                                      ? Colors.grey.shade600
+                                      : const Color(0xFFCFCFCF),
+                                ),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 10),
                                   child: TextField(
                                     controller: descController,
                                     readOnly: !editable,
-                                    maxLines: null, // let it grow
-                                    decoration: const InputDecoration(
+                                    maxLines: null,
+                                    style: TextStyle(
+                                      fontFamily: 'poppins',
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.black,
+                                    ),
+                                    decoration: InputDecoration(
                                       hintText: 'Description',
                                       isDense: true,
                                       border: InputBorder.none,
+                                      hintStyle: TextStyle(
+                                        color: isDarkMode
+                                            ? Colors.grey.shade500
+                                            : Colors.grey,
+                                      ),
                                     ),
-                                    style: const TextStyle(fontFamily: 'poppins'),
                                   ),
                                 ),
                               ],
@@ -222,12 +244,16 @@ class _TripPlanSectionState extends State<TripPlanSection>
                                         padding: const EdgeInsets.all(4),
                                         decoration: BoxDecoration(
                                           color: isPressed
-                                              ? const Color.fromARGB(255, 145, 145, 145)
-                                              : const Color.fromARGB(255, 224, 224, 224),
+                                              ? Colors.grey.shade600
+                                              : isDarkMode
+                                                  ? Colors.grey.shade800
+                                                  : const Color.fromARGB(
+                                                      255, 224, 224, 224),
                                           shape: BoxShape.circle,
                                           boxShadow: const [
                                             BoxShadow(
-                                              color: Color.fromARGB(66, 42, 42, 42),
+                                              color: Color.fromARGB(
+                                                  66, 42, 42, 42),
                                               blurRadius: 4,
                                               offset: Offset(0, 2),
                                             ),
@@ -253,14 +279,18 @@ class _TripPlanSectionState extends State<TripPlanSection>
                               width: 20,
                               height: 20,
                               decoration: BoxDecoration(
-                                color: Colors.grey.shade400,
+                                color: isDarkMode
+                                    ? Colors.grey.shade700
+                                    : Colors.grey.shade400,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               alignment: Alignment.center,
                               child: Text(
                                 '${index + 1}',
                                 style: const TextStyle(
-                                    fontSize: 11, color: Colors.white),
+                                  fontSize: 11,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -275,8 +305,10 @@ class _TripPlanSectionState extends State<TripPlanSection>
                                 child: Container(
                                   width: 30,
                                   height: 30,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.black,
+                                  decoration: BoxDecoration(
+                                    color: isDarkMode
+                                        ? Colors.blue.shade200
+                                        : Colors.black,
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(Icons.add,
@@ -293,19 +325,18 @@ class _TripPlanSectionState extends State<TripPlanSection>
             }),
           ),
         ),
-        const SizedBox(width: 50),
         const SizedBox(height: 10),
         Row(
-          children: const [
-            Icon(Icons.info, size: 16, color: Colors.blue),
-            SizedBox(width: 6),
+          children: [
+            const Icon(Icons.info, size: 16, color: Colors.blue),
+            const SizedBox(width: 6),
             Expanded(
               child: Text(
                 'Enter time (1–12), choose AM/PM, and drag to reorder checkpoints.',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.blue,
                   fontFamily: 'poppins',
+                  color: isDarkMode ? Colors.lightBlueAccent : Colors.blue,
                 ),
               ),
             ),

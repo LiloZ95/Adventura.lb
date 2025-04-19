@@ -14,7 +14,6 @@ class CalendarDateSelector extends StatefulWidget {
   final ValueChanged<Set<String>> onWeekdaysChanged;
   final void Function(TimeOfDay?, TimeOfDay?)? onTimeRangeSelected;
 
-
   const CalendarDateSelector({
     Key? key,
     required this.selectedListingType,
@@ -61,6 +60,8 @@ class _CalendarDateSelectorState extends State<CalendarDateSelector> {
   }
 
   Future<void> _pickTime(bool isStart) async {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     final initialTime = TimeOfDay(hour: 8, minute: 0);
     final picked = await showTimePicker(
       context: context,
@@ -69,30 +70,35 @@ class _CalendarDateSelectorState extends State<CalendarDateSelector> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF007AFF),
-              onSurface: Colors.black,
+            colorScheme: ColorScheme(
+              brightness: isDarkMode ? Brightness.dark : Brightness.light,
+              primary: const Color(0xFF007AFF),
+              onPrimary: Colors.white,
+              secondary: const Color(0xFF007AFF),
+              onSecondary: Colors.white,
+              surface: isDarkMode ? const Color(0xFF1C1C1E) : Colors.white,
+              onSurface: isDarkMode ? Colors.white : Colors.black,
+              error: Colors.red,
+              onError: Colors.white,
+              background: isDarkMode ? const Color(0xFF1C1C1E) : Colors.white,
+              onBackground: isDarkMode ? Colors.white : Colors.black,
             ),
             timePickerTheme: TimePickerThemeData(
-              backgroundColor: Colors.white,
-              hourMinuteShape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12)),
-              ),
-              hourMinuteColor: MaterialStateColor.resolveWith(
-                (states) => states.contains(MaterialState.selected)
-                    ? const Color(0xFF007AFF)
-                    : Colors.transparent,
-              ),
-              dayPeriodColor: MaterialStateColor.resolveWith(
-                (states) => states.contains(MaterialState.selected)
-                    ? const Color(0xFF007AFF)
-                    : Colors.transparent,
-              ),
-              dayPeriodTextColor: MaterialStateColor.resolveWith(
-                (states) => states.contains(MaterialState.selected)
-                    ? Colors.white
-                    : Colors.black,
-              ),
+              backgroundColor:
+                  isDarkMode ? const Color(0xFF1C1C1E) : Colors.white,
+              hourMinuteColor: MaterialStateColor.resolveWith((states) =>
+                  states.contains(MaterialState.selected)
+                      ? const Color(0xFF007AFF)
+                      : isDarkMode
+                          ? const Color(0xFF2C2C2E)
+                          : const Color(0xFFF2F2F7)),
+              hourMinuteTextColor: MaterialStateColor.resolveWith((states) =>
+                  states.contains(MaterialState.selected)
+                      ? Colors.white
+                      : isDarkMode
+                          ? Colors.white
+                          : Colors.black),
+              dialHandColor: const Color(0xFF007AFF),
               entryModeIconColor: const Color(0xFF007AFF),
             ),
           ),
@@ -129,31 +135,31 @@ class _CalendarDateSelectorState extends State<CalendarDateSelector> {
     return durations;
   }
 
-  // String _formatDuration(Duration d) {
-  //   final hours = d.inHours;
-  //   final minutes = d.inMinutes % 60;
-  //   return '${hours}h${minutes > 0 ? ' $minutes min' : ''}';
-  // }
-
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final durationOptions = _calculateDurations();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: const [
+          children: [
             Text(
               'Select Date(s)',
               style: TextStyle(
                 fontFamily: 'poppins',
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
+                color: isDarkMode ? Colors.white : Colors.black,
               ),
             ),
-            SizedBox(width: 8),
-            Expanded(child: Divider(color: Colors.grey)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Divider(
+                color: isDarkMode ? Colors.grey.shade600 : Colors.grey,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 10),
@@ -174,25 +180,31 @@ class _CalendarDateSelectorState extends State<CalendarDateSelector> {
           rangeStartDay: _startDate,
           rangeEndDay: _endDate,
           onDaySelected: _onDaySelected,
-          calendarStyle: const CalendarStyle(
+          calendarStyle: CalendarStyle(
             isTodayHighlighted: true,
-            rangeStartDecoration: BoxDecoration(
+            todayTextStyle: TextStyle(
+              color: isDarkMode ? Colors.white : Colors.black,
+            ),
+            todayDecoration: BoxDecoration(
+              color: isDarkMode ? Colors.blue.shade300 : Colors.blue.shade100,
+              shape: BoxShape.circle,
+            ),
+            selectedDecoration: const BoxDecoration(
               color: Colors.blue,
               shape: BoxShape.circle,
             ),
-            rangeEndDecoration: BoxDecoration(
+            rangeStartDecoration: const BoxDecoration(
               color: Colors.blue,
               shape: BoxShape.circle,
             ),
-            selectedDecoration: BoxDecoration(
+            rangeEndDecoration: const BoxDecoration(
               color: Colors.blue,
               shape: BoxShape.circle,
             ),
           ),
-          rangeSelectionMode:
-              widget.selectedListingType == ListingType.recurrent
-                  ? RangeSelectionMode.enforced
-                  : RangeSelectionMode.toggledOff,
+          rangeSelectionMode: widget.selectedListingType == ListingType.recurrent
+              ? RangeSelectionMode.enforced
+              : RangeSelectionMode.toggledOff,
         ),
         const SizedBox(height: 10),
         if (_startDate != null)
@@ -202,63 +214,81 @@ class _CalendarDateSelectorState extends State<CalendarDateSelector> {
                 : _endDate != null
                     ? "Range: ${DateFormat.yMMMd().format(_startDate!)} → ${DateFormat.yMMMd().format(_endDate!)}"
                     : "Start: ${DateFormat.yMMMd().format(_startDate!)} (select end date)",
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-          ),
-        
-          const SizedBox(height: 30),
-          Row(
-            children: const [
-              Text(
-                'Time Settings',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(width: 8),
-              Expanded(child: Divider(color: Colors.grey)),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStyledTimeBox(
-                  context,
-                  'Start Time',
-                  _fromTime,
-                  () => _pickTime(true),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildStyledTimeBox(
-                  context,
-                  'End Time',
-                  _toTime,
-                  () => _pickTime(false),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          if (widget.selectedListingType == ListingType.recurrent && durationOptions.isNotEmpty) ...[
-            DurationSelector(
-              selectedDuration: widget.selectedDuration,
-              availableDurations: durationOptions,
-              onChanged: widget.onDurationChanged,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: isDarkMode ? Colors.white70 : Colors.black87,
             ),
+          ),
+        const SizedBox(height: 30),
+        Row(
+          children: [
+            Text(
+              'Time Settings',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? Colors.white : Colors.black,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Divider(
+                color: isDarkMode ? Colors.grey.shade600 : Colors.grey,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _buildStyledTimeBox(
+                context,
+                'Start Time',
+                _fromTime,
+                () => _pickTime(true),
+                isDarkMode,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildStyledTimeBox(
+                context,
+                'End Time',
+                _toTime,
+                () => _pickTime(false),
+                isDarkMode,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        if (widget.selectedListingType == ListingType.recurrent && durationOptions.isNotEmpty) ...[
+          DurationSelector(
+            selectedDuration: widget.selectedDuration,
+            availableDurations: durationOptions,
+            onChanged: widget.onDurationChanged,
+          ),
           const SizedBox(height: 20),
           WeekdaySelector(
             selectedDays: widget.selectedWeekdays,
-            onChanged: (days) => widget.onWeekdaysChanged(days),
+            onChanged: widget.onWeekdaysChanged,
           ),
-        ]
+        ],
       ],
     );
   }
 
   Widget _buildStyledTimeBox(
-      BuildContext context, String label, TimeOfDay? time, VoidCallback onTap) {
+    BuildContext context,
+    String label,
+    TimeOfDay? time,
+    VoidCallback onTap,
+    bool isDarkMode,
+  ) {
     final timeStr = time != null ? time.format(context) : '';
-    final bool isSelected = timeStr.isNotEmpty;
+    final isSelected = timeStr.isNotEmpty;
 
     return GestureDetector(
       onTap: onTap,
@@ -266,13 +296,12 @@ class _CalendarDateSelectorState extends State<CalendarDateSelector> {
         height: 50,
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
+          color: isDarkMode ? const Color(0xFF2C2C2C) : Colors.white,
           border: Border.all(
-            color:
-                isSelected ? const Color(0xFF007AFF) : const Color(0xFFCFCFCF),
+            color: isSelected ? const Color(0xFF007AFF) : Colors.grey.shade500,
             width: 1.3,
           ),
           borderRadius: BorderRadius.circular(12),
-          color: Colors.white,
         ),
         alignment: Alignment.centerLeft,
         child: Row(
@@ -287,7 +316,9 @@ class _CalendarDateSelectorState extends State<CalendarDateSelector> {
                 isSelected ? timeStr : label,
                 key: ValueKey(timeStr),
                 style: TextStyle(
-                  color: isSelected ? Colors.black : Colors.grey,
+                  color: isSelected
+                      ? (isDarkMode ? Colors.white : Colors.black)
+                      : Colors.grey,
                   fontFamily: 'poppins',
                   fontSize: 14,
                 ),

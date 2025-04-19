@@ -567,7 +567,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
                 hint: 'Ex: 20',
                 icon: Icons.event_seat,
               ),
-
+            const SizedBox(height: 8),
               // ---------------------------------
               // Age Allowed
               // ---------------------------------
