@@ -1,4 +1,4 @@
-const { sequelize, Activity, ActivityCategory, User } = require('../models');
+const { sequelize, Activity, ActivityCategory, User, Provider, Client, Administrator } = require('../models');
 // GET all activities with category name
 const getAllActivities = async (req, res) => {
   try {
@@ -169,15 +169,41 @@ const modifyUser = async (req, res) => {
   const deleteUser = async (req, res) => {
     try {
       const { id } = req.params;
+  
+      // 1. Get client and provider IDs (if they exist)
+      const client = await Client.findOne({ where: { user_id: id } });
+      const provider = await Provider.findOne({ where: { user_id: id } });
+  
+      // 2. Delete related bookings (if client exists)
+      if (client) {
+        await sequelize.query(`DELETE FROM booking WHERE client_id = ${client.client_id}`);
+      }
+  
+      // 3. Delete related activities (if provider exists)
+      if (provider) {
+        await sequelize.query(`DELETE FROM activities WHERE provider_id = ${provider.provider_id}`);
+      }
+  
+      // 4. Delete related interactions
+      await sequelize.query(`DELETE FROM user_activity_interaction WHERE user_id = ${id}`);
+  
+      // 5. Delete from related tables first
+      await Provider.destroy({ where: { user_id: id } });
+      await Client.destroy({ where: { user_id: id } });
+      await Administrator.destroy({ where: { user_id: id } });
+  
+      // 6. Delete the user
       const deleted = await User.destroy({ where: { user_id: id } });
   
       if (!deleted) return res.status(404).json({ message: 'User not found' });
   
       res.json({ message: 'User deleted successfully' });
     } catch (err) {
+      console.error(err);
       res.status(500).json({ error: err.message });
     }
   };
+  
   const getTopCities = async (req, res) => {
     try {
       const result = await sequelize.query(
@@ -265,7 +291,7 @@ const modifyUser = async (req, res) => {
         JOIN booking b ON b.booking_id = p.booking_id
         JOIN activities a ON a.activity_id = b.activity_id
         JOIN category c ON c.category_id = a.category_id
-        WHERE p.payment_status = 'paid'
+        WHERE p.payment_status = 'confirmed'
         GROUP BY c.name
         ORDER BY total_revenue DESC;
       `, {
@@ -278,6 +304,7 @@ const modifyUser = async (req, res) => {
       res.status(500).json({ error: err.message });
     }
   };
+  
   const getTopCitiesByRevenue = async (req, res) => {
     try {
       const data = await sequelize.query(`
@@ -352,6 +379,7 @@ module.exports = {
    // getTopGender,
     getRevenueByType,
     getPayments,
-    getTopCategories
+    getTopCategories,
+    Administrator
   };
   

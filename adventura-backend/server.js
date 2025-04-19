@@ -47,7 +47,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors({
   origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST","PATCH", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 app.use(helmet());
@@ -73,6 +73,7 @@ const bookingRoutes = require("./routes/bookingRoutes");
 const adminRoutes = require('./routes/adminRoutes');
 const providerRequestRoutes = require("./routes/providerRequestRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const adminNotificationRoutes = require('./routes/adminNotificationRoutes');
 
 // const socialAuthRoutes = require('./routes/socialAuthRoutes'); // optional
 
@@ -94,7 +95,7 @@ app.use("/booking", bookingRoutes);
 app.use('/admin', adminRoutes); // ← important to keep this prefix!
 app.use("/api", providerRequestRoutes); // Provider request routes
 app.use("/", notificationRoutes);
-
+app.use('/admin', adminNotificationRoutes);
 // app.use("/users", socialAuthRoutes); // Optional social login routes
 
 // ===========================================================

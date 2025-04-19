@@ -12,6 +12,7 @@ const UserPreferences = require("./UserPreferences");
 const UserActivityInteraction = require("./UserActivityInteraction");
 const Booking = require("./Booking");
 const Feature = require("./Feature");
+const Administrator = require('./Administrator');
 const availability = require("./Availability");
 const ActivityCategory = require('./ActivityCategory');
 const NotificationModel = require("./Notification");
@@ -125,6 +126,7 @@ module.exports = {
   Event,
   EventImage,
   UserActivityInteraction,
+  Administrator,
   TripPlan,
   Feature,
   User,

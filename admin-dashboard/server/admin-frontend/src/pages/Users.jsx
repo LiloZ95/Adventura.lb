@@ -7,10 +7,11 @@ const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [editingUser, setEditingUser] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [confirmEditData, setConfirmEditData] = useState(null);
 
   const fetchUsers = () => {
     axios.get(`${process.env.REACT_APP_API_URL}/admin/users`)
-
       .then(res => {
         setUsers(res.data);
         setFilteredUsers(res.data);
@@ -31,24 +32,32 @@ const Users = () => {
     setFilteredUsers(filtered);
   }, [searchTerm, roleFilter, users]);
 
-  const handleDelete = async (id) => {
-    const confirm = window.confirm("Are you sure you want to delete this user?");
-    if (!confirm) return;
+  const handleDelete = (id) => {
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
     try {
-      await axios.delete(`${process.env.REACT_APP_API_URL}/admin/users/${id}`);
+      await axios.delete(`${process.env.REACT_APP_API_URL}/admin/users/${confirmDeleteId}`);
+      setConfirmDeleteId(null);
       fetchUsers();
     } catch (err) {
       console.error('Delete error:', err);
     }
   };
 
-  const handleSaveEdit = async (data) => {
+  const handleSaveEdit = (data) => {
+    setConfirmEditData(data);
+  };
+
+  const confirmSaveEdit = async () => {
     try {
-      await axios.patch(`${process.env.REACT_APP_API_URL}/admin/users/${editingUser.user_id}`, data);
+      await axios.patch(`${process.env.REACT_APP_API_URL}/admin/users/${editingUser.user_id}`, confirmEditData);
       setEditingUser(null);
+      setConfirmEditData(null);
       fetchUsers();
     } catch (err) {
-      console.error('Edit error:', err);
+      console.error('Edit error:', err?.response?.data || err.message);
       alert('Failed to save changes');
     }
   };
@@ -65,7 +74,6 @@ const Users = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="border p-2 rounded w-1/2"
         />
-
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
@@ -130,17 +138,32 @@ const Users = () => {
           onSave={handleSaveEdit}
         />
       )}
+
+      {/* ✅ Delete Confirmation Modal */}
+      {confirmDeleteId && (
+        <ConfirmModal
+          title="Confirm Delete"
+          message="Are you sure you want to delete this user?"
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
+      )}
+
+      {/* ✅ Edit Confirmation Modal */}
+      {confirmEditData && (
+        <ConfirmModal
+          title="Confirm Save"
+          message="Are you sure you want to save these changes?"
+          onConfirm={confirmSaveEdit}
+          onCancel={() => setConfirmEditData(null)}
+        />
+      )}
     </div>
   );
 };
 
 const EditUserModal = ({ user, onClose, onSave }) => {
-  const [form, setForm] = useState({
-    first_name: user.first_name,
-    last_name: user.last_name,
-    phone_number: user.phone_number,
-    user_type: user.user_type
-  });
+  const [form, setForm] = useState({ ...user });
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -167,6 +190,21 @@ const EditUserModal = ({ user, onClose, onSave }) => {
         <div className="flex justify-end mt-4 space-x-2">
           <button onClick={onClose} className="px-4 py-1 bg-gray-200 rounded">Cancel</button>
           <button onClick={handleSubmit} className="px-4 py-1 bg-blue-500 text-white rounded">Save</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ConfirmModal = ({ title, message, onConfirm, onCancel }) => {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg w-[350px]">
+        <h3 className="text-lg font-semibold mb-4">{title}</h3>
+        <p className="text-sm text-gray-700 mb-6">{message}</p>
+        <div className="flex justify-end gap-2">
+          <button onClick={onCancel} className="bg-gray-200 px-4 py-1 rounded">Cancel</button>
+          <button onClick={onConfirm} className="bg-red-600 text-white px-4 py-1 rounded">Confirm</button>
         </div>
       </div>
     </div>

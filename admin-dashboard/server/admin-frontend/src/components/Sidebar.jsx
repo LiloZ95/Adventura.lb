@@ -39,15 +39,21 @@ const Sidebar = () => {
         >
           Advanced Insights
         </Link>
-        <Link
-        to="/transactions"
-        className={`block px-4 py-2 rounded mt-2 ${
-        location.pathname === '/transactions' ? 'bg-blue-600 text-white' : 'text-white'
-        }`}
-        >
-  Transactions
-</Link>
 
+        <Link
+          to="/transactions"
+          className={`block px-4 py-2 rounded ${isActive('/transactions') ? 'bg-blue-600' : 'hover:bg-blue-700'}`}
+        >
+          Transactions
+        </Link>
+
+        {/* ✅ Notifications tab added */}
+        <Link
+          to="/notifications"
+          className={`block px-4 py-2 rounded ${isActive('/notifications') ? 'bg-blue-600' : 'hover:bg-blue-700'}`}
+        >
+          Notifications
+        </Link>
       </nav>
     </aside>
   );
