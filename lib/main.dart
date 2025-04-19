@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:adventura/main_api.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
- // ✅ NEW import
+// ✅ NEW import
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,11 +20,14 @@ void main() async {
   await Hive.openBox('authBox');
   await Hive.openBox('chatMessages');
 
+  final themeController = ThemeController(); // loads theme from Hive
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => MainApi()),
-        ChangeNotifierProvider(create: (context) => ThemeController()), // ✅ NEW provider
+        ChangeNotifierProvider(
+            create: (_) => themeController), // ✅ Use the same instance
       ],
       child: MyApp(),
     ),
