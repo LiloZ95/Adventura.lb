@@ -1,12 +1,12 @@
-// lib/web/widgets/navbar_widget.dart
+
+
+import 'package:adventura/Chatbot/chatBot.dart';
 import 'package:adventura/Notification/NotificationPage.dart';
-import 'package:adventura/components/customdropdown.dart';
-import 'package:adventura/web/bookingweb.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/colors.dart';
+import 'package:adventura/components/customdropdown.dart';
 import 'package:hive/hive.dart';
 import 'dart:typed_data';
-
 
 class NavbarWidget extends StatelessWidget {
   final String firstName;
@@ -14,8 +14,8 @@ class NavbarWidget extends StatelessWidget {
   final VoidCallback onMenuTap;
   final String selectedLocation;
   final Function(String) onLocationChanged;
-    final int selectedIndex;
-    final Function(int) onTapNavItem;
+  final int selectedIndex;
+  final Function(int) onTapNavItem;
 
   const NavbarWidget({
     Key? key,
@@ -24,7 +24,8 @@ class NavbarWidget extends StatelessWidget {
     required this.onMenuTap,
     required this.selectedLocation,
     required this.onLocationChanged,
-       required this.selectedIndex, required this.onTapNavItem,
+    required this.selectedIndex,
+    required this.onTapNavItem,
   }) : super(key: key);
 
   @override
@@ -47,16 +48,16 @@ class NavbarWidget extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Logo
+          
           Image.asset(
             'assets/images/MainLogo.png',
             width: 200,
-            height: 700,
+            height: 70,
             fit: BoxFit.cover,
           ),
           SizedBox(width: 32),
           
-          // Creative Location dropdown (shown only on desktop)
+          
           if (!isMobile)
             Expanded(
               child: CreativeLocationDropdown(
@@ -64,61 +65,33 @@ class NavbarWidget extends StatelessWidget {
                 locations: ["Tripoli", "Beirut", "Jbeil", "Jounieh", "Sayda"],
                 onLocationChanged: onLocationChanged,
                 accentColor: AppColors.mainBlue,
-                width: 200.0, // You can adjust this width based on your needs
+                width: 200.0, 
               ),
             ),
           
-          // Navigation links (shown only on desktop)
+          
           if (!isMobile) ...[
-            TextButton(
-               onPressed: () => onTapNavItem(0),
-              child: Text(
-                "Home",
-                style: TextStyle(
-                  color: AppColors.mainBlue,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            _buildNavItem("Home", 0),
             SizedBox(width: 24),
-            TextButton(
-            onPressed: () =>  onTapNavItem(1),
-              child: Text(
-                "Discover",
-                style: TextStyle(
-                  color: Colors.grey.shade700,
-                ),
-              ),
-            ),
+            _buildNavItem("Discover", 1),
             SizedBox(width: 24),
-            TextButton(
-              onPressed: () {},
-              child: Text(
-                "My Bookings",
-                style: TextStyle(
-                  color: Colors.grey.shade700,
-                ),
-              ),
-            ),
+            _buildNavItem("My Bookings", 2),
             SizedBox(width: 24),
-            TextButton(
-                 onPressed: () => onTapNavItem(2),
-              child: Text(
-                "Saved",
-                style: TextStyle(
-                  color: Colors.grey.shade700,
-                ),
-              ),
-            ),
+            _buildNavItem("Saved", 3),
           ],
           
-          // Profile section
+          
           Spacer(),
           Row(
             children: [
               if (!isMobile) ...[
                 IconButton(
-                  onPressed: () {},
+                  onPressed: () {   Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdventuraChatPage()
+          ),
+        );},
                   icon: Image.asset(
                     'assets/Icons/ai.png',
                     width: 28,
@@ -126,9 +99,12 @@ class NavbarWidget extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  onPressed: () { Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) =>NotificationScreen()),);},
+                  onPressed: () {   Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NotificationScreen()
+          ),
+        );},
                   icon: Image.asset(
                     'assets/Icons/bell-Bold.png',
                     width: 24,
@@ -171,6 +147,29 @@ class NavbarWidget extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  
+  Widget _buildNavItem(String title, int index) {
+    final bool isSelected = selectedIndex == index;
+    
+    return TextButton(
+      onPressed: () => onTapNavItem(index),
+      style: ButtonStyle(
+        overlayColor: MaterialStateProperty.all(Colors.transparent),
+        padding: MaterialStateProperty.all(
+          EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
+      ),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: isSelected ? AppColors.mainBlue : Colors.grey.shade700,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          fontSize: 16,
+        ),
       ),
     );
   }

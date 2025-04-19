@@ -57,7 +57,7 @@ class DynamicOnboarding extends StatelessWidget {
                         alignment: PlaceholderAlignment.baseline,
                         baseline: TextBaseline.alphabetic,
                         child: DefaultTextStyle(
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 55,
                             fontWeight: FontWeight.bold,
                             color: Color(0xff007AFF),

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io'; // ✅ Import dart:io for platform detection
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/login/login.dart';
+import 'package:adventura/web/homeweb.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -126,14 +127,14 @@ class MainApi extends ChangeNotifier {
 
       if (isValid) {
         print("✅ User is already logged in. Redirecting to MainScreen...");
-        _initialScreen = MainScreen();
+        _initialScreen =  AdventuraWebHomee();
       } else {
         print("❌ Token expired. Trying refresh...");
         bool refreshed = await refreshTokens();
 
         if (refreshed) {
           print("✅ Tokens refreshed. Redirecting to MainScreen...");
-          _initialScreen = MainScreen();
+          _initialScreen =  AdventuraWebHomee();
         } else {
           print("❌ Token refresh failed. Logging out.");
           await logout();

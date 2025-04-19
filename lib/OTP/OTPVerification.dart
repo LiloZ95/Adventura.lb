@@ -2,21 +2,22 @@ import 'package:adventura/OTP/SetPassword.dart';
 import 'package:adventura/Services/otp_service.dart';
 import 'package:adventura/userPreferences/userPreferences.dart';
 import 'package:flutter/material.dart';
-import 'package:pin_code_fields/pin_code_fields.dart';
+// Removed pin_code_fields import as we're using custom OTP field design
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:async'; // ✅ Import for Timer
-import 'dart:ui' as ui; // ✅ Use alias for dart:ui
+import 'dart:async';
+import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class OtpVerificationScreen extends StatefulWidget {
   final String email;
   final bool isForSignup;
-  final Map<String, String>? signupData; // ✅ Store signup data
+  final Map<String, String>? signupData;
 
   OtpVerificationScreen({
     required this.email,
     required this.isForSignup,
-    this.signupData, // ✅ Accept signup data
+    this.signupData,
   });
 
   @override
@@ -24,20 +25,19 @@ class OtpVerificationScreen extends StatefulWidget {
 }
 
 class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
-  final TextEditingController _otpController = TextEditingController();
+  // Using individual controllers for each OTP digit instead of a single controller
   final storage = FlutterSecureStorage();
-  bool _isResendingOtp = false; // Track resend status
+  bool _isResendingOtp = false;
   bool _isLoading = false;
   String _errorMessage = "";
 
-  // ✅ Countdown Timer Variables
+  // Countdown Timer Variables
   int _remainingSeconds = 300; // 5 minutes = 300 seconds
   late Timer _timer;
-  bool _showResendButton =
-      false; // ✅ Controls visibility of "Resend OTP" button
+  bool _showResendButton = false;
 
-  // ✅ New: Border color for PinCodeTextField
-  Color _pinBorderColor = Colors.grey[600]!; // Default grey
+  // Border color for PinCodeTextField
+  Color _pinBorderColor = Colors.grey[600]!;
 
   @override
   void initState() {
@@ -45,35 +45,31 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     _startCountdown();
   }
 
-  // ✅ Start countdown timer
   void _startCountdown() {
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (_remainingSeconds > 0) {
         setState(() => _remainingSeconds--);
       } else {
         setState(() {
-          _showResendButton =
-              true; // ✅ Show "Resend Code" button when timer ends
+          _showResendButton = true;
         });
-        timer.cancel(); // Stop the timer at 00:00
+        timer.cancel();
       }
     });
   }
 
-  // ✅ Format time to MM:SS (e.g., 04:59)
   String _formatTime(int seconds) {
     int minutes = seconds ~/ 60;
     int secs = seconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
 
-  // ✅ Reset timer when "RESET CODE" is pressed
   void _resetTimer() {
     setState(() {
-      _remainingSeconds = 300; // Reset to 5:00
-      _showResendButton = false; // Hide reset button
+      _remainingSeconds = 300;
+      _showResendButton = false;
     });
-    _startCountdown(); // Restart countdown
+    _startCountdown();
   }
 
   void _resendOtp() async {
@@ -93,7 +89,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         SnackBar(content: Text("A new OTP has been sent to your email.")),
       );
 
-      _resetTimer(); // ✅ Reset countdown timer after resending OTP
+      _resetTimer();
     } else {
       print("❌ Failed to resend OTP: ${response["error"]}");
       ScaffoldMessenger.of(context).showSnackBar(
@@ -104,29 +100,40 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     setState(() => _isResendingOtp = false);
   }
 
+  // Custom OTP text controllers for individual digits
+  final List<TextEditingController> _digitControllers = 
+    List.generate(6, (index) => TextEditingController());
+    
+  // Focus nodes for each digit field
+  final List<FocusNode> _focusNodes = 
+    List.generate(6, (index) => FocusNode());
+  
+  String get _fullOtp => 
+    _digitControllers.map((controller) => controller.text).join();
+  
   void _verifyOtp() async {
-    if (_otpController.text.isEmpty) {
+    if (_fullOtp.length < 6) {
       setState(() {
-        _errorMessage = "❌ OTP cannot be empty!"; // ✅ Show error message
+        _errorMessage = "❌ OTP cannot be empty!";
         _isLoading = false;
       });
-      return; // ✅ Stop execution
+      return;
     }
 
     setState(() {
-      _isLoading = true; // ✅ Start loading only if OTP is not empty
-      _errorMessage = ""; // ✅ Clear previous errors
+      _isLoading = true;
+      _errorMessage = "";
     });
 
     print("🔍 Sending OTP Verification Request:");
     print("Email: ${widget.email}");
-    print("Entered OTP: ${_otpController.text}");
+    print("Entered OTP: ${_fullOtp}");
     print("isForSignup: ${widget.isForSignup}");
 
     try {
       final response = await OtpService.verifyOtp(
         widget.email,
-        _otpController.text,
+        _fullOtp,
         isForSignup: widget.isForSignup,
         firstName: widget.signupData?["firstName"],
         lastName: widget.signupData?["lastName"],
@@ -136,28 +143,24 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
       print("🔍 FULL API Response: $response");
 
-      // ✅ Ensure response contains "user"
       if (!response.containsKey("user") || response["user"] == null) {
         print("❌ User data is missing in response! Full Response: $response");
         setState(() {
-          _errorMessage = response["error"] ??
-              "Invalid OTP. Please try again."; // ✅ Show error message
-          _isLoading = false; // ✅ Stop loading
+          _errorMessage = response["error"] ?? "Invalid OTP. Please try again.";
+          _isLoading = false;
         });
         return;
       }
 
       Map<String, dynamic> user = response["user"];
 
-      // ✅ Debugging: Ensure all fields are present
       print("🔍 Extracted User Data: $user");
 
       if (!user.containsKey("user_id") || user["user_id"] == null) {
         print("❌ User ID is missing in response!");
         setState(() {
-          _errorMessage = response["error"] ??
-              "Invalid OTP. Please try again."; // ✅ Show error message
-          _isLoading = false; // ✅ Stop loading
+          _errorMessage = response["error"] ?? "Invalid OTP. Please try again.";
+          _isLoading = false;
         });
         return;
       }
@@ -172,7 +175,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         String lastName = user["last_name"] ?? "";
         String profilePicture = user["profilePicture"] ?? "";
 
-        // ✅ Store user data
         await prefs.setString("userId", userId);
         await prefs.setString("firstName", firstName);
         await prefs.setString("lastName", lastName);
@@ -183,7 +185,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
             "✅ Stored User Data: ID=$userId, Name=$firstName $lastName, ProfilePicture=$profilePicture");
 
         setState(() {
-          _isLoading = false; // ✅ Ensure loading stops after success
+          _isLoading = false;
         });
 
         if (widget.isForSignup) {
@@ -201,30 +203,37 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       } else {
         print("❌ OTP Verification Failed: ${response["error"]}");
         setState(() {
-          _errorMessage = response["error"] ??
-              "Invalid OTP. Please try again."; // ✅ Show error message
-          _isLoading = false; // ✅ Stop loading
+          _errorMessage = response["error"] ?? "Invalid OTP. Please try again.";
+          _isLoading = false;
         });
       }
     } catch (e) {
       print("❌ Network or Server Error: $e");
       setState(() {
         _errorMessage = "❌ Network error. Please try again.";
-        _isLoading = false; // ✅ Ensure loading stops on network error
+        _isLoading = false;
       });
     }
   }
 
   @override
   void dispose() {
-    _timer.cancel(); // ✅ Stop the timer when widget is disposed
+    _timer.cancel();
+    
+    // Dispose controllers and focus nodes
+    for (var controller in _digitControllers) {
+      controller.dispose();
+    }
+    
+    for (var node in _focusNodes) {
+      node.dispose();
+    }
+    
     super.dispose();
   }
 
-  // ✅ We only color the timer portion, not the entire text
-  Widget _buildTimerRichText(double screenWidth) {
-    // If remaining seconds > 0, color is green, else red
-    Color timerColor = _remainingSeconds > 0 ? Colors.green : Colors.red;
+  Widget _buildTimerRichText(double fontSize) {
+    Color timerColor = Colors.green; // Always green as shown in the design
 
     return RichText(
       textAlign: TextAlign.center,
@@ -232,29 +241,205 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         text:
             "We have sent a verification code to your email, it will expire in ",
         style: TextStyle(
-          fontSize: screenWidth * 0.035,
-          color: Colors.black, // rest of text in black
+          fontSize: fontSize,
+          color: Colors.black,
           fontFamily: "Poppins",
+          height: 1.5,
         ),
         children: [
           TextSpan(
             text: _formatTime(_remainingSeconds),
             style: TextStyle(
-              fontSize: screenWidth * 0.035,
-              color: timerColor, // only timer portion changes color
+              fontSize: fontSize,
+              color: timerColor,
               fontFamily: "Poppins",
+              fontWeight: FontWeight.bold,
             ),
           ),
           TextSpan(
-            text: ".", // end with a period
+            text: ".",
             style: TextStyle(
-              fontSize: screenWidth * 0.035,
+              fontSize: fontSize,
               color: Colors.black,
               fontFamily: "Poppins",
             ),
           ),
         ],
       ),
+    );
+  }
+
+  // Web-specific layout for larger screens
+  Widget _buildWebLayout() {
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 500), // Limit width for web
+        child: Card(
+          margin: EdgeInsets.all(24),
+          color: Colors.white, 
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 5,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+            child: _buildFormContent(isWeb: true),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Mobile layout
+  Widget _buildMobileLayout(double screenWidth, double screenHeight) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Card(
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              elevation: 5,
+              child: Padding(
+                padding: EdgeInsets.all(screenWidth * 0.05),
+                child: _buildFormContent(isWeb: false),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  // Shared form content with responsive parameters
+  Widget _buildFormContent({required bool isWeb}) {
+    // Use fixed sizes for web, percentage-based for mobile
+    double fontSize = isWeb ? 16.0 : MediaQuery.of(context).size.width * 0.04;
+    double headerFontSize = isWeb ? 24.0 : MediaQuery.of(context).size.width * 0.05;
+    double timerFontSize = isWeb ? 16.0 : MediaQuery.of(context).size.width * 0.035;
+    double pinFieldHeight = isWeb ? 60.0 : MediaQuery.of(context).size.height * 0.06;
+    double pinFieldWidth = isWeb ? 50.0 : MediaQuery.of(context).size.width * 0.12;
+    
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          "Check your email",
+          style: TextStyle(
+            fontSize: headerFontSize,
+            fontWeight: FontWeight.bold,
+            fontFamily: "Poppins",
+            color: Colors.black,
+          ),
+        ),
+        SizedBox(height: 16),
+        
+        _buildTimerRichText(timerFontSize),
+        
+        SizedBox(height: 24),
+        
+        Text(
+          "Enter the OTP sent to ${widget.email}",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: FontWeight.bold,
+            fontFamily: "Poppins",
+            color: Colors.black,
+          ),
+        ),
+        SizedBox(height: 24),
+        
+        // OTP input fields
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: List.generate(
+            6,
+            (index) => Container(
+              width: isWeb ? 50 : pinFieldWidth,
+              height: isWeb ? 50 : pinFieldHeight,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey[400]!),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: TextField(
+                controller: _digitControllers[index],
+                focusNode: _focusNodes[index],
+                textAlign: TextAlign.center,
+                keyboardType: TextInputType.number,
+                maxLength: 1,
+                decoration: InputDecoration(
+                  counterText: "",
+                  border: InputBorder.none,
+                ),
+                onChanged: (value) {
+                  // Auto-advance to next field
+                  if (value.length == 1 && index < 5) {
+                    _focusNodes[index + 1].requestFocus();
+                  }
+                },
+              ),
+            ),
+          ),
+        ),
+        
+        if (_errorMessage.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 8.0),
+            child: Text(
+              _errorMessage,
+              style: TextStyle(color: Colors.red, fontSize: 14),
+            ),
+          ),
+        
+        SizedBox(height: 24),
+        
+        // Verify button - matches the design in the image
+        Container(
+          width: double.infinity,
+          height: isWeb ? 50 : MediaQuery.of(context).size.height * 0.06,
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _verifyOtp,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF3498DB), // Match the blue in the image
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: EdgeInsets.zero,
+            ),
+            child: _isLoading
+                ? CircularProgressIndicator(color: Colors.white)
+                : Text(
+                    "Verify",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: fontSize,
+                      color: Colors.white,
+                      fontFamily: "Poppins",
+                      height: 1.2,
+                    ),
+                  ),
+          ),
+        ),
+        
+        SizedBox(height: 16),
+        
+        if (_showResendButton)
+          TextButton(
+            onPressed: _isResendingOtp ? null : _resendOtp,
+            child: Text(
+              "Resend code",
+              style: TextStyle(
+                color: Colors.blue,
+                fontFamily: "Poppins",
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -266,7 +451,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // ✅ Background Image with Blur Effect
+          // Background Image with Blur Effect
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
@@ -280,146 +465,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
             ),
           ),
 
-          // Centered Content
-          Center(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                  horizontal: screenWidth * 0.05), // Dynamic horizontal padding
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Card(
-                    color: Colors.white, // Background based on dark mode
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    elevation: 5,
-                    child: Padding(
-                      padding: EdgeInsets.all(screenWidth * 0.05),
-                      child: Column(
-                        children: [
-                          Text(
-                            "Check your email",
-                            style: TextStyle(
-                              fontSize: screenWidth * 0.05,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: "Poppins",
-                              color:
-                                  Colors.black, // Text color based on dark mode
-                            ),
-                          ),
-                          SizedBox(height: screenHeight * 0.01),
-
-                          // ✅ Timer Text with Dynamic Color (only timer portion)
-                          _buildTimerRichText(screenWidth),
-
-                          SizedBox(height: screenHeight * 0.02),
-
-                          Text(
-                            "Enter the OTP sent to ${widget.email}",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: screenWidth * 0.04,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: "Poppins",
-                              color:
-                                  Colors.black, // Text color based on dark mode
-                            ),
-                          ),
-                          SizedBox(height: screenHeight * 0.02),
-
-                          // ✅ OTP Input Field with dynamic border color
-                          Form(
-                            child: PinCodeTextField(
-                              controller: _otpController,
-                              appContext: context,
-                              length: 6,
-                              obscureText: false,
-                              animationType: AnimationType.fade,
-                              pinTheme: PinTheme(
-                                shape: PinCodeFieldShape.box,
-                                borderRadius: BorderRadius.circular(8),
-                                fieldHeight: screenHeight * 0.06,
-                                fieldWidth: screenWidth * 0.12,
-                                activeFillColor: Colors
-                                    .white, // Dynamic color based on dark mode
-                                selectedFillColor: Colors.white,
-                                inactiveFillColor: Colors.white,
-
-                                // ✅ Use our dynamic color for the border
-                                activeColor: _pinBorderColor,
-                                selectedColor: _pinBorderColor,
-                                inactiveColor: _pinBorderColor,
-                              ),
-                              enableActiveFill: true,
-                              showCursor: false,
-                              onChanged: (value) {},
-                            ),
-                          ),
-
-                          // ✅ Error Message Display
-                          if (_errorMessage.isNotEmpty)
-                            Padding(
-                              padding: EdgeInsets.symmetric(vertical: 1.0),
-                              child: Text(
-                                _errorMessage,
-                                style:
-                                    TextStyle(color: Colors.red, fontSize: 14),
-                              ),
-                            ),
-
-                          SizedBox(height: screenHeight * 0.01),
-
-                          // ✅ Resend OTP Button (Shows only when _showResendButton is true)
-                          if (_showResendButton)
-                            TextButton(
-                              onPressed: _isResendingOtp
-                                  ? null
-                                  : _resendOtp, // Disable while resending
-                              child: Text(
-                                "Resend code",
-                                style: TextStyle(
-                                  color:
-                                      Colors.blue, // Color based on dark mode
-                                  fontFamily: "Poppins",
-                                ),
-                              ),
-                            ),
-
-                          SizedBox(height: screenHeight * 0.01),
-
-                          // ✅ Verify OTP Button with Loading State
-                          ElevatedButton(
-                            onPressed: _isLoading ? null : _verifyOtp,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              padding: EdgeInsets.symmetric(
-                                vertical: screenHeight * 0.02,
-                                horizontal: screenWidth * 0.2,
-                              ),
-                            ),
-                            child: _isLoading
-                                ? CircularProgressIndicator(color: Colors.white)
-                                : Text(
-                                    "Verify",
-                                    style: TextStyle(
-                                      fontSize: screenWidth * 0.04,
-                                      color: Colors.white,
-                                      fontFamily: "Poppins",
-                                    ),
-                                  ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          // Use different layout based on platform
+          kIsWeb ? _buildWebLayout() : _buildMobileLayout(screenWidth, screenHeight),
         ],
       ),
     );

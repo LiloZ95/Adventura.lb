@@ -31,6 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
   http: 1.2.0
+  
   cupertino_icons: ^1.0.2
   animated_text_kit: ^4.2.2
   postgres: ^3.4.4
@@ -59,9 +60,13 @@ dependencies:
   visibility_detector: ^0.4.0+2
   reorderables: ^0.6.0
   lucide_icons: ^0.257.0
+  
   firebase_core: ^2.27.0
   google_sign_in: 
   flutter_facebook_auth: 
+  google_fonts: ^6.2.1
+  file_picker: ^8.0.0+1
+  
 
   
 

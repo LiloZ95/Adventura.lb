@@ -1,3 +1,4 @@
+import 'package:adventura/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
@@ -212,11 +213,11 @@ class NotificationScreen extends StatelessWidget {
                   width: 54,
                   height: 54,
                   decoration: BoxDecoration(
-                    color: Color.fromARGB(255, 134, 124, 224),
+                    color:AppColors.mainBlue,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Color.fromARGB(255, 134, 124, 224).withOpacity(0.3),
+                        color: AppColors.mainBlue.withOpacity(0.3),
                         blurRadius: 8,
                         spreadRadius: 0,
                         offset: Offset(0, 3),

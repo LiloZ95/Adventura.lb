@@ -55,7 +55,7 @@ class ActivityCard extends StatelessWidget {
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: () {
-                // Handle booking action here
+               
               },
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size.fromHeight(40),

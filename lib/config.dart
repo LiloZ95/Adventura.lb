@@ -1,2 +1,2 @@
-const String baseUrl = "http://localhost:3000";  // Change this once, it applies everywhere!
-const String recommendationsUrl = 'http://localhost:5001/recommend'; // For physical device it should be your local IP address instead of localhost
+const String baseUrl = "http://192.168.1.6:3000";  // Change this once, it applies everywhere!
+const String recommendationsUrl = 'http://192.168.1.6:5001/recommend'; // For physical device it should be your local IP address instead of localho

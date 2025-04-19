@@ -1,3 +1,5 @@
+
+import 'package:adventura/web/homeweb.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:ui';
@@ -328,10 +330,15 @@ class _SignUpPageState extends State<SignUpPage> {
                             IconButton(
                               onPressed: () {
                                 // Handle Google login
+                                kIsWeb?
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => MainScreen()),
+                                      builder: (context) => AdventuraWebHomee()),
+                                ): Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => AdventuraWebHomee()),
                                 );
                               },
                               icon: Image.asset(
@@ -346,7 +353,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => MainScreen()),
+                                      builder: (context) =>  AdventuraWebHomee()),
                                 );
                               },
                               icon: Image.asset(

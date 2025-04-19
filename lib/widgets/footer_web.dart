@@ -1,4 +1,4 @@
-// footer_widget.dart
+
 import 'package:flutter/material.dart';
 import 'package:adventura/colors.dart';
 
@@ -20,18 +20,18 @@ class FooterWidget extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Divider
+          
           Divider(color: Colors.grey.shade300, thickness: 1),
           const SizedBox(height: 30),
           
-          // Footer content
+          
           isMobile 
             ? _buildMobileFooter() 
             : _buildDesktopFooter(isTablet),
             
           const SizedBox(height: 30),
           
-          // Copyright text
+          
           Text(
             '© ${DateTime.now().year} Adventura. All rights reserved.',
             style: TextStyle(
@@ -52,17 +52,17 @@ class FooterWidget extends StatelessWidget {
           title: 'Adventura',
           items: ['About Us', 'Careers', 'Blog', 'Press'],
         ),
-        SizedBox(height: 30),
+        const SizedBox(height: 30),
         _buildFooterSection(
           title: 'Support',
           items: ['Help Center', 'Contact Us', 'Safety', 'COVID-19 Resources'],
         ),
-        SizedBox(height: 30),
+        const SizedBox(height: 30),
         _buildFooterSection(
           title: 'Legal',
           items: ['Terms of Service', 'Privacy Policy', 'Cookie Policy'],
         ),
-        SizedBox(height: 30),
+        const SizedBox(height: 30),
         _buildSocialMediaSection(),
       ],
     );
@@ -83,7 +83,7 @@ class FooterWidget extends StatelessWidget {
             height: 120,
             fit: BoxFit.cover,
           ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Text(
                 'Discover extraordinary experiences and activities around you. Adventure awaits!',
                 style: TextStyle(
@@ -92,12 +92,12 @@ class FooterWidget extends StatelessWidget {
                   height: 1.5,
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               _buildSocialMediaSection(),
             ],
           ),
         ),
-        SizedBox(width: 40),
+        const SizedBox(width: 40),
         Expanded(
           flex: 2,
           child: _buildFooterSection(
@@ -105,7 +105,7 @@ class FooterWidget extends StatelessWidget {
             items: ['About Us', 'Careers', 'Blog', 'Press'],
           ),
         ),
-        SizedBox(width: 20),
+        const SizedBox(width: 20),
         Expanded(
           flex: 2,
           child: _buildFooterSection(
@@ -113,7 +113,7 @@ class FooterWidget extends StatelessWidget {
             items: ['Help Center', 'Contact Us', 'Safety', 'COVID-19 Resources'],
           ),
         ),
-        SizedBox(width: 20),
+        const SizedBox(width: 20),
         Expanded(
           flex: 2,
           child: _buildFooterSection(
@@ -131,13 +131,13 @@ class FooterWidget extends StatelessWidget {
       children: [
         Text(
           title,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
             color: Colors.black,
           ),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
         ...items.map((item) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: InkWell(
@@ -159,7 +159,7 @@ class FooterWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'Follow Us',
           style: TextStyle(
             fontSize: 18,
@@ -167,15 +167,15 @@ class FooterWidget extends StatelessWidget {
             color: Colors.black,
           ),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
         Row(
           children: [
             _socialIcon('assets/Icons/facebook.png'),
-            SizedBox(width: 16),
+            const SizedBox(width: 16),
             _socialIcon('assets/Icons/facebook.png'),
-            SizedBox(width: 16),
+            const SizedBox(width: 16),
             _socialIcon('assets/Icons/facebook.png'),
-            SizedBox(width: 16),
+            const SizedBox(width: 16),
             _socialIcon('assets/Icons/facebook.png'),
           ],
         ),

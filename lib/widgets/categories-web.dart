@@ -86,7 +86,7 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
   }
 
   void _startAutoScroll() {
-    _autoScrollTimer = Timer.periodic(Duration(seconds: 5), (timer) {
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (_pageController.hasClients) {
         if (_currentPage < categories.length - 1) {
           _currentPage++;
@@ -95,7 +95,7 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
         }
         _pageController.animateToPage(
           _currentPage,
-          duration: Duration(milliseconds: 800),
+          duration: const Duration(milliseconds: 800),
           curve: Curves.easeInOut,
         );
       }
@@ -134,7 +134,7 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: 48),
+      padding: const EdgeInsets.symmetric(vertical: 48),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -142,7 +142,7 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 20,
-            offset: Offset(0, 10),
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -169,7 +169,7 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         Text(
                           "Popular Categories",
                           style: TextStyle(
@@ -181,7 +181,7 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Padding(
                       padding: const EdgeInsets.only(left: 16.0),
                       child: Text(
@@ -205,9 +205,9 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
                       side: BorderSide(
                           color: AppColors.mainBlue.withOpacity(0.5), width: 1),
                     ),
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
@@ -227,7 +227,7 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
               ],
             ),
           ),
-          SizedBox(height: 32),
+          const SizedBox(height: 32),
 
           
           Stack(
@@ -258,7 +258,7 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
                           onEnter: (_) => setState(() => _hoveredIndex = index),
                           onExit: (_) => setState(() => _hoveredIndex = -1),
                           child: AnimatedContainer(
-                            duration: Duration(milliseconds: 300),
+                            duration: const Duration(milliseconds: 300),
                             curve: Curves.easeInOut,
                             margin: EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -272,8 +272,8 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
                                       : Colors.black.withOpacity(0.1),
                                   blurRadius: isCurrentPage ? 20 : 10,
                                   offset: isCurrentPage
-                                      ? Offset(0, 10)
-                                      : Offset(0, 5),
+                                      ? const Offset(0, 10)
+                                      : const Offset(0, 5),
                                 ),
                               ],
                               
@@ -311,7 +311,7 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
                                         top: 16,
                                         right: 16,
                                         child: Container(
-                                          padding: EdgeInsets.symmetric(
+                                          padding: const EdgeInsets.symmetric(
                                               horizontal: 10, vertical: 6),
                                           decoration: BoxDecoration(
                                             color:
@@ -322,15 +322,15 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Icon(
+                                              const Icon(
                                                 Icons.star,
                                                 color: Colors.amber,
                                                 size: 16,
                                               ),
-                                              SizedBox(width: 4),
+                                              const SizedBox(width: 4),
                                               Text(
                                                 category['rating'].toString(),
-                                                style: TextStyle(
+                                                style: const TextStyle(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.bold,
                                                   color: Colors.white,
@@ -348,7 +348,7 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
                                     child: Container(
                                       padding:
                                           EdgeInsets.all(isMobile ? 16 : 20),
-                                      decoration: BoxDecoration(
+                                      decoration: const BoxDecoration(
                                         color: Colors.white,
                                       ),
                                       child: Column(
@@ -357,14 +357,14 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
                                         children: [
                                           Text(
                                             category['title'],
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               fontSize: 20,
                                               fontWeight: FontWeight.bold,
                                               fontFamily: 'Poppins',
                                               color: Colors.black87,
                                             ),
                                           ),
-                                          SizedBox(height: 8),
+                                          const SizedBox(height: 8),
                                           Text(
                                             category['description'],
                                             maxLines: 2,
@@ -376,13 +376,13 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
                                               height: 1.4,
                                             ),
                                           ),
-                                          Spacer(),
+                                          const Spacer(),
                                           Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceBetween,
                                             children: [
                                               Container(
-                                                padding: EdgeInsets.symmetric(
+                                                padding: const EdgeInsets.symmetric(
                                                     horizontal: 12,
                                                     vertical: 6),
                                                 decoration: BoxDecoration(
@@ -395,15 +395,15 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
                                                   mainAxisSize:
                                                       MainAxisSize.min,
                                                   children: [
-                                                    Icon(
+                                                    const Icon(
                                                       Icons.place,
                                                       color: AppColors.mainBlue,
                                                       size: 14,
                                                     ),
-                                                    SizedBox(width: 4),
+                                                    const SizedBox(width: 4),
                                                     Text(
                                                       "${category['locations']} locations",
-                                                      style: TextStyle(
+                                                      style: const TextStyle(
                                                         fontSize: 12,
                                                         color:
                                                             AppColors.mainBlue,
@@ -428,13 +428,13 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
                                                               BorderRadius
                                                                   .circular(30),
                                                         ),
-                                                        padding: EdgeInsets
+                                                        padding: const EdgeInsets
                                                             .symmetric(
                                                                 horizontal: 16,
                                                                 vertical: 8),
                                                         elevation: 0,
                                                       ),
-                                                      child: Row(
+                                                      child: const Row(
                                                         mainAxisSize:
                                                             MainAxisSize.min,
                                                         children: [
@@ -491,7 +491,7 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
                         BoxShadow(
                           color: Colors.black.withOpacity(0.1),
                           blurRadius: 10,
-                          offset: Offset(0, 4),
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
@@ -500,18 +500,18 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
                         if (_currentPage > 0) {
                           _pageController.animateToPage(
                             _currentPage - 1,
-                            duration: Duration(milliseconds: 500),
+                            duration: const Duration(milliseconds: 500),
                             curve: Curves.easeInOut,
                           );
                         } else {
                           _pageController.animateToPage(
                             categories.length - 1,
-                            duration: Duration(milliseconds: 500),
+                            duration: const Duration(milliseconds: 500),
                             curve: Curves.easeInOut,
                           );
                         }
                       },
-                      icon: Icon(Icons.arrow_back_ios_new, size: 18),
+                      icon: const Icon(Icons.arrow_back_ios_new, size: 18),
                       color: AppColors.mainBlue,
                     ),
                   ),
@@ -530,7 +530,7 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
                         BoxShadow(
                           color: Colors.black.withOpacity(0.1),
                           blurRadius: 10,
-                          offset: Offset(0, 4),
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
@@ -539,18 +539,18 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
                         if (_currentPage < categories.length - 1) {
                           _pageController.animateToPage(
                             _currentPage + 1,
-                            duration: Duration(milliseconds: 500),
+                            duration: const Duration(milliseconds: 500),
                             curve: Curves.easeInOut,
                           );
                         } else {
                           _pageController.animateToPage(
                             0,
-                            duration: Duration(milliseconds: 500),
+                            duration: const Duration(milliseconds: 500),
                             curve: Curves.easeInOut,
                           );
                         }
                       },
-                      icon: Icon(Icons.arrow_forward_ios, size: 18),
+                      icon: const Icon(Icons.arrow_forward_ios, size: 18),
                       color: AppColors.mainBlue,
                     ),
                   ),
@@ -559,7 +559,7 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
           ),
 
           
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
@@ -568,15 +568,15 @@ class _CategoriesWebWidgetState extends State<CategoriesWebWidget> {
                 onTap: () {
                   _pageController.animateToPage(
                     index,
-                    duration: Duration(milliseconds: 500),
+                    duration: const Duration(milliseconds: 500),
                     curve: Curves.easeInOut,
                   );
                 },
                 child: AnimatedContainer(
-                  duration: Duration(milliseconds: 300),
+                  duration: const Duration(milliseconds: 300),
                   width: _currentPage == index ? 24 : 10,
                   height: 10,
-                  margin: EdgeInsets.symmetric(horizontal: 4),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     color: _currentPage == index

@@ -1,16 +1,18 @@
-// lib/web/widgets/hero_section_widget.dart
-import 'package:adventura/login/login.dart';
+// Update this file: lib/widgets/herosection_web.dart
+
 import 'package:flutter/material.dart';
 import 'package:adventura/colors.dart';
-import '../widgets/bouncing_dots_loader.dart';
 import 'dart:math' as math;
 
 class HeroSectionWidget extends StatelessWidget {
   final bool isLoading;
+  // Add the callback for search tap
+  final VoidCallback onSearchTap;
 
   const HeroSectionWidget({
     Key? key,
     required this.isLoading,
+    required this.onSearchTap, // New required parameter
   }) : super(key: key);
 
   @override
@@ -33,10 +35,10 @@ class HeroSectionWidget extends StatelessWidget {
         ),
       ),
       child: isLoading
-          ? const Center(child: BouncingDotsLoader())
+          ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
-                // Animated shapes for visual interest
+                // Animated shapes for visual interest (keep as is)
                 Positioned(
                   top: -50,
                   right: -50,
@@ -64,6 +66,7 @@ class HeroSectionWidget extends StatelessWidget {
                     ),
                   ),
                 ),
+                
                 // Content container
                 Padding(
                   padding: EdgeInsets.symmetric(
@@ -96,7 +99,7 @@ class HeroSectionWidget extends StatelessWidget {
                           fontSize: isMobile ? 32 : 48,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Poppins',
-                          color:  AppColors.mainBlue.withOpacity(0.8),
+                          color: AppColors.mainBlue.withOpacity(0.8),
                           height: 1.2,
                           shadows: [
                             Shadow(
@@ -112,7 +115,7 @@ class HeroSectionWidget extends StatelessWidget {
                         style: TextStyle(
                           fontSize: isMobile ? 16 : 20,
                           fontFamily: 'Poppins',
-                          color:  AppColors.mainBlue.withOpacity(0.8),
+                          color: AppColors.mainBlue.withOpacity(0.8),
                           shadows: [
                             Shadow(
                               color: Colors.black.withOpacity(0.3),
@@ -122,58 +125,66 @@ class HeroSectionWidget extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 32),
-                      Container(
-                        width: isMobile ? double.infinity : screenWidth * 0.5,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(50),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 15,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.search, color: AppColors.mainBlue, size: 28),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  hintText: "What to you want to explore?",
-                                  border: InputBorder.none,
-                                  hintStyle: TextStyle(
-                                    color: Colors.grey.shade400,
-                                    fontSize: 16,
+                      
+                      // Updated search container with GestureDetector
+                      GestureDetector(
+                        onTap: onSearchTap, // Use the callback when tapped
+                        child: Container(
+                          width: isMobile ? double.infinity : screenWidth * 0.5,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(50),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.search, color: AppColors.mainBlue, size: 28),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: AbsorbPointer( // Prevent direct interaction with TextField
+                                  child: TextField(
+                                    decoration: InputDecoration(
+                                      hintText: "What to you want to explore?",
+                                      border: InputBorder.none,
+                                      hintStyle: TextStyle(
+                                        color: Colors.grey.shade400,
+                                        fontSize: 16,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            ElevatedButton(
-                              onPressed: () {},
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.mainBlue,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
+                              ElevatedButton(
+                                onPressed: onSearchTap, // Also use the callback here
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.mainBlue,
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                ),
+                                child: const Text(
+                                  "Explore",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                              child: const Text(
-                                "Explore",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
+                      
                       const SizedBox(height: 32),
                       const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -188,41 +199,9 @@ class HeroSectionWidget extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Login prompt
-                Positioned(
-                  top: 24,
-                  right: isMobile ? 16 : 64,
-                  child: InkWell(
-                        onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => LoginPage()),
-                    );
-                  },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color:  AppColors.mainBlue.withOpacity(0.3)),
-                                   
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.person_outline, color:  AppColors.mainBlue),
-                          SizedBox(width: 8),
-                          Text(
-                            "Sign in to book",
-                            style: TextStyle(
-                              color: AppColors.mainBlue,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+                
+                // Login prompt (keep as is)
+           
               ],
             ),
     );

@@ -185,7 +185,7 @@ class ViewTicketPage extends StatelessWidget {
                       // Navigate to home screen
                       Navigator.pushAndRemoveUntil(
                         context,
-                        MaterialPageRoute(builder: (context) => MainScreen()),
+                        MaterialPageRoute(builder: (context) => MainScreen(onScrollChanged: (bool ) {  },)),
                         (route) => false,
                       );
                     },

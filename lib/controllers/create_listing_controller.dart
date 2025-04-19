@@ -40,7 +40,7 @@ class CreateListingController {
 
   // 📌 Lifecycle setup
   void init(VoidCallback onUpdate) {
-    fetchCategories(onUpdate);
+    // fetchCategories(onUpdate);
 
     titleController.addListener(() => onUpdate());
     descriptionController.addListener(() => onUpdate());
@@ -65,11 +65,11 @@ class CreateListingController {
     featuresController.dispose();
   }
 
-  // 📌 API call for categories
-  Future<void> fetchCategories(VoidCallback onUpdate) async {
-    categories = await ActivityService.fetchCategories();
-    onUpdate();
-  }
+  // // 📌 API call for categories
+  // Future<void> fetchCategories(VoidCallback onUpdate) async {
+  //   categories = await ActivityService.fetchCategories();
+  //   onUpdate();
+  // }
 
   void parseGoogleMapsUrl(VoidCallback onUpdate) async {
     final url = googleMapsUrlController.text.trim();

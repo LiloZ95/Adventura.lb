@@ -1,13 +1,16 @@
-import 'package:adventura/utils/snackbars.dart';
-import 'package:adventura/CreateListing/widgets/category_selector.dart';
-import 'package:adventura/CreateListing/widgets/image_selector.dart';
-import 'package:adventura/widgets/location_picker.dart';
-import 'package:adventura/CreateListing/widgets/title_section.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
 import 'package:image_picker/image_picker.dart';
-import 'package:adventura/services/activity_service.dart';
+
+import 'package:adventura/CreateListing/preview_page.dart';
+import 'package:adventura/CreateListing/widgets/category_selector.dart';
+import 'package:adventura/CreateListing/widgets/image_selector.dart';
+import 'package:adventura/CreateListing/widgets/title_section.dart';
 import 'package:adventura/controllers/create_listing_controller.dart';
+import 'package:adventura/services/activity_service.dart';
+import 'package:adventura/utils/snackbars.dart';
+import 'package:adventura/widgets/location_picker.dart';
+
 import 'widgets/age_selector.dart';
 import 'widgets/date_selector.dart';
 import 'widgets/description_section.dart';
@@ -16,7 +19,6 @@ import 'widgets/listing_type_selector.dart';
 import 'widgets/location_section.dart';
 import 'widgets/ticket_price_selector.dart';
 import 'widgets/trip_plan_section.dart';
-import 'package:adventura/CreateListing/preview_page.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -185,14 +187,14 @@ class _CreateListingPageState extends State<CreateListingPage> {
       "listing_type": _selectedListingType.toString().split('.').last,
     };
 
-    final success = await ActivityService.createActivity(activityData);
+    // final success = await ActivityService.createActivity(activityData);
 
-    showAppSnackBar(
-      context,
-      success
-          ? "✅ Activity created successfully!"
-          : "❌ Failed to create activity.",
-    );
+//     showAppSnackBar(
+//       context,
+// success      
+//           ? "✅ Activity created successfully!"
+//           : "❌ Failed to create activity.",
+//     );
   }
 
   // A reusable widget method for text fields

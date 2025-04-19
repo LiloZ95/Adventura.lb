@@ -57,7 +57,9 @@ class _AvailabilityModalState extends State<AvailabilityModal> {
   Future<void> bookNow() async {
     final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
 
+    // 🚩 DON'T show SnackBar here anymore!
     widget.onDateSlotSelected(formattedDate, selectedSlot!);
+    // Close the modal cleanly
     if (mounted) {
       Navigator.pop(context);
     }
@@ -67,7 +69,7 @@ class _AvailabilityModalState extends State<AvailabilityModal> {
   Widget build(BuildContext context) {
     return Theme(
       data: Theme.of(context).copyWith(
-        colorScheme: const ColorScheme.light(
+        colorScheme: ColorScheme.light(
           primary: AppColors.blue,
           onPrimary: Colors.white,
           onSurface: Colors.black87,
@@ -91,7 +93,7 @@ class _AvailabilityModalState extends State<AvailabilityModal> {
                   ),
                 ),
               ),
-              const Center(
+              Center(
                 child: Text(
                   "Check Availability",
                   style: TextStyle(
@@ -102,7 +104,7 @@ class _AvailabilityModalState extends State<AvailabilityModal> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 "Select a Date",
                 style: TextStyle(
                     fontSize: 16,
@@ -130,8 +132,8 @@ class _AvailabilityModalState extends State<AvailabilityModal> {
               if (!isLoading && hasFetchedSlots) ...[
                 const SizedBox(height: 10),
                 if (availableSlots.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8, bottom: 16),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 16),
                     child: Center(
                       child: Text(
                         "No available slots for this date.",
@@ -144,7 +146,7 @@ class _AvailabilityModalState extends State<AvailabilityModal> {
                     ),
                   )
                 else ...[
-                  const Text(
+                  Text(
                     "Select a Time Slot",
                     style: TextStyle(
                       fontSize: 16,

@@ -150,7 +150,7 @@ class _PurchaseConfirmationPageState extends State<PurchaseConfirmationPage>
                     onPressed: () {
                       Navigator.pushAndRemoveUntil(
                         context,
-                        MaterialPageRoute(builder: (context) => MainScreen()),
+                        MaterialPageRoute(builder: (context) => MainScreen(onScrollChanged: (bool ) {  },)),
                         (route) => false,
                       );
                     },

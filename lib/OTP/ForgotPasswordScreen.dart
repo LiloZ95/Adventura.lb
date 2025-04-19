@@ -2,8 +2,9 @@ import 'package:adventura/Services/otp_service.dart';
 import 'package:adventura/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/OTP/OTPVerification.dart';
-import '../login/login.dart'; // ✅ Import LoginPage
-import 'dart:ui' as ui; // For ImageFilter
+import '../login/login.dart';
+import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ForgotPasswordScreen extends StatefulWidget {
   @override
@@ -26,7 +27,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       print("🔍 Sending OTP request to: ${_emailController.text}");
 
       final response = await OtpService.sendOtp(_emailController.text,
-          isForSignup: false); // Get response
+          isForSignup: false);
 
       print("🔍 API Response: $response");
 
@@ -66,23 +67,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    
+    // Adjust layout for web
+    final bool isWebPlatform = kIsWeb;
+    final double formWidth = isWebPlatform 
+        ? (screenWidth > 800 ? 500 : screenWidth * 0.8) 
+        : screenWidth * 0.9;
 
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
-          // ✅ Background Color
-          AnimatedContainer(
-            duration: Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-            decoration: BoxDecoration(
-              color: Colors.white,
-            ),
-          ),
-
-          // ✅ Background Image with Blur
+          // Background Image with Blur
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
@@ -98,13 +96,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ),
           ),
 
-          // ✅ Centered Content
-          Center(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+          // Centered Content
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isWebPlatform ? 0 : screenWidth * 0.05,
+                  vertical: screenHeight * 0.02
+                ),
                 child: Container(
-                  padding: EdgeInsets.all(screenWidth * 0.05),
+                  width: formWidth,
+                  padding: EdgeInsets.all(isWebPlatform ? 30 : screenWidth * 0.05),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
@@ -120,12 +122,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // ✅ Heading
+                      // Heading
                       Text(
                         "Forgot Password?",
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: screenWidth * 0.05,
+                          fontSize: isWebPlatform 
+                              ? (screenWidth > 800 ? 28 : screenWidth * 0.05)
+                              : screenWidth * 0.05,
                           fontWeight: FontWeight.bold,
                           fontFamily: "Poppins",
                           color: Colors.black,
@@ -137,30 +141,32 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         "Enter Your Email here to get an OTP Code",
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: screenWidth * 0.035,
+                          fontSize: isWebPlatform 
+                              ? (screenWidth > 800 ? 16 : screenWidth * 0.035)
+                              : screenWidth * 0.035,
                           color: Colors.grey[700],
                           fontFamily: "Poppins",
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.02),
+                      SizedBox(height: screenHeight * 0.03),
 
-                      // ✅ Email Input Field (No background, grey[200] border, 1px thick)
+                      // Email Input Field
                       TextField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: "poppins",
-                          fontSize: screenWidth * 0.045,
+                          fontSize: isWebPlatform ? 16 : screenWidth * 0.045,
                           color: Colors.black,
                         ),
                         decoration: InputDecoration(
                           hintText: "Enter Your Email Here",
-
-                          hintStyle: TextStyle(color: Color(0xFF8E8E8E)),
-                          // ✅ No background
+                          hintStyle: TextStyle(
+                            color: Color(0xFF8E8E8E),
+                            fontSize: isWebPlatform ? 16 : screenWidth * 0.04,
+                          ),
                           filled: false,
-                          // ✅ Grey[200] border with 1px thickness
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                             borderSide: BorderSide(
@@ -175,29 +181,54 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               width: 1.0,
                             ),
                           ),
+                          contentPadding: isWebPlatform
+                              ? EdgeInsets.symmetric(vertical: 15, horizontal: 15)
+                              : null,
                         ),
                       ),
                       SizedBox(height: screenHeight * 0.03),
 
-                      // ✅ Verify OTP Button
+                      // Error message if any
+                      if (_errorMessage.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Text(
+                            _errorMessage,
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: isWebPlatform ? 14 : screenWidth * 0.035,
+                              fontFamily: "Poppins",
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+
+                      // Verify OTP Button
                       ElevatedButton(
                         onPressed: _isLoading ? null : _sendOtp,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.blue, // Always blue
+                          backgroundColor: AppColors.blue,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                           padding: EdgeInsets.symmetric(
-                            vertical: screenHeight * 0.02,
+                            vertical: isWebPlatform ? 16 : screenHeight * 0.02,
                           ),
-                          minimumSize: Size(screenWidth * 0.2, 20),
+                          minimumSize: Size(double.infinity, 50),
                         ),
                         child: _isLoading
-                            ? CircularProgressIndicator(color: Colors.white)
+                            ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.0,
+                                ),
+                              )
                             : Text(
                                 "Send OTP",
                                 style: TextStyle(
-                                  fontSize: screenWidth * 0.04,
+                                  fontSize: isWebPlatform ? 16 : screenWidth * 0.04,
                                   color: Colors.white,
                                   fontFamily: "Poppins",
                                 ),
@@ -210,13 +241,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ),
           ),
 
-          // ✅ Arrow icon in the top left corner without an AppBar
+          // Back button
           Positioned(
-            top: 16,
             left: 16,
             child: SafeArea(
               child: IconButton(
-                icon: Icon(Icons.arrow_back, color: Colors.white),
+                icon: Icon(Icons.arrow_back, 
+                  color: Colors.white,
+                  size: isWebPlatform ? 30 : 24,
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
