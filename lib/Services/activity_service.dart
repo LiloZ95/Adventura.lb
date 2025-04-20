@@ -5,11 +5,15 @@ import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart'; // ✅ Use Hive instead of StorageService
 import 'package:adventura/config.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as path;
+import 'package:http_parser/http_parser.dart'; 
 
 class ActivityService {
   /// ✅ Create Activity
-  static Future<bool> createActivity(Map<String, dynamic> activityData,
-      {List<XFile>? images}) async {
+  static Future<bool> createActivity(
+    Map<String, dynamic> activityData, {
+    List<XFile>? images,
+  }) async {
     Box authBox = await Hive.openBox('authBox');
     String? accessToken = authBox.get("accessToken");
 
@@ -19,10 +23,11 @@ class ActivityService {
         Uri.parse('$baseUrl/activities/create'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $accessToken', // ✅ add this if missing
+          'Authorization': 'Bearer $accessToken',
         },
         body: jsonEncode(activityData),
       );
+
       print("🔑 Token being sent: $accessToken");
 
       if (activityResponse.statusCode < 200 ||
@@ -33,43 +38,61 @@ class ActivityService {
       }
 
       final decoded = jsonDecode(activityResponse.body);
-      final activityId = decoded is Map &&
-              decoded.containsKey('activity') &&
-              decoded['activity'] != null
-          ? decoded['activity']['activity_id']
-          : null;
+      final activityId = decoded?['activity']?['activity_id'];
 
-      if (activityId == null) return false;
+      if (activityId == null) {
+        print("❌ Activity ID not returned from backend.");
+        return false;
+      }
 
-      // 2. Upload images if available
+      // 2. Upload images if provided
       if (images != null && images.isNotEmpty) {
         var request = http.MultipartRequest(
-            'POST',
-            Uri.parse(
-                '$baseUrl/activities/activity-images/upload/$activityId?listing_type=${activityData["listing_type"]}'));
+          'POST',
+          Uri.parse(
+            '$baseUrl/activities/activity-images/upload/$activityId?listing_type=${activityData["listing_type"]}',
+          ),
+        );
+
         request.headers['Authorization'] = 'Bearer $accessToken';
 
         for (var image in images) {
+          final ext = path.extension(image.path).toLowerCase();
+          String mimeType = 'jpeg'; // default
+
+          if (ext == '.png')
+            mimeType = 'png';
+          else if (ext == '.gif')
+            mimeType = 'gif';
+          else if (ext == '.webp')
+            mimeType = 'webp';
+          else if (ext == '.heic') mimeType = 'heic';
+
           print("Uploading image: ${image.path}");
+
           request.files.add(await http.MultipartFile.fromPath(
             'images',
             image.path,
-            filename: image.name,
+            filename: path.basename(image.path),
+            contentType: MediaType('image', mimeType),
           ));
         }
 
-        var response = await request.send();
+        final response = await request.send();
+
         if (response.statusCode != 200) {
           final responseBody = await response.stream.bytesToString();
           print(
               "❌ Image upload failed → Status: ${response.statusCode}, Body: $responseBody");
           return false;
         }
+
+        print("✅ Images uploaded successfully.");
       }
 
       return true;
     } catch (e) {
-      print("Error creating activity: $e");
+      print("❌ Error creating activity: $e");
       return false;
     }
   }
