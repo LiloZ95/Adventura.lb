@@ -1,3 +1,4 @@
+import 'package:adventura/Booking/MyBooking.dart';
 import 'package:adventura/Services/booking_service.dart';
 import 'package:adventura/Services/interaction_service.dart';
 import 'package:flutter/material.dart';
@@ -81,32 +82,42 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     final double energyTotal = energyDrinks * energyPrice;
     final double subtotal = ticketsTotal + bbqTotal + waterTotal + energyTotal;
     final double totalDue = subtotal + 3.50;
-
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final double screenHeight = MediaQuery.of(context).size.height;
     final double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF1F1F1F)
+            : Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black,
+          ),
           onPressed: () {
             Navigator.of(context).pop();
           },
         ),
-        title: const Text(
+        title: Text(
           'Order Details',
           style: TextStyle(
             fontFamily: 'Poppins',
             fontSize: 20,
             fontWeight: FontWeight.bold,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black,
           ),
         ),
         centerTitle: true,
       ),
       body: Container(
-        color: Colors.white,
+        color: isDarkMode ? Colors.black87 : Colors.white,
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -118,7 +129,6 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                 child: Stack(
                   children: [
                     // Background image (network or asset)
-
                     Positioned.fill(
                       child: widget.selectedImage.startsWith('http')
                           ? Image.network(
@@ -133,15 +143,21 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                               fit: BoxFit.cover,
                             ),
                     ),
-                    // Gradient overlay + text
+
+                    // ✅ Gradient overlay + dynamic dark mode styling
                     Positioned.fill(
                       child: Container(
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [
-                              Color.fromARGB(134, 62, 62, 62),
-                              Color.fromARGB(221, 0, 0, 0)
-                            ],
+                            colors: isDarkMode
+                                ? [
+                                    Color.fromARGB(180, 20, 20, 20),
+                                    Color.fromARGB(240, 0, 0, 0),
+                                  ]
+                                : [
+                                    Color.fromARGB(80, 100, 100, 100),
+                                    Color.fromARGB(200, 0, 0, 0),
+                                  ],
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                           ),
@@ -150,10 +166,19 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                         alignment: Alignment.bottomLeft,
                         child: Text(
                           '${widget.eventTitle}\n${widget.eventDate}\n${widget.eventLocation}',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.white : Colors.black,
                             fontSize: 16,
                             fontFamily: 'Poppins',
+                            shadows: isDarkMode
+                                ? [
+                                    Shadow(
+                                      color: Colors.black.withOpacity(0.8),
+                                      blurRadius: 6,
+                                      offset: Offset(0, 2),
+                                    )
+                                  ]
+                                : [],
                           ),
                         ),
                       ),
@@ -169,22 +194,25 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Ticket Options container.
+
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius:
-                            BorderRadius.circular(12), // <-- Rounded corners
+                        color: isDarkMode
+                            ? const Color(0xFF2B2B2B)
+                            : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       padding: EdgeInsets.all(screenWidth * 0.04),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Ticket Options',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               fontFamily: 'Poppins',
+                              color: isDarkMode ? Colors.white : Colors.black,
                             ),
                           ),
                           SizedBox(height: screenHeight * 0.005),
@@ -195,6 +223,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                                 increment((val) => tickets = val, tickets),
                             onRemove: () =>
                                 decrement((val) => tickets = val, tickets),
+                            isDarkMode: isDarkMode,
                           ),
                           _buildTicketOptionRow(
                             label: 'Barbeque share',
@@ -203,6 +232,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                                 increment((val) => bbqShare = val, bbqShare),
                             onRemove: () =>
                                 decrement((val) => bbqShare = val, bbqShare),
+                            isDarkMode: isDarkMode,
                           ),
                           _buildTicketOptionRow(
                             label: 'Water bottles',
@@ -211,6 +241,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                                 (val) => waterBottles = val, waterBottles),
                             onRemove: () => decrement(
                                 (val) => waterBottles = val, waterBottles),
+                            isDarkMode: isDarkMode,
                           ),
                           _buildTicketOptionRow(
                             label: 'Energy drink',
@@ -219,45 +250,64 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                                 (val) => energyDrinks = val, energyDrinks),
                             onRemove: () => decrement(
                                 (val) => energyDrinks = val, energyDrinks),
+                            isDarkMode: isDarkMode,
                           ),
                         ],
                       ),
                     ),
+
                     SizedBox(height: screenHeight * 0.015),
                     // Order Summary container.
+              
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius:
-                            BorderRadius.circular(12), // <-- Rounded corners
+                        color: isDarkMode
+                            ? const Color(0xFF2B2B2B)
+                            : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       padding: EdgeInsets.all(screenWidth * 0.04),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Order Summary',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               fontFamily: 'Poppins',
+                              color: isDarkMode ? Colors.white : Colors.black,
                             ),
                           ),
                           SizedBox(height: screenHeight * 0.01),
-                          _buildSummaryRow('Tickets', tickets, ticketsTotal),
-                          _buildSummaryRow('BBQ Share', bbqShare, bbqTotal),
+
+                          // Rows
+                          _buildSummaryRow('Tickets', tickets, ticketsTotal,
+                              isDarkMode: isDarkMode),
+                          _buildSummaryRow('BBQ Share', bbqShare, bbqTotal,
+                              isDarkMode: isDarkMode),
                           _buildSummaryRow(
-                              'Water Bottles', waterBottles, waterTotal),
+                              'Water Bottles', waterBottles, waterTotal,
+                              isDarkMode: isDarkMode),
                           _buildSummaryRow(
-                              'Energy Drinks', energyDrinks, energyTotal),
-                          const Divider(),
+                              'Energy Drinks', energyDrinks, energyTotal,
+                              isDarkMode: isDarkMode),
+
+                          Divider(
+                            color: isDarkMode
+                                ? Colors.grey[700]
+                                : Colors.grey[400],
+                          ),
+
                           _buildSummaryRow('Subtotal', 0, subtotal,
-                              isSubtotal: true),
+                              isSubtotal: true, isDarkMode: isDarkMode),
                           SizedBox(height: screenHeight * 0.005),
+
+                          // Total
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
+                              Text(
                                 'Total Due',
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
@@ -384,6 +434,11 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                                 ),
                               );
                             }
+                             Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => MyBookingsPage(onScrollChanged: (bool ) {  },)),
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.blue,
@@ -411,7 +466,10 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     required int quantity,
     required VoidCallback onAdd,
     required VoidCallback onRemove,
+    required bool isDarkMode,
   }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -419,42 +477,45 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Poppins',
               fontSize: 16,
+              color: isDarkMode ? Colors.white : Colors.black,
             ),
           ),
           Row(
             children: [
               GestureDetector(
                 onTap: onRemove,
-                child: const Text(
+                child: Text(
                   '-',
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
+                    color: isDarkMode ? Colors.white : Colors.black,
                   ),
                 ),
               ),
               const SizedBox(width: 16),
               Text(
                 quantity.toString(),
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 16,
+                  color: isDarkMode ? Colors.white : Colors.black,
                 ),
               ),
               const SizedBox(width: 16),
               GestureDetector(
                 onTap: onAdd,
-                child: const Text(
+                child: Text(
                   '+',
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue,
+                    color: isDarkMode ? Colors.blue[300] : Colors.blue,
                   ),
                 ),
               ),
@@ -471,6 +532,8 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     required String label,
     required String iconPath,
   }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return InkWell(
       onTap: () {
         setState(() {
@@ -488,9 +551,10 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
           const SizedBox(width: 10),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Poppins',
               fontSize: 16,
+              color: isDarkMode ? Colors.white : Colors.black,
             ),
           ),
           const Spacer(),
@@ -505,6 +569,12 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
               }
             },
             activeColor: Colors.blue,
+            fillColor: MaterialStateProperty.resolveWith<Color>((states) {
+              if (states.contains(MaterialState.selected)) {
+                return Colors.blue;
+              }
+              return isDarkMode ? Colors.grey : Colors.black54;
+            }),
           ),
         ],
       ),
@@ -513,7 +583,9 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
 
   // Helper widget for summary rows.
   Widget _buildSummaryRow(String label, int count, double cost,
-      {bool isSubtotal = false}) {
+      {bool isSubtotal = false, required bool isDarkMode}) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
       child: Row(
@@ -522,21 +594,28 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
           if (!isSubtotal)
             Text(
               '$count x $label',
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Poppins',
+                color: isDarkMode ? Colors.white : Colors.black,
               ),
             )
           else
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Poppins',
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: isDarkMode ? Colors.white : Colors.black,
               ),
             ),
           Text(
             '\$${cost.toStringAsFixed(2)}',
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Poppins',
+              fontWeight: isSubtotal ? FontWeight.bold : FontWeight.normal,
+              fontSize: isSubtotal ? 16 : 14,
+              color: isDarkMode ? Colors.white : Colors.black,
             ),
           ),
         ],

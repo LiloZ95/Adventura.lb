@@ -270,45 +270,53 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
   // A reusable widget method for text fields
   Widget _buildTextFieldBox({
-    required TextEditingController controller,
-    required String hint,
-    IconData? icon,
-  }) {
-    return Container(
-      height: 50,
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFCFCFCF), width: 1),
-        borderRadius: BorderRadius.circular(8),
+  required TextEditingController controller,
+  required String hint,
+  IconData? icon,
+}) {
+  final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+  return Container(
+    height: 50,
+    decoration: BoxDecoration(
+      color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+      border: Border.all(
+        color: isDarkMode ? Colors.grey[700]! : const Color(0xFFCFCFCF),
+        width: 1,
       ),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          suffixIcon: icon != null
-              ? Icon(
-                  icon,
-                  color: Colors.blue, // Change icon color here
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 14,
-          ),
-          hintText: hint,
-          hintStyle: const TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
-            fontFamily: 'poppins',
-          ),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        suffixIcon: icon != null
+            ? Icon(
+                icon,
+                color: isDarkMode ? Colors.white : Colors.blue,
+              )
+            : null,
+        border: InputBorder.none,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 14,
         ),
-        style: const TextStyle(
-          color: Colors.black,
+        hintText: hint,
+        hintStyle: TextStyle(
+          color: isDarkMode ? Colors.grey[400] : Colors.blue,
           fontSize: 14,
-          fontFamily: 'poppins',
+          fontFamily: 'Poppins',
         ),
       ),
-    );
-  }
+      style: TextStyle(
+        color: isDarkMode ? Colors.white : Colors.blue,
+        fontSize: 14,
+        fontFamily: 'Poppins',
+      ),
+      cursorColor: isDarkMode ? Colors.white70 : Colors.blue,
+    ),
+  );
+}
+
 
   @override
   void initState() {

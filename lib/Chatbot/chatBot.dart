@@ -207,41 +207,68 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.blue,
+        backgroundColor: isDarkMode ? const Color(0xFF121212) : Colors.blue,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back,
+              color: isDarkMode ? Colors.white : Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           "EVA Adventure Chatbot",
           style: TextStyle(
-            fontFamily: "poppins",
+            fontFamily: "Poppins",
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            fontSize: 20,
+            color: isDarkMode ? Colors.white : Colors.white,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete_forever, color: Colors.redAccent),
+            icon: const Icon(Icons.delete_forever),
+            color: Colors.redAccent,
             tooltip: "Clear chat",
             onPressed: () async {
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: const Text("Clear Chat"),
-                  content: const Text(
-                      "Are you sure you want to delete all messages?"),
+                  backgroundColor:
+                      isDarkMode ? const Color(0xFF2C2C2C) : Colors.white,
+                  title: Text(
+                    "Clear Chat",
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                  content: Text(
+                    "Are you sure you want to delete all messages?",
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white70 : Colors.black87,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
                   actions: [
                     TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text("Cancel")),
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text(
+                        "Cancel",
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.grey[400] : Colors.black,
+                        ),
+                      ),
+                    ),
                     TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text("Clear",
-                            style: TextStyle(color: Colors.red))),
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text(
+                        "Clear",
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
                   ],
                 ),
               );
@@ -249,14 +276,14 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
                 await _clearChat();
               }
             },
-          )
+          ),
         ],
       ),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
-              controller: _scrollController, // 👈 this!
+              controller: _scrollController,
               padding: const EdgeInsets.all(12),
               itemCount: _messages.length + (_isTyping ? 1 : 0),
               itemBuilder: (context, index) {
@@ -269,7 +296,7 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: isDarkMode ? Colors.grey[800] : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: const BouncingDotsLoader(size: 7),
@@ -285,78 +312,73 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
                 final isWelcome = msg['isWelcome'] ?? false;
 
                 return AnimatedOpacity(
-                    opacity: 1.0,
-                    duration: const Duration(milliseconds: 400),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.75),
-                      child: IntrinsicWidth(
-                        child: Column(
-                          crossAxisAlignment: isUser
-                              ? CrossAxisAlignment.end
-                              : CrossAxisAlignment.start,
-                          children: [
-                            MessageBubble(
-                              msg: msg,
-                              isUser: isUser,
-                              isError: isError,
-                              isWelcome: isWelcome,
-                              index: index,
-                              animatedMessageIndexes: _animatedMessageIndexes,
-                              onAnimationFinished: () {
-                                setState(() {
-                                  _animatedMessageIndexes.add(index);
-                                });
-                              },
-                            ),
-                            if (!isUser && isWelcome)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: [
-                                    Wrap(
-                                      spacing: 8,
-                                      runSpacing: 8,
-                                      children: [
-                                        buildQuickChip("❓ What is Adventura?",
-                                            "What is Adventura?"),
-                                        buildQuickChip("📆 How do I book?",
-                                            "How do I book an activity?"),
-                                        buildQuickChip(
-                                            "📍 What locations do you support",
-                                            "What locations do you support"),
-                                        buildQuickChip("🚗 Car Events near me",
-                                            "Show me some car events"),
-                                        buildQuickChip(
-                                            "🌊 Sea trips in Tripoli",
-                                            "Can you suggest some sea trips in Tripoli?"),
-                                        buildQuickChip(
-                                            "💰 how can i become a organizer?",
-                                            "how can i become a organizer?"),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                  opacity: 1.0,
+                  duration: const Duration(milliseconds: 400),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.75),
+                    child: IntrinsicWidth(
+                      child: Column(
+                        crossAxisAlignment: isUser
+                            ? CrossAxisAlignment.end
+                            : CrossAxisAlignment.start,
+                        children: [
+                          MessageBubble(
+                            msg: msg,
+                            isUser: isUser,
+                            isError: isError,
+                            isWelcome: isWelcome,
+                            index: index,
+                            animatedMessageIndexes: _animatedMessageIndexes,
+                            onAnimationFinished: () {
+                              setState(() {
+                                _animatedMessageIndexes.add(index);
+                              });
+                            },
+                          ),
+                          if (!isUser && isWelcome)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  buildQuickChip("❓ What is Adventura?",
+                                      "What is Adventura?"),
+                                  buildQuickChip("📆 How do I book?",
+                                      "How do I book an activity?"),
+                                  buildQuickChip(
+                                      "📍 What locations do you support",
+                                      "What locations do you support"),
+                                  buildQuickChip("🚗 Car Events near me",
+                                      "Show me some car events"),
+                                  buildQuickChip("🌊 Sea trips in Tripoli",
+                                      "Can you suggest some sea trips in Tripoli?"),
+                                  buildQuickChip(
+                                      "💰 how can i become a organizer?",
+                                      "how can i become a organizer?"),
+                                ],
                               ),
-                            if (!isUser && msg['cards'] != null)
-                              ...msg['cards']
-                                  .asMap()
-                                  .entries
-                                  .map<Widget>((entry) {
-                                final i = entry.key;
-                                final card = entry.value;
-                                return SlideTransitionCard(
-                                    card: card, index: i);
-                              }),
-                          ],
-                        ),
+                            ),
+                          if (!isUser && msg['cards'] != null)
+                            ...msg['cards']
+                                .asMap()
+                                .entries
+                                .map<Widget>((entry) {
+                              final i = entry.key;
+                              final card = entry.value;
+                              return SlideTransitionCard(card: card, index: i);
+                            }),
+                        ],
                       ),
-                    ));
+                    ),
+                  ),
+                );
               },
             ),
           ),
+
+          /// Chat Input Bar (already uses dynamic styling?)
           ChatInputBar(
             controller: _controller,
             onSend: _sendMessage,
