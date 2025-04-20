@@ -27,7 +27,6 @@ Widget EventCard({
     if (b.toLowerCase() == "trending") return 1;
     return 0;
   });
-  final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
   return GestureDetector(
     onTap: () async {

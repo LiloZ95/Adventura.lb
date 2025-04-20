@@ -83,7 +83,7 @@ class _PreviewPageState extends State<PreviewPage> {
       backgroundColor: isDarkMode ? const Color(0xFF121212) : Colors.white,
       appBar: AppBar(
         title: const Text('Preview'),
-        backgroundColor: isDarkMode ? Colors.black : Colors.white,
+        backgroundColor: isDarkMode ? const Color(0xFF121212) : Colors.white,
         foregroundColor: isDarkMode ? Colors.white : Colors.black,
         elevation: 0.5,
       ),
@@ -382,62 +382,79 @@ class _PreviewPageState extends State<PreviewPage> {
   Widget _bottomBar(BuildContext context, bool isDarkMode) {
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: isDarkMode
+                ? Colors.black.withOpacity(0.4)
+                : Colors.black.withOpacity(0.15),
             blurRadius: 15,
             offset: const Offset(0, -2),
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        child: Container(
+          color: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Price",
-                  style: TextStyle(
-                      color: isDarkMode ? Colors.white70 : Colors.black54)),
-              const SizedBox(height: 2),
-              Row(
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "\$${widget.price}",
-                    style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue),
+                    "Price",
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white70 : Colors.black54,
+                    ),
                   ),
-                  const SizedBox(width: 4),
-                  Text("/${widget.priceType}",
-                      style: TextStyle(
-                          color: isDarkMode ? Colors.white60 : Colors.black54))
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Text(
+                        "\$${widget.price}",
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        "/${widget.priceType}",
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.white60 : Colors.black54,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text("This is just a preview."),
+                  ));
+                },
+                icon: const Icon(Icons.local_activity_outlined,
+                    color: Colors.white, size: 20),
+                label: const Text("Book Ticket",
+                    style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 25, vertical: 18),
+                ),
+              )
             ],
           ),
-          ElevatedButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text("This is just a preview."),
-              ));
-            },
-            icon: const Icon(Icons.local_activity_outlined,
-                color: Colors.white, size: 20),
-            label: const Text("Book Ticket",
-                style: TextStyle(color: Colors.white)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 18),
-            ),
-          )
-        ],
+        ),
       ),
     );
   }

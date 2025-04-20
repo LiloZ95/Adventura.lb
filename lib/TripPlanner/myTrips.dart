@@ -1,6 +1,5 @@
 import 'package:adventura/TripPlanner/buildWithAiPage.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 class MyTripsPage extends StatefulWidget {
   const MyTripsPage({super.key});
@@ -133,7 +132,6 @@ class _MyTripsPageState extends State<MyTripsPage>
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
 
     final activeTrips =
         trips.where((trip) => trip['completed'] == false).toList();

@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
 		cb(null, `${fieldName}.jpg`);
 	},
 });
-
+ 
 const upload = multer({ storage });
 
 router.post("/provider-request", controller.submitProviderRequest);
