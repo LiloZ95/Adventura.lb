@@ -23,21 +23,21 @@ class ViewTicketPage extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-
-      // AppBar with a centered title
+      backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
         elevation: 0,
         title: Text(
           "View Ticket",
           style: TextStyle(
-            color: Colors.black,
+            color: isDarkMode ? Colors.white : Colors.black,
             fontFamily: "Poppins",
             fontSize: screenWidth * 0.05,
             fontWeight: FontWeight.bold,
@@ -45,12 +45,11 @@ class ViewTicketPage extends StatelessWidget {
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back,
+              color: isDarkMode ? Colors.white : Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-
-      // Main content
       body: SingleChildScrollView(
         padding: EdgeInsets.all(screenWidth * 0.05),
         child: Column(
@@ -62,7 +61,7 @@ class ViewTicketPage extends StatelessWidget {
                 fontSize: screenWidth * 0.05,
                 fontWeight: FontWeight.bold,
                 fontFamily: "Poppins",
-                color: Colors.black,
+                color: isDarkMode ? Colors.white : Colors.black,
               ),
             ),
             SizedBox(height: screenHeight * 0.005),
@@ -73,32 +72,33 @@ class ViewTicketPage extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: screenWidth * 0.035,
-                color: Colors.grey,
+                color: isDarkMode ? Colors.grey[400] : Colors.grey,
                 fontFamily: "Poppins",
               ),
             ),
             SizedBox(height: screenHeight * 0.03),
 
-            // Container wrapping BarcodeWidget
+            // QR Code Container
             Container(
               width: screenWidth * 0.6,
               height: screenWidth * 0.6,
               decoration: BoxDecoration(
-                color: Colors.grey[200], // Background color
+                color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[200],
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black12,
+                    color: isDarkMode
+                        ? Colors.black.withOpacity(0.2)
+                        : Colors.black12,
                     blurRadius: 6,
-                    offset: Offset(0, 3),
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
               child: Center(
-                // BarcodeWidget from the barcode_widget package
                 child: BarcodeWidget(
-                  barcode: Barcode.qrCode(), // Generate a QR code
-                  data: ticketId, // The data to encode
+                  barcode: Barcode.qrCode(),
+                  data: ticketId,
                   width: screenWidth * 0.45,
                   height: screenWidth * 0.45,
                 ),
@@ -107,16 +107,16 @@ class ViewTicketPage extends StatelessWidget {
 
             SizedBox(height: screenHeight * 0.03),
 
-            // Ticket Details
-            _buildInfoRow("Event", eventTitle, screenWidth),
-            _buildInfoRow("Client name", clientName, screenWidth),
-            _buildInfoRow("Event time", eventTime, screenWidth),
-            _buildInfoRow(
-                "Number of attendees", "$numberOfAttendees", screenWidth),
-            _buildInfoRow("Ticket ID", ticketId, screenWidth),
+            _buildInfoRow("Event", eventTitle, screenWidth, isDarkMode),
+            _buildInfoRow("Client name", clientName, screenWidth, isDarkMode),
+            _buildInfoRow("Event time", eventTime, screenWidth, isDarkMode),
+            _buildInfoRow("Number of attendees", "$numberOfAttendees",
+                screenWidth, isDarkMode),
+            _buildInfoRow("Ticket ID", ticketId, screenWidth, isDarkMode),
 
-            // Status row with colored background
             SizedBox(height: screenHeight * 0.01),
+
+            // Status Row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -126,6 +126,7 @@ class ViewTicketPage extends StatelessWidget {
                     fontSize: screenWidth * 0.04,
                     fontWeight: FontWeight.bold,
                     fontFamily: "Poppins",
+                    color: isDarkMode ? Colors.white : Colors.black,
                   ),
                 ),
                 Container(
@@ -150,17 +151,17 @@ class ViewTicketPage extends StatelessWidget {
                 ),
               ],
             ),
+
             SizedBox(height: screenHeight * 0.03),
 
-            // Bottom Buttons: "Cancel Booking" & "Go To Home"
+            // Buttons
             Row(
               children: [
-                // Cancel Booking Button (Outlined)
+                // Cancel Booking
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      // TODO: Implement cancel booking logic
-                      // e.g., Navigator.push(context, MaterialPageRoute(builder: (context) => CancelBookingScreen()));
+                      // TODO: Implement cancel logic
                     },
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Colors.red, width: 2),
@@ -182,11 +183,10 @@ class ViewTicketPage extends StatelessWidget {
                 ),
                 SizedBox(width: 12),
 
-                // Go To Home Button (Filled)
+                // Go to Home
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      // Navigate to home screen
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
@@ -219,9 +219,9 @@ class ViewTicketPage extends StatelessWidget {
       ),
     );
   }
-
+}
   /// Helper method to build a row of info (label on the left, value on the right)
-  Widget _buildInfoRow(String label, String value, double screenWidth) {
+  Widget _buildInfoRow(String label, String value, double screenWidth, bool isDarkMode) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -251,4 +251,4 @@ class ViewTicketPage extends StatelessWidget {
       ),
     );
   }
-}
+

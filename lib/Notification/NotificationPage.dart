@@ -63,8 +63,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
@@ -74,11 +76,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new,
-                        color: Colors.black),
+                    icon: Icon(
+                      Icons.arrow_back_ios_new,
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Center(
                       child: Text(
                         "Notifications",
@@ -86,7 +90,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           fontFamily: "Poppins",
-                          color: Colors.black,
+                          color: isDarkMode ? Colors.white : Colors.black,
                         ),
                       ),
                     ),
@@ -101,10 +105,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 child: isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : notifications.isEmpty
-                        ? const Center(
+                        ? Center(
                             child: Text(
                               "No notifications yet.",
-                              style: TextStyle(fontFamily: "Poppins"),
+                              style: TextStyle(
+                                fontFamily: "Poppins",
+                                color: isDarkMode
+                                    ? Colors.grey[400]
+                                    : Colors.black,
+                              ),
                             ),
                           )
                         : ListView.builder(
@@ -161,6 +170,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   Widget _buildNotificationItem(Map<String, dynamic> notification) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       children: [
         Row(
@@ -189,29 +200,29 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 children: [
                   Text(
                     notification["title"] ?? '',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                       fontFamily: "Poppins",
-                      color: Colors.black,
+                      color: isDarkMode ? Colors.white : Colors.black,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     notification["description"] ?? '',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontFamily: "Poppins",
-                      color: Colors.black54,
+                      color: isDarkMode ? Colors.grey[300] : Colors.black54,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     formatDate(notification["created_at"] ?? ''),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontFamily: "Poppins",
-                      color: Colors.grey,
+                      color: isDarkMode ? Colors.grey[500] : Colors.grey,
                     ),
                   ),
                 ],
@@ -222,7 +233,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         const SizedBox(height: 8),
         Container(
           height: 2,
-          color: Colors.grey[300],
+          color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
           margin: const EdgeInsets.only(left: 30, right: 16),
         ),
         const SizedBox(height: 10),

@@ -12,7 +12,10 @@ class ChatInputBar extends StatelessWidget {
   });
 
   @override
+  @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       child: Row(
@@ -20,27 +23,38 @@ class ChatInputBar extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: controller,
+              style: TextStyle(
+                color: isDarkMode ? Colors.white : Colors.black,
+                fontFamily: "Poppins",
+              ),
               decoration: InputDecoration(
                 contentPadding:
                     const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                 hintText: "Type your message...",
-                hintStyle: const TextStyle(fontFamily: "poppins"),
+                hintStyle: TextStyle(
+                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                  fontFamily: "Poppins",
+                ),
+                filled: true,
+                fillColor: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide:
-                      const BorderSide(color: AppColors.grey0, width: 1),
+                  borderSide: BorderSide(
+                    color: isDarkMode ? Colors.grey[700]! : AppColors.grey0,
+                    width: 1,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide:
-                      const BorderSide(color: AppColors.grey3, width: 1),
+                  borderSide: BorderSide(
+                    color: isDarkMode ? Colors.grey[600]! : AppColors.grey3,
+                    width: 1,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: const BorderSide(color: Colors.blue, width: 2),
                 ),
-                fillColor: Colors.white,
-                filled: true,
               ),
               onSubmitted: (_) => onSend(),
             ),
@@ -48,9 +62,11 @@ class ChatInputBar extends StatelessWidget {
           const SizedBox(width: 8),
           IconButton(
             onPressed: onSend,
-            icon: const Icon(Icons.send),
-            color: Colors.blue,
-          )
+            icon: Icon(
+              Icons.send,
+              color: Colors.blue,
+            ),
+          ),
         ],
       ),
     );
