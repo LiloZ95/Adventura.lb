@@ -134,7 +134,7 @@ class _SignUpPageState extends State<SignUpPage> {
     // Use MediaQuery to obtain dynamic dimensions
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       resizeToAvoidBottomInset: true, // Adjust when keyboard appears
       body: Stack(
@@ -162,7 +162,9 @@ class _SignUpPageState extends State<SignUpPage> {
                 child: Container(
                   padding: EdgeInsets.all(screenWidth * 0.06),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isDarkMode
+                        ? const Color(0xFF121212)
+                        : const Color(0xFFF6F6F6),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -182,21 +184,25 @@ class _SignUpPageState extends State<SignUpPage> {
                           "Welcome to the team!",
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: screenWidth * 0.07, // Dynamic font size
+                            fontSize: screenWidth * 0.07,
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.bold,
                             letterSpacing: -0.5,
-                            color: Colors.black,
+                            color: isDarkMode ? Colors.white : Colors.black,
                           ),
                         ),
+
                         SizedBox(height: screenHeight * 0.01),
+
                         Text(
                           "Enter the required credentials and start your unforgettable journey.",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: screenWidth * 0.035,
                             fontFamily: 'Poppins',
-                            color: Color(0x77000000),
+                            color: isDarkMode
+                                ? Colors.grey[300]
+                                : const Color(0x77000000),
                           ),
                         ),
                         SizedBox(height: screenHeight * 0.02),
@@ -390,9 +396,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                   recognizer: TapGestureRecognizer()
                                     ..onTap = () {
                                       Navigator.push(
-                                      context,
-                                      CinematicPageRoute(page: LoginPage()),
-                                    );
+                                        context,
+                                        CinematicPageRoute(page: LoginPage()),
+                                      );
                                     },
                                 ),
                               ],
@@ -412,60 +418,62 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   // Custom Reusable Text Field Widget with updated border and text style
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    TextInputType keyboardType = TextInputType.text,
-    bool obscureText = false,
-    bool isPasswordField = false,
-    String? Function(String?)? validator,
-  }) {
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      child: TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        obscureText: obscureText,
-        style: TextStyle(
-          color: const Color.fromARGB(255, 5, 5, 5),
+ Widget _buildTextField({
+  required TextEditingController controller,
+  required String hintText,
+  TextInputType keyboardType = TextInputType.text,
+  bool obscureText = false,
+  bool isPasswordField = false,
+  String? Function(String?)? validator,
+}) {
+  final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+  return AnimatedContainer(
+    duration: Duration(milliseconds: 300),
+    curve: Curves.easeInOut,
+    child: TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      style: TextStyle(
+        color: isDarkMode ? Colors.white : Colors.black,
+        fontFamily: 'Poppins',
+      ),
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: TextStyle(
+          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
           fontFamily: 'Poppins',
         ),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(
-            color: Colors.grey[400],
-            fontFamily: 'Poppins',
+        filled: true,
+        fillColor: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(
+            color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
+            width: 1,
           ),
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(
-              color: Colors.grey[200]!,
-              width: 1,
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(
-              // color: Colors.grey[200]!,
-              width: 1,
-            ),
-          ),
-          suffixIcon: isPasswordField
-              ? IconButton(
-                  icon: Icon(
-                    obscureText ? Icons.visibility_off : Icons.visibility,
-                    color: Colors.grey[400],
-                  ),
-                  onPressed: _togglePasswordVisibility,
-                )
-              : null,
         ),
-        validator: validator,
-        cursorColor: Colors.grey[400],
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(
+            color: isDarkMode ? Colors.white : Colors.black,
+            width: 1,
+          ),
+        ),
+        suffixIcon: isPasswordField
+            ? IconButton(
+                icon: Icon(
+                  obscureText ? Icons.visibility_off : Icons.visibility,
+                  color: isDarkMode ? Colors.white70 : Colors.grey[600],
+                ),
+                onPressed: _togglePasswordVisibility,
+              )
+            : null,
       ),
-    );
-  }
+      validator: validator,
+      cursorColor: isDarkMode ? Colors.white70 : Colors.grey[600],
+    ),
+  );
+}
 }
