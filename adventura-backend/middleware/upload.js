@@ -19,6 +19,11 @@ const dynamicStorage = (folder = "") =>
 
 // ✅ File filter for images only
 const fileFilter = (req, file, cb) => {
+	console.log("🧾 Uploaded file info:", {
+		originalname: file.originalname,
+		mimetype: file.mimetype,
+	});
+
 	const allowedTypes = /jpeg|jpg|png|gif/;
 	const extname = allowedTypes.test(
 		path.extname(file.originalname).toLowerCase()
@@ -28,12 +33,13 @@ const fileFilter = (req, file, cb) => {
 	if (extname && mimetype) {
 		return cb(null, true);
 	} else {
+		console.error("❌ Rejected file:", file.originalname, file.mimetype);
 		cb(new Error("Only image files are allowed"));
 	}
 };
 
 // ✅ Factory function to generate customized uploader
-const  createUploader = (folder = "") =>
+const createUploader = (folder = "") =>
 	multer({
 		storage: dynamicStorage(folder),
 		fileFilter,

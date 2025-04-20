@@ -69,6 +69,7 @@ router.get("/recommendations/:id", async (req, res) => {
 
 router.post(
 	"/activity-images/upload/:activityId",
+  authenticateToken,
 	(req, res, next) => {
 		const type =
 			req.query.listing_type === "recurrent" ? "recurrent" : "onetime";

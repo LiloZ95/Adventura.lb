@@ -46,7 +46,8 @@ class ActivityService {
         var request = http.MultipartRequest(
             'POST',
             Uri.parse(
-                '$baseUrl/activities/$activityId/images?listing_type=${activityData["listing_type"]}'));
+                '$baseUrl/activities/activity-images/upload/$activityId?listing_type=${activityData["listing_type"]}'));
+        request.headers['Authorization'] = 'Bearer $accessToken';
 
         for (var image in images) {
           print("Uploading image: ${image.path}");
