@@ -7,6 +7,8 @@ import Users from './pages/Users';
 import AdvancedInsights from './pages/AdvancedInsights';
 import Transactions from './pages/Transactions';
 import Notifications from './pages/Notifications';
+import ProviderRequests from './pages/ProviderRequests'; // ✅ import
+
 function App() {
   return (
     <Router>
@@ -23,6 +25,7 @@ function App() {
             <Route path="/advanced-insights" element={<AdvancedInsights />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route path="/provider-requests" element={<ProviderRequests />} /> {/* ✅ fixed here */}
           </Routes>
         </div>
       </div>

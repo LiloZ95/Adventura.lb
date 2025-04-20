@@ -121,6 +121,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Poppins',
+                  color: isDarkMode ? Colors.white : Colors.black,
                 ),
               ),
               if (activityDuration != null) ...[
@@ -128,7 +129,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF121212) : Colors.white,
+                    color: isDarkMode
+                        ? const Color(0xFF1F1F1F)
+                        : Colors.white, // Matches dark section
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -155,15 +158,14 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 children: [
                   Icon(Icons.location_on,
                       size: 18,
-                      color:
-                          isDarkMode ? const Color(0xFF121212) : Colors.grey),
+                      color: isDarkMode ? Colors.white70 : Colors.grey),
                   SizedBox(width: 4),
                   Text(
                     widget.activity["location"] ?? "Unknown Location",
                     style: TextStyle(
-                        fontSize: 14,
-                        color:
-                            isDarkMode ? const Color(0xFF121212) : Colors.grey),
+                      fontSize: 14,
+                      color: isDarkMode ? Colors.white70 : Colors.grey,
+                    ),
                   ),
                 ],
               ),
@@ -176,7 +178,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 widget.activity["description"] ?? "No description provided",
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.black87,
+                  color: isDarkMode ? Colors.grey[300] : Colors.black87,
                   fontFamily: "poppins",
                 ),
               ),
@@ -186,7 +188,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               _buildSectionTitle("Location"),
               SizedBox(height: 4),
               Text(widget.activity["location"] ?? "Unknown Location",
-                  style: TextStyle(fontSize: 14, color: Colors.black87)),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDarkMode ? Colors.grey[300] : Colors.black87,
+                  )),
               SizedBox(height: 8),
               ReadOnlyLocationMap(latitude: lat, longitude: lng),
               SizedBox(height: 16),
@@ -233,7 +238,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   child: CircleAvatar(
                     radius: 24,
                     backgroundColor:
-                        isDarkMode ? const Color(0xFF121212) : Colors.grey,
+                        isDarkMode ? const Color(0xFF1F1F1F) : Colors.grey,
                     child: ClipOval(
                       child: Builder(
                         builder: (context) {
@@ -248,11 +253,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                               height: 48,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
-                                  Icon(Icons.person,
-                                      size: 28,
-                                      color: isDarkMode
-                                          ? const Color(0xFF121212)
-                                          : Colors.grey),
+                                  Icon(
+                                Icons.person,
+                                size: 28,
+                                color: isDarkMode ? Colors.white : Colors.grey,
+                              ),
                             );
                           } else {
                             return Image.asset(
@@ -267,8 +272,16 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     ),
                   ),
                 ),
-                title: Text("We tour Lebanon"),
-                subtitle: Text("Joined since 2024 · 94+ Listings · 4.5 Rating"),
+                title: Text(
+                  "We tour Lebanon",
+                  style: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black),
+                ),
+                subtitle: Text(
+                  "Joined since 2024 · 94+ Listings · 4.5 Rating",
+                  style: TextStyle(
+                      color: isDarkMode ? Colors.grey[400] : Colors.grey),
+                ),
                 trailing: ConstrainedBox(
                   constraints: BoxConstraints(maxHeight: 56),
                   child: Column(
@@ -310,8 +323,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Widget _buildTripPlan(List<Map<String, String>> tripSteps) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     if (tripSteps.isEmpty) {
-      return SizedBox(); // or Text("No trip plan available")
+      return const SizedBox(); // or Text("No trip plan available")
     }
 
     return Column(
@@ -319,28 +334,38 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       children: [
         Row(
           children: [
-            Text("Trip plan",
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Poppins')),
-            SizedBox(width: 8),
-            Expanded(child: Divider(color: Colors.grey.shade400, thickness: 1)),
+            Text(
+              "Trip plan",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Poppins',
+                color: isDarkMode ? Colors.white : Colors.black,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Divider(
+                color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade400,
+                thickness: 1,
+              ),
+            ),
           ],
         ),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
         SizedBox(
           height: 80,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: max(0, tripSteps.length * 2 - 1),
-            separatorBuilder: (context, index) => SizedBox(width: 4),
+            separatorBuilder: (context, index) => const SizedBox(width: 4),
             itemBuilder: (context, index) {
               if (index.isOdd) {
-                return _arrowConnector();
+                return _arrowConnector(); // already dark mode ready
               } else {
                 final step = tripSteps[index ~/ 2];
-                return _tripCard(step["time"]!, step["title"]!);
+                return _tripCard(
+                    step["time"]!, step["title"]!); // already dark mode ready
               }
             },
           ),
@@ -350,56 +375,87 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Widget _tripCard(String time, String title) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      margin: EdgeInsets.only(right: 8, left: 8),
-      padding: EdgeInsets.only(left: 10, right: 30, top: 12, bottom: 12),
+      margin: const EdgeInsets.only(right: 8, left: 8),
+      padding: const EdgeInsets.only(left: 10, right: 30, top: 12, bottom: 12),
       decoration: BoxDecoration(
         border: Border.all(
-            color: const Color.fromARGB(255, 51, 51, 51), width: 0.8),
+          color: isDarkMode
+              ? Colors.grey.shade700
+              : const Color.fromARGB(255, 51, 51, 51),
+          width: 0.8,
+        ),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text("• $time",
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-          SizedBox(height: 4),
-          Text(title,
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Colors.black)),
+          Text(
+            "• $time",
+            style: TextStyle(
+              fontSize: 12,
+              color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              color: isDarkMode ? Colors.white : Colors.black,
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _arrowConnector() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 4),
-      padding: EdgeInsets.all(6),
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 84, 84, 84),
+        color: isDarkMode
+            ? const Color.fromARGB(
+                255, 160, 160, 160) // lighter gray in dark mode
+            : const Color.fromARGB(
+                255, 84, 84, 84), // darker gray in light mode
         shape: BoxShape.circle,
       ),
-      child: Icon(Icons.chevron_right, color: Colors.white, size: 16),
+      child: const Icon(Icons.chevron_right, color: Colors.white, size: 16),
     );
   }
 
   Widget _buildSectionTitle(String text) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Text(text,
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Poppins')),
-            SizedBox(width: 8),
-            Expanded(child: Divider(color: Colors.grey.shade400, thickness: 1)),
+            Text(
+              text,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Poppins',
+                color: isDarkMode ? Colors.white : Colors.black,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Divider(
+                color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade400,
+                thickness: 1,
+              ),
+            ),
           ],
         ),
       ],
@@ -430,35 +486,49 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Widget _tag(String text, {List<Color>? gradient}) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: gradient != null ? LinearGradient(colors: gradient) : null,
-        color: gradient == null ? Colors.grey.shade300 : null,
+        color: gradient == null
+            ? (isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300)
+            : null,
       ),
       child: Text(
         text,
         style: TextStyle(
-            color: gradient != null ? Colors.white : Colors.black,
-            fontWeight: FontWeight.w500),
+          color: gradient != null
+              ? Colors.white
+              : (isDarkMode ? Colors.white : Colors.black),
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
 
   AppBar _buildAppBar(double screenWidth) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
       leading: IconButton(
-        icon: Icon(Icons.arrow_back,
-            color: Colors.black, size: screenWidth * 0.07),
+        icon: Icon(
+          Icons.arrow_back,
+          color: isDarkMode ? Colors.white : Colors.black,
+          size: screenWidth * 0.07,
+        ),
         onPressed: () => Navigator.pop(context),
       ),
       actions: [
         IconButton(
-          icon:
-              Icon(Icons.share, color: Colors.black, size: screenWidth * 0.07),
+          icon: Icon(
+            Icons.share,
+            color: isDarkMode ? Colors.white : Colors.black,
+            size: screenWidth * 0.07,
+          ),
           onPressed: () async {
             final box = await Hive.openBox('authBox');
             final userId = int.tryParse(box.get('userId').toString());
@@ -472,11 +542,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               );
             }
 
-            // Share logic (using native share or share_plus package)
             final shareText =
                 "${widget.activity["name"]} - Check it out on Adventura!";
-            // You can import 'package:share_plus/share_plus.dart';
-            // and use: Share.share(shareText);
             print("📤 Shared: $shareText");
           },
         ),
@@ -484,7 +551,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           icon: Icon(
             isFavorite ? Icons.favorite : Icons.favorite_border,
             size: screenWidth * 0.07,
-            color: isFavorite ? Colors.red : Colors.black,
+            color: isFavorite
+                ? Colors.red
+                : (isDarkMode ? Colors.white : Colors.black),
           ),
           onPressed: () async {
             final box = await Hive.openBox('authBox');
@@ -510,6 +579,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   Widget _buildImageCarousel(
       List<String> images, double screenWidth, double screenHeight) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: Stack(
@@ -545,14 +615,19 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             bottom: 8,
             right: 12,
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
+                color: isDarkMode
+                    ? Colors.white.withOpacity(0.2)
+                    : Colors.black.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 '${_currentImageIndex + 1}/${images.length}',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),
@@ -562,6 +637,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Widget _buildAvailabilitySection() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     final type = widget.activity["listing_type"];
     final startDate = widget.activity["start_date"];
 
@@ -578,11 +655,15 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
           return Row(
             children: [
-              Icon(Icons.event, size: 18, color: Colors.grey),
-              SizedBox(width: 6),
+              Icon(Icons.event,
+                  size: 18, color: isDarkMode ? Colors.grey[300] : Colors.grey),
+              const SizedBox(width: 6),
               Text(
                 formatted,
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDarkMode ? Colors.grey[300] : Colors.grey,
+                ),
               ),
             ],
           );
@@ -593,34 +674,41 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
       return Row(
         children: [
-          Icon(Icons.event_busy, size: 18, color: Colors.red),
-          SizedBox(width: 6),
+          Icon(Icons.event_busy, size: 18, color: Colors.redAccent),
+          const SizedBox(width: 6),
           Text(
             "No date provided",
-            style: TextStyle(fontSize: 14, color: Colors.red),
+            style: TextStyle(fontSize: 14, color: Colors.redAccent),
           ),
         ],
       );
     }
 
-    // fallback: recurrent logic
+    // Recurrent logic (when not one-time)
     return confirmedDate != null && confirmedSlot != null
         ? Row(
             children: [
-              Icon(Icons.calendar_today, size: 18, color: Colors.grey),
-              SizedBox(width: 4),
+              Icon(Icons.calendar_today,
+                  size: 18, color: isDarkMode ? Colors.grey[300] : Colors.grey),
+              const SizedBox(width: 4),
               Text(
                 "$confirmedDate at $confirmedSlot",
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDarkMode ? Colors.grey[300] : Colors.grey,
+                ),
               ),
-              SizedBox(width: 6),
+              const SizedBox(width: 6),
               TextButton(
                 onPressed: _openAvailabilityModal,
-                child: Text("Change time",
-                    style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.blue,
-                        fontWeight: FontWeight.w500)),
+                child: Text(
+                  "Change time",
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.blue,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
             ],
           )
@@ -629,14 +717,18 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.blue,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            child: Text("Check Availability",
-                style: TextStyle(color: Colors.white)),
+            child: const Text(
+              "Check Availability",
+              style: TextStyle(color: Colors.white),
+            ),
           );
   }
 
   Widget _buildBottomBar(double screenWidth, List<String> images) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final box = Hive.box('authBox');
     final userType = box.get("userType");
     final providerId = box.get("providerId");
@@ -651,17 +743,19 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: isDarkMode
+                ? Colors.black.withOpacity(0.4)
+                : Colors.black.withOpacity(0.15),
             blurRadius: 15,
-            offset: Offset(0, -2),
+            offset: const Offset(0, -2),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
         child: Container(
-          color: Colors.white,
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          color: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -669,8 +763,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Price", style: TextStyle(color: Colors.black54)),
-                  SizedBox(height: 2),
+                  Text(
+                    "Price",
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.grey[300] : Colors.black54,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
                   Row(
                     children: [
                       Text(
@@ -678,20 +777,26 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             ? "\$${widget.activity["price"]}"
                             : "Free",
                         style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue),
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
                       ),
-                      SizedBox(width: 4),
-                      Text("/Person",
-                          style: TextStyle(color: Colors.black54, fontSize: 14))
+                      const SizedBox(width: 4),
+                      Text(
+                        "/Person",
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.grey[300] : Colors.black54,
+                          fontSize: 14,
+                        ),
+                      ),
                     ],
                   ),
                 ],
               ),
               ElevatedButton.icon(
                 onPressed: isOwnActivity
-                    ? null // disables the button
+                    ? null
                     : () {
                         if (confirmedDate != null && confirmedSlot != null) {
                           Navigator.push(
@@ -710,7 +815,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
+                            const SnackBar(
                               content: Text(
                                   "⚠️ Please select a date and time first."),
                               backgroundColor: Colors.orange,
@@ -719,22 +824,21 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         }
                       },
                 icon: Icon(
-                  isOwnActivity
-                      ? Icons.block // or Icons.info_outline
-                      : Icons.local_activity_outlined,
+                  isOwnActivity ? Icons.block : Icons.local_activity_outlined,
                   color: Colors.white,
                   size: 20,
                 ),
                 label: Text(
                   isOwnActivity ? "Your Listing" : "Book Ticket",
-                  style: TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isOwnActivity ? Colors.grey : AppColors.blue,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  padding: EdgeInsets.symmetric(horizontal: 25, vertical: 18),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 25, vertical: 18),
                 ),
               ),
             ],

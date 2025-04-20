@@ -19,6 +19,9 @@ const NotificationModel = require("./Notification");
 const UniversalNotificationModel = require("./UniversalNotification");
 const Notification = NotificationModel(sequelize, DataTypes);
 const UniversalNotification = UniversalNotificationModel(sequelize, DataTypes);
+const Payment = require('./Payment')(sequelize, DataTypes);
+
+
 
 // ✅ Define Relationships
 Activity.hasMany(ActivityImage, {
@@ -130,6 +133,7 @@ module.exports = {
   TripPlan,
   Feature,
   User,
+  Payment,
   Provider,
   availability,
   ActivityCategory,

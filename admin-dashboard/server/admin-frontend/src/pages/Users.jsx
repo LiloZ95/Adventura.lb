@@ -37,6 +37,9 @@ const Users = () => {
   };
 
   const confirmDelete = async () => {
+    console.log("Confirming delete for ID:", confirmDeleteId); // ✅ Add this
+    if (!confirmDeleteId) return;
+  
     try {
       await axios.delete(`${process.env.REACT_APP_API_URL}/admin/users/${confirmDeleteId}`);
       setConfirmDeleteId(null);
@@ -45,6 +48,7 @@ const Users = () => {
       console.error('Delete error:', err);
     }
   };
+  
 
   const handleSaveEdit = (data) => {
     setConfirmEditData(data);

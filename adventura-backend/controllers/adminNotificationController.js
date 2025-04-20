@@ -74,29 +74,20 @@ const postUniversalNotification = async (req, res) => {
   try {
     const { title, description, icon } = req.body;
 
-    // ✅ Insert into universal_notifications
+    if (!title || !description) {
+      return res.status(400).json({ error: 'Title and description are required' });
+    }
+
+    // ✅ Just insert into universal_notifications — nothing else
     await UniversalNotification.create({ title, description, icon });
 
-    // ✅ Fetch all user_ids
-    const users = await User.findAll({ attributes: ['user_id'] });
-
-    // ✅ Create notification for each user
-    const notifications = users.map((user) => ({
-      user_id: user.user_id,
-      title,
-      description,
-      icon,
-    }));
-
-    // ✅ Insert into notifications table
-    await Notification.bulkCreate(notifications);
-
-    res.status(201).json({ message: 'Universal notification sent to all users.' });
+    res.status(201).json({ message: 'Universal notification sent successfully.' });
   } catch (error) {
     console.error("❌ Error posting universal notification:", error);
     res.status(500).json({ error: error.message });
   }
 };
+
 const getPersonalNotifications = async (req, res) => {
   try {
     const { userId } = req.params;
