@@ -5,7 +5,6 @@ import 'package:adventura/Booking/MyBooking.dart';
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
 import 'package:adventura/Reels/ReelsPlayer.dart';
 import 'package:adventura/TripPlanner/myTrips.dart';
-import 'package:adventura/TripPlanner/tripPlannerPage.dart';
 import 'package:adventura/search%20screen/searchScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';

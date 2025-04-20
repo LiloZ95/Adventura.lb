@@ -6,6 +6,7 @@ import 'package:adventura/widgets/location_picker.dart';
 import 'package:adventura/CreateListing/widgets/title_section.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
+import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:adventura/services/activity_service.dart';
 import 'package:adventura/controllers/create_listing_controller.dart';
@@ -210,19 +211,35 @@ class _CreateListingPageState extends State<CreateListingPage> {
       return;
     }
 
-    final success = await ActivityService.createActivity(activityData);
+    // 🔄 Load images from Hive (saved earlier)
+    final box = await Hive.openBox('listingFlow');
+    final imageCount = box.get('listingImageCount', defaultValue: 0);
+    List<XFile> selectedImages = [];
+
+    for (int i = 0; i < imageCount; i++) {
+      final path = box.get('listingImage_$i');
+      if (path != null) {
+        selectedImages.add(XFile(path));
+      }
+    }
+
+    final success = await ActivityService.createActivity(
+      activityData,
+      images: selectedImages, // ✅ Include images here
+    );
 
     if (success) {
       showAppSnackBar(context, "✅ Activity created successfully!");
 
-      // Delay briefly so the snackbar is visible before navigating
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Optional cleanup
+      await box.clear();
 
-      // Push to MyListingsPage and remove this screen from back stack
+      await Future.delayed(const Duration(milliseconds: 500));
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
-            builder: (_) => MyListingsPage(cameFromCreation: true)),
+          builder: (_) => MyListingsPage(cameFromCreation: true),
+        ),
         (route) => false,
       );
     } else {
@@ -305,40 +322,84 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
   // Picks multiple images from the gallery
   Future<void> _pickImages() async {
-    final List<XFile>? pickedImages = await _picker.pickMultiImage();
-    if (pickedImages != null && pickedImages.isNotEmpty) {
-      final int remainingSpace = _maxImages - _images.length;
-      if (remainingSpace <= 0) {
-        showAppSnackBar(
-            context, 'You can only select up to $_maxImages images.');
-        return;
-      }
-
-      final imagesToAdd = pickedImages.take(remainingSpace).toList();
-
-      setState(() {
-        _images.addAll(imagesToAdd);
-        _currentPage = _images.length - 1;
-      });
-
-      if (_pageController.hasClients) {
-        _pageController.jumpToPage(_currentPage);
-      }
-
-      if (pickedImages.length > remainingSpace) {
-        showAppSnackBar(
-          context,
-          'Only the first $remainingSpace images were added (max $_maxImages).',
-        );
-      }
+    final int remainingSpace = _maxImages - _images.length;
+    if (remainingSpace <= 0) {
+      showAppSnackBar(context, 'You can only select up to $_maxImages images.');
+      return;
     }
+
+    // Show options to user
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Take Photo'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final XFile? photo =
+                      await _picker.pickImage(source: ImageSource.camera);
+                  if (photo != null) {
+                    setState(() {
+                      _images.add(photo);
+                      _currentPage = _images.length - 1;
+                    });
+                    await _saveImagesToHive();
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Choose from Gallery'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final List<XFile>? pickedImages =
+                      await _picker.pickMultiImage();
+                  if (pickedImages != null && pickedImages.isNotEmpty) {
+                    final imagesToAdd =
+                        pickedImages.take(remainingSpace).toList();
+
+                    setState(() {
+                      _images.addAll(imagesToAdd);
+                      _currentPage = _images.length - 1;
+                    });
+
+                    await _saveImagesToHive();
+
+                    if (pickedImages.length > remainingSpace) {
+                      showAppSnackBar(
+                        context,
+                        'Only the first $remainingSpace images were added (max $_maxImages).',
+                      );
+                    }
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _saveImagesToHive() async {
+    final box = await Hive.openBox('listingFlow');
+    for (int i = 0; i < _images.length; i++) {
+      await box.put('listingImage_$i', _images[i].path);
+    }
+    await box.put('listingImageCount', _images.length);
   }
 
   // Clears all selected images
-  void _clearImages() {
-    setState(() {
+  void _clearImages() async {
+    final box = await Hive.openBox('listingFlow');
+    setState(() async {
       _images.clear();
       _currentPage = 0;
+      await box.clear(); // Clear the images from Hive as well
     });
     if (_pageController.hasClients) {
       _pageController.jumpToPage(0);

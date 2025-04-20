@@ -186,9 +186,14 @@ class _CalendarDateSelectorState extends State<CalendarDateSelector> {
               color: isDarkMode ? Colors.white : Colors.black,
             ),
             todayDecoration: BoxDecoration(
-              color: isDarkMode ? Colors.blue.shade300 : Colors.blue.shade100,
+              // color: isDarkMode ? const Color.fromARGB(255, 66, 130, 182) : Colors.blue,
+              border: Border.all(
+                color: Colors.blue,
+                width: 2,
+              ),
               shape: BoxShape.circle,
             ),
+            
             selectedDecoration: const BoxDecoration(
               color: Colors.blue,
               shape: BoxShape.circle,
@@ -201,6 +206,7 @@ class _CalendarDateSelectorState extends State<CalendarDateSelector> {
               color: Colors.blue,
               shape: BoxShape.circle,
             ),
+            rangeHighlightColor: isDarkMode ? const Color.fromARGB(255, 59, 95, 125) : Colors.blue.withOpacity(0.3),
           ),
           rangeSelectionMode:
               widget.selectedListingType == ListingType.recurrent
