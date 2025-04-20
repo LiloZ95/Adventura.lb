@@ -93,12 +93,16 @@ class _SearchScreenState extends State<SearchScreen>
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withOpacity(0.25),
       builder: (BuildContext context) {
+        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
         return BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
           child: FractionallySizedBox(
-            heightFactor: 0.63, // ⬅️ adjust this as needed
+            heightFactor: 0.63,
             child: Material(
-              color: Colors.white.withOpacity(0.95),
+              color: isDarkMode
+                  ? const Color(0xFF1E1E1E)
+                  : Colors.white.withOpacity(0.95),
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(32)),
               child: Padding(
@@ -110,7 +114,6 @@ class _SearchScreenState extends State<SearchScreen>
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // ➕ Your existing content
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
@@ -131,7 +134,9 @@ class _SearchScreenState extends State<SearchScreen>
                                 child: Text(
                                   "Reset",
                                   style: TextStyle(
-                                    color: Colors.black,
+                                    color: isDarkMode
+                                        ? Colors.white
+                                        : Colors.black,
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
                                     fontFamily: 'Poppins',
@@ -141,12 +146,14 @@ class _SearchScreenState extends State<SearchScreen>
                             ],
                           ),
                           const SizedBox(height: 16),
-
                           Text("Rating",
                               style: TextStyle(
                                   fontFamily: 'poppins',
                                   fontSize: 18,
-                                  fontWeight: FontWeight.bold)),
+                                  fontWeight: FontWeight.bold,
+                                  color: isDarkMode
+                                      ? Colors.white
+                                      : Colors.black)),
                           SizedBox(height: 8),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -168,9 +175,15 @@ class _SearchScreenState extends State<SearchScreen>
                                     decoration: BoxDecoration(
                                       color: selectedRatings.contains(rating)
                                           ? AppColors.blue
-                                          : Colors.white,
+                                          : isDarkMode
+                                              ? Colors.grey.shade900
+                                              : Colors.white,
                                       borderRadius: BorderRadius.circular(15),
-                                      border: Border.all(width: 0.3),
+                                      border: Border.all(
+                                          width: 0.3,
+                                          color: isDarkMode
+                                              ? Colors.grey
+                                              : Colors.black),
                                     ),
                                     child: Row(
                                       children: [
@@ -189,7 +202,9 @@ class _SearchScreenState extends State<SearchScreen>
                                             color:
                                                 selectedRatings.contains(rating)
                                                     ? Colors.white
-                                                    : Colors.black,
+                                                    : isDarkMode
+                                                        ? Colors.white
+                                                        : Colors.black,
                                           ),
                                         ),
                                       ],
@@ -200,80 +215,106 @@ class _SearchScreenState extends State<SearchScreen>
                             ),
                           ),
                           SizedBox(height: 16),
-
                           Text("Sort By",
                               style: TextStyle(
                                   fontFamily: 'poppins',
                                   fontSize: 18,
-                                  fontWeight: FontWeight.bold)),
+                                  fontWeight: FontWeight.bold,
+                                  color: isDarkMode
+                                      ? Colors.white
+                                      : Colors.black)),
                           SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              "All",
-                              "Limited",
-                              "New",
-                              "Popular",
-                              "Nearby"
-                            ]
-                                .map((sortOption) => GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          selectedSorts.contains(sortOption)
-                                              ? selectedSorts.remove(sortOption)
-                                              : selectedSorts.add(sortOption);
-                                        });
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 8.0, horizontal: 12),
-                                        decoration: BoxDecoration(
-                                          color:
+                          SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              reverse: true,
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  "All",
+                                  "Limited",
+                                  "New",
+                                  "Popular",
+                                  "Nearby"
+                                ]
+                                    .map((sortOption) => GestureDetector(
+                                          onTap: () {
+                                            setState(() {
                                               selectedSorts.contains(sortOption)
+                                                  ? selectedSorts
+                                                      .remove(sortOption)
+                                                  : selectedSorts
+                                                      .add(sortOption);
+                                            });
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 8.0, horizontal: 12),
+                                            decoration: BoxDecoration(
+                                              color: selectedSorts
+                                                      .contains(sortOption)
                                                   ? AppColors.blue
-                                                  : Colors.white,
-                                          borderRadius:
-                                              BorderRadius.circular(15),
-                                          border: Border.all(width: 0.3),
-                                        ),
-                                        child: Text(
-                                          sortOption,
-                                          style: TextStyle(
-                                            fontFamily: 'poppins',
-                                            fontSize: 16,
-                                            color: selectedSorts
-                                                    .contains(sortOption)
-                                                ? Colors.white
-                                                : Colors.black,
+                                                  : isDarkMode
+                                                      ? Colors.grey.shade900
+                                                      : Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(15),
+                                              border: Border.all(
+                                                  width: 0.3,
+                                                  color: isDarkMode
+                                                      ? Colors.grey
+                                                      : Colors.black),
+                                            ),
+                                            child: Text(
+                                              sortOption,
+                                              style: TextStyle(
+                                                fontFamily: 'poppins',
+                                                fontSize: 16,
+                                                color: selectedSorts
+                                                        .contains(sortOption)
+                                                    ? Colors.white
+                                                    : isDarkMode
+                                                        ? Colors.white
+                                                        : Colors.black,
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                    ))
-                                .toList(),
-                          ),
+                                        ))
+                                    .toList(),
+                              )),
                           SizedBox(height: 16),
-
                           Text("Budget",
                               style: TextStyle(
                                   fontFamily: 'poppins',
                                   fontSize: 18,
-                                  fontWeight: FontWeight.bold)),
+                                  fontWeight: FontWeight.bold,
+                                  color: isDarkMode
+                                      ? Colors.white
+                                      : Colors.black)),
                           SizedBox(height: 8),
-                          // Budget Fields
                           Row(
                             children: [
                               Expanded(
                                 child: TextField(
                                   controller: budgetMinController,
                                   keyboardType: TextInputType.number,
+                                  style: TextStyle(
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.black),
                                   decoration: InputDecoration(
                                     labelText: "Min",
                                     labelStyle: TextStyle(
-                                        color: Colors.black, fontSize: 16),
+                                        color: isDarkMode
+                                            ? Colors.white
+                                            : Colors.black,
+                                        fontSize: 16),
                                     focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(20),
-                                        borderSide:
-                                            BorderSide(color: Colors.black)),
+                                        borderSide: BorderSide(
+                                            color: isDarkMode
+                                                ? Colors.white
+                                                : Colors.black)),
                                     border: OutlineInputBorder(
                                         borderRadius:
                                             BorderRadius.circular(20)),
@@ -290,14 +331,23 @@ class _SearchScreenState extends State<SearchScreen>
                                 child: TextField(
                                   controller: budgetMaxController,
                                   keyboardType: TextInputType.number,
+                                  style: TextStyle(
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.black),
                                   decoration: InputDecoration(
                                     labelText: "Max",
                                     labelStyle: TextStyle(
-                                        color: Colors.black, fontSize: 16),
+                                        color: isDarkMode
+                                            ? Colors.white
+                                            : Colors.black,
+                                        fontSize: 16),
                                     focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(20),
-                                        borderSide:
-                                            BorderSide(color: Colors.black)),
+                                        borderSide: BorderSide(
+                                            color: isDarkMode
+                                                ? Colors.white
+                                                : Colors.black)),
                                     border: OutlineInputBorder(
                                         borderRadius:
                                             BorderRadius.circular(20)),
@@ -312,16 +362,20 @@ class _SearchScreenState extends State<SearchScreen>
                             ],
                           ),
                           SizedBox(height: 16),
-
-                          // Location Filter
                           Text("Location",
                               style: TextStyle(
                                   fontFamily: 'poppins',
                                   fontSize: 18,
-                                  fontWeight: FontWeight.bold)),
+                                  fontWeight: FontWeight.bold,
+                                  color: isDarkMode
+                                      ? Colors.white
+                                      : Colors.black)),
                           SizedBox(height: 8),
                           DropdownButtonFormField<String>(
                             value: selectedLocation,
+                            dropdownColor: isDarkMode
+                                ? Colors.grey.shade900
+                                : Colors.white,
                             items: [
                               "Tripoli",
                               "Beirut",
@@ -334,7 +388,9 @@ class _SearchScreenState extends State<SearchScreen>
                                 child: Text(
                                   location,
                                   style: TextStyle(
-                                    color: Colors.black,
+                                    color: isDarkMode
+                                        ? Colors.white
+                                        : Colors.black,
                                     fontSize: 16,
                                   ),
                                 ),
@@ -347,31 +403,35 @@ class _SearchScreenState extends State<SearchScreen>
                             },
                             decoration: InputDecoration(
                               labelText: "Location",
-                              labelStyle:
-                                  TextStyle(color: Colors.black, fontSize: 16),
+                              labelStyle: TextStyle(
+                                  color:
+                                      isDarkMode ? Colors.white : Colors.black,
+                                  fontSize: 16),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(20),
-                                borderSide: BorderSide(color: Colors.grey),
+                                borderSide: BorderSide(
+                                    color:
+                                        isDarkMode ? Colors.grey : Colors.grey),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(20),
-                                borderSide: BorderSide(color: Colors.black),
+                                borderSide: BorderSide(
+                                    color: isDarkMode
+                                        ? Colors.white
+                                        : Colors.black),
                               ),
                             ),
                           ),
-
                           SizedBox(height: 16),
-
-                          // Apply Button
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
                               onPressed: () {
                                 Navigator.pop(context);
-                                _fetchResults(); // Trigger search when filters are applied
+                                _fetchResults();
                               },
                               child: Text(
                                 "Apply",
@@ -490,8 +550,10 @@ class _SearchScreenState extends State<SearchScreen>
   Widget build(BuildContext context) {
     super.build(context);
     double statusBarHeight = MediaQuery.of(context).padding.top;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDarkMode ? const Color(0xFF121212) : Colors.white,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -504,18 +566,34 @@ class _SearchScreenState extends State<SearchScreen>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      Expanded(
+                          child: Divider(
+                              thickness: 1,
+                              color: isDarkMode
+                                  ? Colors.grey.shade700
+                                  : Colors.grey)),
+                      SizedBox(width: 12),
                       Text(
-                        "Search what you \ndesire",
+                        "Search what you desire",
                         style: TextStyle(
-                          height: 0.96,
-                          fontSize: 36,
+                          fontSize: 22,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Poppins',
-                          color: Colors.black,
+                          color: isDarkMode ? Colors.white : Colors.black,
                         ),
                       ),
+                      SizedBox(width: 12),
+                      Expanded(
+                          child: Divider(
+                              thickness: 1,
+                              color: isDarkMode
+                                  ? Colors.grey.shade700
+                                  : Colors.grey)),
                     ],
                   ),
+                ),
+                SizedBox(
+                  height: 12,
                 ),
                 // Search and Filter Section
                 Padding(
@@ -536,20 +614,31 @@ class _SearchScreenState extends State<SearchScreen>
                         ),
                       ),
                       SizedBox(width: 10),
+
                       // Search Bar
                       Expanded(
                         child: TextField(
                           controller: searchController,
                           onChanged: (value) => _fetchResults(),
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.white : Colors.black,
+                          ),
                           decoration: InputDecoration(
                             filled: true,
-                            fillColor: Colors.grey.shade200,
+                            fillColor: isDarkMode
+                                ? Colors.grey.shade800
+                                : Colors.grey.shade200,
                             hintText: "Search...",
                             hintStyle: TextStyle(
                               fontFamily: 'Poppins',
-                              color: Colors.grey,
+                              color: isDarkMode
+                                  ? Colors.grey.shade400
+                                  : Colors.grey,
                             ),
-                            prefixIcon: Icon(Icons.search, color: Colors.grey),
+                            prefixIcon: Icon(Icons.search,
+                                color: isDarkMode
+                                    ? Colors.grey.shade400
+                                    : Colors.grey),
                             suffixIcon: Padding(
                               padding: const EdgeInsets.only(right: 8.0),
                               child: Container(
@@ -572,6 +661,7 @@ class _SearchScreenState extends State<SearchScreen>
                     ],
                   ),
                 ),
+
                 // Scrollable Event Section
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
@@ -584,7 +674,7 @@ class _SearchScreenState extends State<SearchScreen>
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Poppins',
-                          color: Colors.black,
+                          color: isDarkMode ? Colors.white : Colors.black,
                         ),
                       ),
                       SizedBox(height: 10),
@@ -599,6 +689,7 @@ class _SearchScreenState extends State<SearchScreen>
                     ],
                   ),
                 ),
+
                 // Scrollable Cards
                 SizedBox(
                   child: Padding(
@@ -612,8 +703,7 @@ class _SearchScreenState extends State<SearchScreen>
                           );
                         }).toList(),
                         SizedBox(
-                            height: MediaQuery.of(context).size.height *
-                                0.12), // 👈 Add spacing
+                            height: MediaQuery.of(context).size.height * 0.12),
                       ],
                     ),
                   ),
@@ -621,13 +711,14 @@ class _SearchScreenState extends State<SearchScreen>
               ],
             ),
           ),
-          // Bottom Navigation Bar
+          // You can add Bottom Navigation Bar or FloatingActionButton here if needed
         ],
       ),
     );
   }
 
   Widget categoryChip(String label) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     bool isSelected = selectedCategories.contains(label);
 
     return Padding(
@@ -638,12 +729,11 @@ class _SearchScreenState extends State<SearchScreen>
             if (isSelected) {
               selectedCategories.remove(label);
             } else {
-              selectedCategories
-                  .clear(); // Make it single-selection for simplicity
+              selectedCategories.clear(); // Single-selection logic
               selectedCategories.add(label);
             }
           });
-          _fetchResults(); // Fetch results on chip tap
+          _fetchResults();
         },
         child: Chip(
           label: Row(
@@ -654,10 +744,11 @@ class _SearchScreenState extends State<SearchScreen>
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 14,
-                  // fontWeight: FontWeight.bold,
                   color: isSelected
                       ? Colors.white
-                      : Color.fromARGB(255, 216, 216, 216),
+                      : isDarkMode
+                          ? Colors.grey.shade300
+                          : Color.fromARGB(255, 80, 80, 80),
                 ),
               ),
               if (isSelected)
@@ -678,13 +769,19 @@ class _SearchScreenState extends State<SearchScreen>
                 ),
             ],
           ),
-          backgroundColor: isSelected ? AppColors.blue : Colors.white,
+          backgroundColor: isSelected
+              ? AppColors.blue
+              : (isDarkMode ? Colors.grey.shade900 : Colors.white),
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-              side: BorderSide(
-                  color: isSelected
-                      ? AppColors.blue
-                      : Color.fromARGB(255, 216, 216, 216))),
+            borderRadius: BorderRadius.circular(30),
+            side: BorderSide(
+              color: isSelected
+                  ? AppColors.blue
+                  : isDarkMode
+                      ? Colors.grey.shade600
+                      : Color.fromARGB(255, 216, 216, 216),
+            ),
+          ),
         ),
       ),
     );
