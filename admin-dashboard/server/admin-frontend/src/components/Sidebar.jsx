@@ -54,6 +54,14 @@ const Sidebar = () => {
         >
           Notifications
         </Link>
+        <Link
+  to="/provider-requests"
+  className={`block px-4 py-2 rounded ${isActive('/provider-requests') ? 'bg-blue-600' : 'hover:bg-blue-700'}`}
+>
+  Provider Requests
+</Link>
+
+
       </nav>
     </aside>
   );
