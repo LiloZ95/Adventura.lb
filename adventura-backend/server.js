@@ -8,7 +8,6 @@ const helmet = require("helmet");
 const bodyParser = require("body-parser");
 const path = require("path");
 const cron = require("node-cron");
-
 // ===========================================================
 // ✅ Database & ORM Setup
 // ===========================================================
@@ -50,7 +49,12 @@ app.use(cors({
   methods: ["GET", "POST","PATCH", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false
+  })
+);
+
 app.use(express.json());
 
 // ===========================================================
@@ -96,10 +100,13 @@ app.use('/admin', adminRoutes); // ← important to keep this prefix!
 app.use("/api", providerRequestRoutes); // Provider request routes
 app.use("/", notificationRoutes);
 app.use('/admin', adminNotificationRoutes);
-// app.use("/users", socialAuthRoutes); // Optional social login routes
+app.use('/uploads', (req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "http://localhost:3001");
+  res.header("Access-Control-Allow-Methods", "GET, OPTIONS");
+  next();
+}, express.static(path.join(__dirname, 'uploads')));
 
-// ===========================================================
-// ✅ Global Error Handler
+
 // ===========================================================
 app.use((err, req, res, next) => {
   console.error("❌ Server Error:", err);

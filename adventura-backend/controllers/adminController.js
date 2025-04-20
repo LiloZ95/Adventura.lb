@@ -1,4 +1,4 @@
-const { sequelize, Activity, ActivityCategory, User, Provider, Client, Administrator } = require('../models');
+const { sequelize, Booking, Payment, Activity, ActivityCategory, User, Provider, Client, Administrator } = require('../models');
 // GET all activities with category name
 const getAllActivities = async (req, res) => {
   try {
@@ -167,37 +167,41 @@ const modifyUser = async (req, res) => {
   
   // DELETE user
   const deleteUser = async (req, res) => {
-    try {
-      const { id } = req.params;
+    const { id } = req.params;
   
-      // 1. Get client and provider IDs (if they exist)
+    try {
       const client = await Client.findOne({ where: { user_id: id } });
       const provider = await Provider.findOne({ where: { user_id: id } });
   
-      // 2. Delete related bookings (if client exists)
+      let bookingIds = [];
+  
       if (client) {
-        await sequelize.query(`DELETE FROM booking WHERE client_id = ${client.client_id}`);
+        const clientBookings = await Booking.findAll({ where: { client_id: client.client_id } });
+        bookingIds.push(...clientBookings.map(b => b.booking_id));
       }
   
-      // 3. Delete related activities (if provider exists)
       if (provider) {
-        await sequelize.query(`DELETE FROM activities WHERE provider_id = ${provider.provider_id}`);
+        const providerActivities = await Activity.findAll({ where: { provider_id: provider.provider_id } });
+        const providerActivityIds = providerActivities.map(a => a.activity_id);
+        const providerBookings = await Booking.findAll({ where: { activity_id: providerActivityIds } });
+        bookingIds.push(...providerBookings.map(b => b.booking_id));
       }
   
-      // 4. Delete related interactions
-      await sequelize.query(`DELETE FROM user_activity_interaction WHERE user_id = ${id}`);
+      // Delete related payments first
+      await Payment.destroy({ where: { booking_id: bookingIds } });
   
-      // 5. Delete from related tables first
-      await Provider.destroy({ where: { user_id: id } });
+      // Then delete bookings
+      await Booking.destroy({ where: { booking_id: bookingIds } });
+  
+      // Delete from role tables
       await Client.destroy({ where: { user_id: id } });
+      await Provider.destroy({ where: { user_id: id } });
       await Administrator.destroy({ where: { user_id: id } });
   
-      // 6. Delete the user
-      const deleted = await User.destroy({ where: { user_id: id } });
+      // Finally, delete the user
+      await User.destroy({ where: { user_id: id } });
   
-      if (!deleted) return res.status(404).json({ message: 'User not found' });
-  
-      res.json({ message: 'User deleted successfully' });
+      res.json({ message: "User deleted successfully" });
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: err.message });
@@ -360,7 +364,61 @@ const modifyUser = async (req, res) => {
       res.status(500).json({ error: err.message });
     }
   };
-  
+  const ProviderRequest = require('../models/providerRequest'); // make sure this path is correct
+
+// Get all provider requests
+const getAllProviderRequests = async (req, res) => {
+  try {
+    const requests = await ProviderRequest.findAll({
+      order: [['submitted_at', 'DESC']]
+    });
+    res.json(requests);
+  } catch (err) {
+    console.error("Error fetching provider requests:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Approve provider request
+const approveProviderRequest = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const updated = await ProviderRequest.update(
+      { status: 'approved' },
+      { where: { request_id: id } }
+    );
+
+    if (updated[0] === 0) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    res.json({ message: "Provider request approved" });
+  } catch (err) {
+    console.error("Error approving request:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Reject provider request
+const rejectProviderRequest = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const updated = await ProviderRequest.update(
+      { status: 'rejected' },
+      { where: { request_id: id } }
+    );
+
+    if (updated[0] === 0) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    res.json({ message: "Provider request rejected" });
+  } catch (err) {
+    console.error("Error rejecting request:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
   
 module.exports = {
     getAllUsers,
@@ -380,6 +438,9 @@ module.exports = {
     getRevenueByType,
     getPayments,
     getTopCategories,
-    Administrator
+    Administrator,
+    getAllProviderRequests,
+    approveProviderRequest,
+    rejectProviderRequest
   };
   

@@ -1,7 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
-
+// ✅ Add this import at the top with the other imports:
+const {
+    getAllProviderRequests,
+    approveProviderRequest,
+    rejectProviderRequest,
+  } = require('../controllers/adminController');
 router.get('/users', adminController.getAllUsers);
 router.patch('/users/:id', adminController.modifyUser);
 router.patch('/activities/:id', adminController.modifyActivity);
@@ -19,5 +24,9 @@ router.get('/top-categories', adminController.getTopCategories);
 router.get('/top-categories-revenue', adminController.getTopCategoriesByRevenue);
 router.get('/top-cities-revenue', adminController.getTopCitiesByRevenue);
 router.get('/transactions', adminController.getPayments);
+// Provider Requests
+router.get('/provider-requests', getAllProviderRequests);
+router.patch('/provider-requests/:id/approve', approveProviderRequest);
+router.patch('/provider-requests/:id/reject', rejectProviderRequest);
 
 module.exports = router;
