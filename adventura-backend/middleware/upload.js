@@ -33,7 +33,7 @@ const fileFilter = (req, file, cb) => {
 };
 
 // ✅ Factory function to generate customized uploader
-const createUploader = (folder = "") =>
+const  createUploader = (folder = "") =>
 	multer({
 		storage: dynamicStorage(folder),
 		fileFilter,
