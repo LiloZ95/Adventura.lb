@@ -35,7 +35,7 @@ async function authenticateToken(req, res, next) {
 		});
 
 		req.user = {
-			user_id: user.user_id,
+			userId: user.user_id,
 			provider_id: provider?.provider_id || null,
 			user_type: user.user_type,
 			email: user.email,

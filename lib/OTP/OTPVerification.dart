@@ -2,21 +2,23 @@ import 'package:adventura/OTP/SetPassword.dart';
 import 'package:adventura/Services/otp_service.dart';
 import 'package:adventura/userPreferences/userPreferences.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async'; // ✅ Import for Timer
 import 'dart:ui' as ui; // ✅ Use alias for dart:ui
 
 class OtpVerificationScreen extends StatefulWidget {
-  final String email;
+  final String target; // could be email or phone number
+  final String targetType; // "email" or "phone"
   final bool isForSignup;
-  final Map<String, String>? signupData; // ✅ Store signup data
+  final Map<String, String>? signupData;
 
   OtpVerificationScreen({
-    required this.email,
+    required this.target,
+    required this.targetType,
     required this.isForSignup,
-    this.signupData, // ✅ Accept signup data
+    this.signupData,
   });
 
   @override
@@ -79,10 +81,10 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   void _resendOtp() async {
     setState(() => _isResendingOtp = true);
 
-    print("🔍 Requesting OTP resend for: ${widget.email}");
+    print("🔍 Requesting OTP resend for: ${widget.target}");
 
     final response = await OtpService.resendOtp(
-      widget.email,
+      widget.target,
       isForSignup: widget.isForSignup,
     );
 
@@ -119,13 +121,13 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     });
 
     print("🔍 Sending OTP Verification Request:");
-    print("Email: ${widget.email}");
+    print("Email: ${widget.target}");
     print("Entered OTP: ${_otpController.text}");
     print("isForSignup: ${widget.isForSignup}");
 
     try {
       final response = await OtpService.verifyOtp(
-        widget.email,
+        widget.target,
         _otpController.text,
         isForSignup: widget.isForSignup,
         firstName: widget.signupData?["firstName"],
@@ -161,9 +163,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       }
 
       if (response["success"] == true) {
+        final box = await Hive.openBox('authBox');
         print("✅ OTP Verified Successfully!");
-
-        final SharedPreferences prefs = await SharedPreferences.getInstance();
 
         String userId = user["user_id"].toString();
         String firstName = user["first_name"] ?? "";
@@ -171,11 +172,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         String profilePicture = user["profilePicture"] ?? "";
 
         // ✅ Store user data
-        await prefs.setString("userId", userId);
-        await prefs.setString("firstName", firstName);
-        await prefs.setString("lastName", lastName);
-        await prefs.setString("profilePicture", profilePicture);
-        await prefs.setBool("isLoggedIn", true);
+        await box.put("userId", userId);
+        await box.put("firstName", firstName);
+        await box.put("lastName", lastName);
+        await box.put("profilePicture", profilePicture);
+        await box.put("isLoggedIn", true);
 
         print(
             "✅ Stored User Data: ID=$userId, Name=$firstName $lastName, ProfilePicture=$profilePicture");
@@ -193,7 +194,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-                builder: (context) => SetPassword(email: widget.email)),
+                builder: (context) => SetPassword(email: widget.target)),
           );
         }
       } else {
@@ -297,7 +298,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       child: Column(
                         children: [
                           Text(
-                            "Check your email",
+                            "Check your ${widget.targetType}",
                             style: TextStyle(
                               fontSize: screenWidth * 0.05,
                               fontWeight: FontWeight.bold,
@@ -314,7 +315,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           SizedBox(height: screenHeight * 0.02),
 
                           Text(
-                            "Enter the OTP sent to ${widget.email}",
+                            "Enter the OTP sent to your ${widget.targetType}",
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: screenWidth * 0.04,

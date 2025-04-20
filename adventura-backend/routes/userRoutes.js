@@ -34,7 +34,8 @@ const upload = multer({
 // ✅ Basic User Routes
 router.get("/", userController.getAllUsers);
 router.post("/", userController.createUser);
-router.get("/:id", userController.getUserById);
+router.get("/me", authenticateToken, userController.getUserById);
+router.get("/:id", authenticateToken, userController.getUserByIdPublic);
 router.put("/:id", userController.updateUser);
 router.delete("/delete-account/:id", userController.deleteUser);
 

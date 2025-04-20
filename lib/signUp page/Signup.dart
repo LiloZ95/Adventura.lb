@@ -19,7 +19,6 @@ class _SignUpPageState extends State<SignUpPage> {
   // Controllers for text fields
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -83,7 +82,7 @@ class _SignUpPageState extends State<SignUpPage> {
     final email = _emailController.text.trim();
     final firstName = _firstNameController.text.trim();
     final lastName = _lastNameController.text.trim();
-    final phoneNumber = _phoneController.text.trim();
+    // final phoneNumber = _phoneController.text.trim();
     final password = _passwordController.text;
 
     try {
@@ -100,12 +99,13 @@ class _SignUpPageState extends State<SignUpPage> {
           context,
           MaterialPageRoute(
             builder: (context) => OtpVerificationScreen(
-              email: email,
+              target: email,
+              targetType: "email",
               isForSignup: true,
               signupData: {
                 "firstName": firstName,
                 "lastName": lastName,
-                "phoneNumber": phoneNumber,
+                // "phoneNumber": phoneNumber,
                 "password": password,
               },
             ),
@@ -234,18 +234,18 @@ class _SignUpPageState extends State<SignUpPage> {
                         SizedBox(height: screenHeight * 0.02),
 
                         // Phone Number Field
-                        _buildTextField(
-                          controller: _phoneController,
-                          hintText: "Phone number",
-                          keyboardType: TextInputType.phone,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return "Phone Number is required.";
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: screenHeight * 0.02),
+                        // _buildTextField(
+                        //   controller: _phoneController,
+                        //   hintText: "Phone number",
+                        //   keyboardType: TextInputType.phone,
+                        //   validator: (value) {
+                        //     if (value == null || value.isEmpty) {
+                        //       return "Phone Number is required.";
+                        //     }
+                        //     return null;
+                        //   },
+                        // ),
+                        // SizedBox(height: screenHeight * 0.02),
 
                         // Email Field with Validation
                         _buildTextField(

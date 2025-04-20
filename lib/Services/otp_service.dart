@@ -61,6 +61,50 @@ class OtpService {
     }
   }
 
+  /// ✅ Send OTP to phone number
+  static Future<bool> sendPhoneOtp(String phone) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/send-phone-otp'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"phone": phone}),
+      );
+
+      if (response.statusCode == 200) {
+        print("✅ OTP sent successfully to $phone");
+        return true;
+      } else {
+        print("❌ Failed to send OTP: ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("❌ Error sending OTP: $e");
+      return false;
+    }
+  }
+
+  /// ✅ Verify phone number with OTP
+  static Future<bool> verifyPhoneOtp(String phone, String otp) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/verify-phone-otp'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"phone": phone, "otp": otp}),
+      );
+
+      if (response.statusCode == 200) {
+        print("✅ Phone number verified");
+        return true;
+      } else {
+        print("❌ OTP verification failed: ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("❌ Error verifying OTP: $e");
+      return false;
+    }
+  }
+
   /// ✅ **Verify OTP & Handle Signup or Password Reset**
   static Future<Map<String, dynamic>> verifyOtp(
     String email,
@@ -73,7 +117,7 @@ class OtpService {
   }) async {
     try {
       var box = await Hive.openBox('authBox');
-      
+
       // fallback to Hive if not passed
       firstName ??= box.get('firstName', defaultValue: '');
       lastName ??= box.get('lastName', defaultValue: '');

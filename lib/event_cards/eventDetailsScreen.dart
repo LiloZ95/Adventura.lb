@@ -12,7 +12,6 @@ import 'package:adventura/widgets/availability_modal.dart';
 import 'package:adventura/event_cards/widgets/readonly_location_map.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
-import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> activity;

@@ -92,6 +92,8 @@ class AuthService {
         String? refreshToken = data["refreshToken"];
         Map<String, dynamic>? user = data["user"];
 
+        print("📦 Received user object: $user");
+
         print("🔑 Received Access Token: $accessToken");
         print("🔑 Received Refresh Token: $refreshToken");
 

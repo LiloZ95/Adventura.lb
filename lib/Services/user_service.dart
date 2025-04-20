@@ -6,11 +6,11 @@ import 'package:hive/hive.dart';
 import 'package:adventura/config.dart'; // ✅ Import the global config file
 
 class UserService {
-
   /// ✅ **Fetch User Profile**
-  static Future<Map<String, dynamic>?> fetchUserProfile() async {               
+  static Future<Map<String, dynamic>?> fetchUserProfile() async {
     Box storageBox = await Hive.openBox('authBox');
     String? userId = storageBox.get("userId");
+    String? accessToken = storageBox.get("accessToken");
 
     if (userId == null) {
       print("❌ Error: No user ID found in storage.");
@@ -19,8 +19,11 @@ class UserService {
 
     try {
       final response = await http.get(
-        Uri.parse("$baseUrl/users/$userId"),
-        headers: {"Content-Type": "application/json"},
+        Uri.parse("$baseUrl/users/me"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $accessToken"
+        },
       );
 
       if (response.statusCode == 200) {

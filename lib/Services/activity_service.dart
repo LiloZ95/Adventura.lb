@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart'; // ✅ Use Hive instead of StorageService
 import 'package:adventura/config.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart'; // ✅ Import the global config file
 
 class ActivityService {
   /// ✅ Create Activity

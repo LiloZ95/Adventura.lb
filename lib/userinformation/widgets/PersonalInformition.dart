@@ -1,11 +1,7 @@
-import 'dart:convert';
-import 'package:adventura/config.dart';
+import 'package:adventura/OTP/OTPVerification.dart';
+import 'package:adventura/Services/user_service.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
-import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:adventura/Services/auth_service.dart';
-
 
 class PersonalDetailsPage extends StatefulWidget {
   const PersonalDetailsPage({super.key});
@@ -29,27 +25,15 @@ class _PersonalDetailsPageState extends State<PersonalDetailsPage> {
   }
 
   Future<void> loadUserProfile() async {
-    final box = await Hive.openBox('authBox');
-    final userId = box.get('userId');
+    final user = await UserService.fetchUserProfile();
+    if (user == null) return;
 
-    if (userId == null) return;
-
-    final response = await http.get(
-      Uri.parse('$baseUrl/users/$userId'),
-      headers: await AuthService.getAuthHeaders(),
-    );
-
-    if (response.statusCode == 200) {
-      final user = jsonDecode(response.body);
-      setState(() {
-        fullNameController.text =
-            "${user['first_name'] ?? ''} ${user['last_name'] ?? ''}".trim();
-        emailController.text = user['email'] ?? '';
-        phoneController.text = user['phone_number'] ?? '';
-      });
-    } else {
-      print("❌ Failed to load user data: ${response.body}");
-    }
+    setState(() {
+      fullNameController.text =
+          "${user['first_name'] ?? ''} ${user['last_name'] ?? ''}".trim();
+      emailController.text = user['email'] ?? '';
+      phoneController.text = user['phone_number'] ?? '';
+    });
   }
 
   Future<void> saveChanges() async {
@@ -59,27 +43,19 @@ class _PersonalDetailsPageState extends State<PersonalDetailsPage> {
     final firstName = nameParts.first;
     final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
 
-    final box = await Hive.openBox('authBox');
-    final userId = box.get('userId');
+    final updated = await UserService.updateUserDetails({
+      "first_name": firstName,
+      "last_name": lastName,
+      "email": emailController.text.trim(),
+      "phone_number": phoneController.text.trim(),
+    });
 
-    final response = await http.put(
-      Uri.parse('$baseUrl/users/$userId'),
-      headers: await AuthService.getAuthHeaders(),
-      body: jsonEncode({
-        "first_name": firstName,
-        "last_name": lastName,
-        "email": emailController.text.trim(),
-        "phone_number": phoneController.text.trim(),
-      }),
-    );
-
-    if (response.statusCode == 200) {
+    if (updated) {
       setState(() => isEditing = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Details updated successfully')),
       );
     } else {
-      print("❌ Update failed: ${response.body}");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Update failed. Please try again.')),
       );
@@ -122,7 +98,8 @@ class _PersonalDetailsPageState extends State<PersonalDetailsPage> {
               fontFamily: 'Poppins',
               color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
             ),
-            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(color: Colors.blue.withOpacity(0.4)),
@@ -144,7 +121,8 @@ class _PersonalDetailsPageState extends State<PersonalDetailsPage> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : const Color(0xFFF2F4F8),
+      backgroundColor:
+          isDarkMode ? const Color(0xFF1F1F1F) : const Color(0xFFF2F4F8),
       appBar: AppBar(
         title: Text(
           "Personal Details",
@@ -207,6 +185,36 @@ class _PersonalDetailsPageState extends State<PersonalDetailsPage> {
                     keyboardType: TextInputType.phone,
                     isDarkMode: isDarkMode,
                   ),
+                  if (isEditing)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        icon: const Icon(Icons.sms, size: 18),
+                        label: const Text("Verify Phone"),
+                        onPressed: () {
+                          final phone = phoneController.text.trim();
+                          if (phone.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      "Please enter a phone number first.")),
+                            );
+                            return;
+                          }
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OtpVerificationScreen(
+                                target: phone,
+                                targetType: "phone",
+                                isForSignup: false,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   const SizedBox(height: 30),
                   if (isEditing)
                     SizedBox(
