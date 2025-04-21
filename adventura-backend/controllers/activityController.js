@@ -277,7 +277,7 @@ const getAllActivities = async (req, res) => {
 				"to_time",
 				"provider_id",
 				"listing_type",
-				"event_date",
+				"start_date",
 				"createdAt",
 				"updatedAt",
 			],
@@ -381,6 +381,7 @@ const getActivitiesDetails = async (req, res) => {
 const uploadImages = async (req, res) => {
 	const { activityId } = req.params;
 	const files = req.files;
+	console.log("📸 Upload route hit → Activity ID:", req.params.activityId);
 
 	if (!files || files.length === 0) {
 		return res.status(400).json({ message: "No images uploaded" });

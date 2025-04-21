@@ -139,6 +139,7 @@ class _LoginPageState extends State<LoginPage> {
     // Get the screen width and height dynamically
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -168,7 +169,9 @@ class _LoginPageState extends State<LoginPage> {
                   padding:
                       EdgeInsets.all(screenWidth * 0.05), // Dynamic padding
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isDarkMode
+                        ? const Color(0xFF121212)
+                        : const Color(0xFFF6F6F6),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -191,7 +194,9 @@ class _LoginPageState extends State<LoginPage> {
                           fontFamily: 'Poppins',
                           fontWeight: FontWeight.bold,
                           letterSpacing: -0.5,
-                          color: Colors.black,
+                          color: isDarkMode
+                              ? const Color(0xFFF6F6F6)
+                              : const Color(0xff121212),
                         ),
                       ),
                       SizedBox(height: screenHeight * 0.005), // Dynamic spacing
@@ -202,23 +207,37 @@ class _LoginPageState extends State<LoginPage> {
                           fontSize: screenWidth * 0.035, // Dynamic font size
                           fontFamily: 'Poppins',
                           letterSpacing: -0.5,
-                          color: Color(0x77000000),
+                          color: isDarkMode
+                              ? Colors.grey
+                              : const Color(0xff121212),
                         ),
                       ),
                       SizedBox(height: screenHeight * 0.02), // Dynamic spacing
 
-                      // Email text field with validation
+                      // Email text field with validation + dark mode
                       TextField(
                         controller: _emailController,
+                        style: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black,
+                          fontFamily: 'Poppins',
+                        ),
                         decoration: InputDecoration(
                           hintText: "Email address",
                           hintStyle: TextStyle(
-                            color: Colors.grey,
-                            fontSize: screenWidth * 0.04, // Dynamic font size
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[700],
+                            fontSize: screenWidth * 0.04,
                             fontFamily: 'Poppins',
                           ),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor:
+                              Theme.of(context).brightness == Brightness.dark
+                                  ? const Color(0xFF2A2A2A)
+                                  : Colors.white,
                           errorText: _isEmailValid
                               ? null
                               : "Please enter a valid email address",
@@ -226,7 +245,10 @@ class _LoginPageState extends State<LoginPage> {
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(
                               color: _isEmailValid
-                                  ? AppColors.grey2
+                                  ? Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.grey
+                                      : AppColors.grey2
                                   : AppColors.red,
                             ),
                           ),
@@ -234,49 +256,75 @@ class _LoginPageState extends State<LoginPage> {
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(
                               color: _isEmailValid
-                                  ? AppColors.black
+                                  ? Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.white
+                                      : AppColors.black
                                   : AppColors.red,
                             ),
                           ),
                         ),
                       ),
+
                       SizedBox(height: screenHeight * 0.02), // Dynamic spacing
 
                       // Password text field with validation
                       TextField(
                         controller: _passwordController,
                         obscureText: _obscureText,
+                        style: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black,
+                          fontFamily: 'Poppins',
+                        ),
                         decoration: InputDecoration(
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscureText
                                   ? Icons.visibility_off
                                   : Icons.visibility,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.white70
+                                  : Colors.black87,
                             ),
                             onPressed: _toggle,
                           ),
                           hintText: "Password",
                           hintStyle: TextStyle(
-                            color: Colors.grey,
-                            fontSize: screenWidth * 0.04, // Dynamic font size
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[700],
+                            fontSize: screenWidth * 0.04,
                             fontFamily: 'Poppins',
                           ),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor:
+                              Theme.of(context).brightness == Brightness.dark
+                                  ? const Color(0xFF2A2A2A)
+                                  : Colors.white,
                           errorText: _passwordError,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(
                               color: _passwordError == null
-                                  ? AppColors.grey2
-                                  : Colors.red,
+                                  ? Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.grey
+                                      : AppColors.grey2
+                                  : AppColors.red,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(
                               color: _passwordError == null
-                                  ? AppColors.grey2
+                                  ? Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.white
+                                      : AppColors.grey2
                                   : Colors.red,
                             ),
                           ),
@@ -313,6 +361,7 @@ class _LoginPageState extends State<LoginPage> {
                       SizedBox(height: screenHeight * 0.01), // Dynamic spacing
 
                       // Facebook login button
+
                       ElevatedButton.icon(
                         onPressed: () async {},
                         icon: Image.asset(
@@ -322,20 +371,27 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         label: Text(
                           "Sign in With Facebook",
-                          style: TextStyle(fontSize: 16, fontFamily: 'Poppins'),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontFamily: 'Poppins',
+                            color: isDarkMode ? Colors.white : Colors.black,
+                          ),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black,
-                          padding: EdgeInsets.symmetric(vertical: 6),
+                          backgroundColor: isDarkMode
+                              ? const Color(0xFF2A2A2A)
+                              : Colors.white,
+                          foregroundColor:
+                              isDarkMode ? Colors.white : Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 6),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.02), // Dynamic spacing
 
-                      // Google login button
+                      SizedBox(height: screenHeight * 0.02),
+
                       ElevatedButton.icon(
                         onPressed: () async {},
                         icon: Image.asset(
@@ -345,22 +401,30 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         label: Text(
                           "Sign in With Google",
-                          style: TextStyle(fontSize: 16, fontFamily: 'Poppins'),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontFamily: 'Poppins',
+                            color: isDarkMode ? Colors.white : Colors.black,
+                          ),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black,
-                          padding: EdgeInsets.symmetric(vertical: 6),
+                          backgroundColor: isDarkMode
+                              ? const Color(0xFF2A2A2A)
+                              : Colors.white,
+                          foregroundColor:
+                              isDarkMode ? Colors.white : Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 6),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
+
                       SizedBox(height: screenHeight * 0.01), // Dynamic spacing
+
                       Center(
                         child: TextButton(
                           onPressed: () {
-                            // Navigate to the OTP page when clicked
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -370,59 +434,63 @@ class _LoginPageState extends State<LoginPage> {
                           child: Text(
                             "Forgot Password?",
                             style: TextStyle(
-                              color: Colors.black,
+                              color: isDarkMode ? Colors.white : Colors.black,
                               decoration: TextDecoration.underline,
                               fontSize: 18.5,
-                              fontFamily: "poppins",
+                              fontFamily: "Poppins",
                             ),
                           ),
                         ),
                       ),
-                      // Continue button
-                      SizedBox(height: screenHeight * 0.01), // Dynamic spacing
+
+                      SizedBox(height: screenHeight * 0.01),
+
                       ElevatedButton(
-                        onPressed: _isLoading
-                            ? null
-                            : _validateInputs, // Validate inputs on press
+                        onPressed: _isLoading ? null : _validateInputs,
                         child: _isLoading
-                            ? CircularProgressIndicator()
+                            ? CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  isDarkMode ? Colors.white : Colors.blue,
+                                ),
+                              )
                             : Text(
                                 "Continue",
                                 style: TextStyle(
-                                    fontSize: screenWidth *
-                                        0.045, // Dynamic font size
-                                    color: Colors.white,
-                                    fontFamily: 'Poppins'),
+                                  fontSize: screenWidth * 0.045,
+                                  color: Colors.white,
+                                  fontFamily: 'Poppins',
+                                ),
                               ),
-
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.blue,
                           padding: EdgeInsets.symmetric(
-                            vertical: screenHeight * 0.02, // Dynamic padding
+                            vertical: screenHeight * 0.02,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
-                      SizedBox(
-                        height: screenWidth * 0.03,
-                      ),
 
-                      // Not a member? Create an account
+                      SizedBox(height: screenWidth * 0.03),
+
                       Center(
                         child: RichText(
                           text: TextSpan(
                             text: "Not a member? ",
                             style: TextStyle(
-                              color: AppColors.grey3,
+                              color: isDarkMode
+                                  ? Colors.grey[400]
+                                  : AppColors.grey3,
                               fontFamily: 'Poppins',
                             ),
                             children: [
                               TextSpan(
                                 text: "Create an account",
-                                style: const TextStyle(
-                                  color: Colors.blue,
+                                style: TextStyle(
+                                  color: isDarkMode
+                                      ? Colors.lightBlueAccent
+                                      : Colors.blue,
                                   fontFamily: 'Poppins',
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -433,7 +501,7 @@ class _LoginPageState extends State<LoginPage> {
                                       CinematicPageRoute(page: SignUpPage()),
                                     );
                                   },
-                              )
+                              ),
                             ],
                           ),
                         ),

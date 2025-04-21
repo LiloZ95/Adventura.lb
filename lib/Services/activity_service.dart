@@ -5,11 +5,15 @@ import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart'; // ✅ Use Hive instead of StorageService
 import 'package:adventura/config.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as path;
+import 'package:http_parser/http_parser.dart'; 
 
 class ActivityService {
   /// ✅ Create Activity
-  static Future<bool> createActivity(Map<String, dynamic> activityData,
-      {List<XFile>? images}) async {
+  static Future<bool> createActivity(
+    Map<String, dynamic> activityData, {
+    List<XFile>? images,
+  }) async {
     Box authBox = await Hive.openBox('authBox');
     String? accessToken = authBox.get("accessToken");
 
@@ -19,10 +23,11 @@ class ActivityService {
         Uri.parse('$baseUrl/activities/create'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $accessToken', // ✅ add this if missing
+          'Authorization': 'Bearer $accessToken',
         },
         body: jsonEncode(activityData),
       );
+
       print("🔑 Token being sent: $accessToken");
 
       if (activityResponse.statusCode < 200 ||
@@ -33,39 +38,61 @@ class ActivityService {
       }
 
       final decoded = jsonDecode(activityResponse.body);
-      final activityId = decoded is Map &&
-              decoded.containsKey('activity') &&
-              decoded['activity'] != null
-          ? decoded['activity']['activity_id']
-          : null;
+      final activityId = decoded?['activity']?['activity_id'];
 
-      if (activityId == null) return false;
+      if (activityId == null) {
+        print("❌ Activity ID not returned from backend.");
+        return false;
+      }
 
-      // 2. Upload images if available
+      // 2. Upload images if provided
       if (images != null && images.isNotEmpty) {
         var request = http.MultipartRequest(
           'POST',
-          Uri.parse('$baseUrl/activities/$activityId/images'),
+          Uri.parse(
+            '$baseUrl/activities/activity-images/upload/$activityId?listing_type=${activityData["listing_type"]}',
+          ),
         );
 
+        request.headers['Authorization'] = 'Bearer $accessToken';
+
         for (var image in images) {
+          final ext = path.extension(image.path).toLowerCase();
+          String mimeType = 'jpeg'; // default
+
+          if (ext == '.png')
+            mimeType = 'png';
+          else if (ext == '.gif')
+            mimeType = 'gif';
+          else if (ext == '.webp')
+            mimeType = 'webp';
+          else if (ext == '.heic') mimeType = 'heic';
+
+          print("Uploading image: ${image.path}");
+
           request.files.add(await http.MultipartFile.fromPath(
             'images',
             image.path,
-            filename: image.name,
+            filename: path.basename(image.path),
+            contentType: MediaType('image', mimeType),
           ));
         }
 
-        var response = await request.send();
+        final response = await request.send();
+
         if (response.statusCode != 200) {
-          print("Image upload failed");
+          final responseBody = await response.stream.bytesToString();
+          print(
+              "❌ Image upload failed → Status: ${response.statusCode}, Body: $responseBody");
           return false;
         }
+
+        print("✅ Images uploaded successfully.");
       }
 
       return true;
     } catch (e) {
-      print("Error creating activity: $e");
+      print("❌ Error creating activity: $e");
       return false;
     }
   }
@@ -478,52 +505,54 @@ class ActivityService {
   }
 
   static String? getDurationDisplay(Map<String, dynamic> activity) {
-  final from = activity['from_time'];
-  final to = activity['to_time'];
+    final from = activity['from_time'];
+    final to = activity['to_time'];
 
-  print("🧪 getDurationDisplay → from_time: $from, to_time: $to");
+    print("🧪 getDurationDisplay → from_time: $from, to_time: $to");
 
-  if (from == null || to == null) {
-    print("⚠️ One of the times is null. Skipping duration display.");
-    return null;
-  }
-
-  try {
-    final regex = RegExp(r'^(\d{1,2}):(\d{2}) (AM|PM)$');
-
-    TimeOfDay parse(String timeStr) {
-      final match = regex.firstMatch(timeStr.trim());
-      if (match == null) throw FormatException("Invalid time format → $timeStr");
-      int hour = int.parse(match.group(1)!);
-      int minute = int.parse(match.group(2)!);
-      final meridian = match.group(3);
-      if (meridian == "PM" && hour < 12) hour += 12;
-      if (meridian == "AM" && hour == 12) hour = 0;
-      return TimeOfDay(hour: hour, minute: minute);
-    }
-
-    final now = DateTime.now();
-    final fromTime = parse(from);
-    final toTime = parse(to);
-
-    final start = DateTime(now.year, now.month, now.day, fromTime.hour, fromTime.minute);
-    final end = DateTime(now.year, now.month, now.day, toTime.hour, toTime.minute);
-    final diff = end.difference(start);
-
-    if (diff.inMinutes <= 0) {
-      print("❌ Duration is non-positive. Skipping badge.");
+    if (from == null || to == null) {
+      print("⚠️ One of the times is null. Skipping duration display.");
       return null;
     }
 
-    final h = diff.inHours;
-    final m = diff.inMinutes % 60;
-    if (h > 0 && m > 0) return "$h h $m min";
-    if (h > 0) return "$h hour${h == 1 ? '' : 's'}";
-    return "$m min";
-  } catch (e) {
-    print("❌ Error parsing duration: $e");
-    return null;
-  }
-}
+    try {
+      final regex = RegExp(r'^(\d{1,2}):(\d{2}) (AM|PM)$');
 
+      TimeOfDay parse(String timeStr) {
+        final match = regex.firstMatch(timeStr.trim());
+        if (match == null)
+          throw FormatException("Invalid time format → $timeStr");
+        int hour = int.parse(match.group(1)!);
+        int minute = int.parse(match.group(2)!);
+        final meridian = match.group(3);
+        if (meridian == "PM" && hour < 12) hour += 12;
+        if (meridian == "AM" && hour == 12) hour = 0;
+        return TimeOfDay(hour: hour, minute: minute);
+      }
+
+      final now = DateTime.now();
+      final fromTime = parse(from);
+      final toTime = parse(to);
+
+      final start = DateTime(
+          now.year, now.month, now.day, fromTime.hour, fromTime.minute);
+      final end =
+          DateTime(now.year, now.month, now.day, toTime.hour, toTime.minute);
+      final diff = end.difference(start);
+
+      if (diff.inMinutes <= 0) {
+        print("❌ Duration is non-positive. Skipping badge.");
+        return null;
+      }
+
+      final h = diff.inHours;
+      final m = diff.inMinutes % 60;
+      if (h > 0 && m > 0) return "$h h $m min";
+      if (h > 0) return "$h hour${h == 1 ? '' : 's'}";
+      return "$m min";
+    } catch (e) {
+      print("❌ Error parsing duration: $e");
+      return null;
+    }
+  }
 }

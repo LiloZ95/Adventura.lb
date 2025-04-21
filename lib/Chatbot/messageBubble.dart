@@ -28,7 +28,10 @@ class MessageBubble extends StatelessWidget {
   });
 
   @override
+  @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return AnimatedOpacity(
       opacity: 1.0,
       duration: const Duration(milliseconds: 400),
@@ -46,14 +49,19 @@ class MessageBubble extends StatelessWidget {
                   child: Row(
                     children: [
                       const CircleAvatar(
-                          radius: 12,
-                          backgroundImage:
-                              AssetImage("assets/Pictures/cars.webp")),
+                        radius: 12,
+                        backgroundImage:
+                            AssetImage("assets/Pictures/cars.webp"),
+                      ),
                       const SizedBox(width: 8),
-                      const Text("EVA",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'poppins')),
+                      Text(
+                        "EVA",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Poppins',
+                          color: isDarkMode ? Colors.white : Colors.black,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -63,7 +71,11 @@ class MessageBubble extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isError
                       ? Colors.red[400]
-                      : (isUser ? Colors.blue[400] : Colors.white),
+                      : (isUser
+                          ? Colors.blue[400]
+                          : isDarkMode
+                              ? const Color(0xFF2A2A2A)
+                              : Colors.white),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
@@ -75,20 +87,22 @@ class MessageBubble extends StatelessWidget {
                       Text(
                         msg['text'],
                         style: const TextStyle(
-                            color: Colors.white,
-                            fontFamily: "poppins",
-                            fontSize: 14),
+                          color: Colors.white,
+                          fontFamily: "Poppins",
+                          fontSize: 14,
+                        ),
                       )
                     else if (!animatedMessageIndexes.contains(index))
                       AnimatedTextKit(
                         animatedTexts: [
                           TypewriterAnimatedText(
                             msg['text'],
-                            textStyle: const TextStyle(
-                                color: Colors.black,
-                                fontFamily: "poppins",
-                                fontSize: 14),
-                            speed: Duration(milliseconds: 7),
+                            textStyle: TextStyle(
+                              color: isDarkMode ? Colors.white : Colors.black,
+                              fontFamily: "Poppins",
+                              fontSize: 14,
+                            ),
+                            speed: const Duration(milliseconds: 7),
                           ),
                         ],
                         isRepeatingAnimation: false,
@@ -99,10 +113,11 @@ class MessageBubble extends StatelessWidget {
                     else
                       Text(
                         msg['text'],
-                        style: const TextStyle(
-                            color: Colors.black,
-                            fontFamily: "poppins",
-                            fontSize: 14),
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.white : Colors.black,
+                          fontFamily: "Poppins",
+                          fontSize: 14,
+                        ),
                       ),
                     const SizedBox(height: 4),
                     if (msg['timestamp'] != null)
@@ -110,8 +125,12 @@ class MessageBubble extends StatelessWidget {
                         formatTimestamp(msg['timestamp']),
                         style: TextStyle(
                           fontSize: 10,
-                          color: isUser ? Colors.white70 : Colors.grey[600],
-                          fontFamily: "poppins",
+                          color: isUser
+                              ? Colors.white70
+                              : (isDarkMode
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600]),
+                          fontFamily: "Poppins",
                         ),
                       ),
                   ],

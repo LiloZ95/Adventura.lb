@@ -189,9 +189,10 @@ class _MainScreenState extends State<MainScreen>
     print("✅ MainScreen build() called");
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
-
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor:
+          isDarkMode ? const Color(0xFF121212) : const Color(0xFFF6F6F6),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : SafeArea(
@@ -230,11 +231,12 @@ class _MainScreenState extends State<MainScreen>
                                           "Welcome \nback, $firstName !",
                                           style: TextStyle(
                                             height: 0.96,
-                                            fontSize: screenWidth *
-                                                0.075, // Dynamic font size
+                                            fontSize: screenWidth * 0.075,
                                             fontWeight: FontWeight.bold,
                                             fontFamily: 'Poppins',
-                                            color: Colors.black,
+                                            color: isDarkMode
+                                                ? Colors.white
+                                                : Colors.black,
                                           ),
                                         ),
                                         SizedBox(height: 10.0),
@@ -243,19 +245,26 @@ class _MainScreenState extends State<MainScreen>
                                           "Current Location",
                                           style: TextStyle(
                                             fontSize: screenWidth * 0.045,
-                                            color: Colors.grey.shade400,
+                                            color: isDarkMode
+                                                ? Colors.grey.shade300
+                                                : Colors.grey.shade400,
                                           ),
                                         ),
                                         Container(
                                             width: 130,
                                             padding: EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                            ),
+                                                horizontal: 12),
                                             decoration: BoxDecoration(
-                                              color: Color.fromRGBO(
-                                                  124, 124, 124, 0.07),
+                                              color: isDarkMode
+                                                  ? const Color.fromRGBO(
+                                                      200, 200, 200, 0.08)
+                                                  : const Color.fromRGBO(
+                                                      124, 124, 124, 0.07),
                                               border: Border.all(
-                                                  color: Colors.white),
+                                                color: isDarkMode
+                                                    ? Colors.grey.shade700
+                                                    : Colors.white,
+                                              ),
                                               borderRadius:
                                                   BorderRadius.circular(14),
                                             ),
@@ -274,8 +283,12 @@ class _MainScreenState extends State<MainScreen>
                                                         child: Text(
                                                           location,
                                                           style: TextStyle(
-                                                              fontFamily:
-                                                                  'poppins'),
+                                                            fontFamily:
+                                                                'poppins',
+                                                            color: isDarkMode
+                                                                ? Colors.white
+                                                                : Colors.black,
+                                                          ),
                                                         ),
                                                       );
                                                     }).toList(),
@@ -399,19 +412,29 @@ class _MainScreenState extends State<MainScreen>
                                                     height: 40,
                                                     decoration: BoxDecoration(
                                                       shape: BoxShape.circle,
-                                                      color: Colors
-                                                          .white, // Light background helps with contrast
+                                                      color: isDarkMode
+                                                          ? Colors.grey.shade900
+                                                          : Colors
+                                                              .white, // ✅ dynamic background
                                                       border: Border.all(
-                                                        color: Colors.grey
-                                                            .shade300, // Soft border
+                                                        color: isDarkMode
+                                                            ? Colors
+                                                                .grey.shade700
+                                                            : Colors.grey
+                                                                .shade300, // ✅ dynamic border
                                                         width: 1.2,
                                                       ),
                                                       boxShadow: [
                                                         BoxShadow(
-                                                          color: Colors.black12,
+                                                          color: isDarkMode
+                                                              ? Colors.black
+                                                                  .withOpacity(
+                                                                      0.3)
+                                                              : Colors
+                                                                  .black12, // ✅ dynamic shadow
                                                           blurRadius: 2,
-                                                          offset: Offset(0,
-                                                              1.5), // Slight lift
+                                                          offset:
+                                                              Offset(0, 1.5),
                                                         ),
                                                       ],
                                                     ),
@@ -419,7 +442,10 @@ class _MainScreenState extends State<MainScreen>
                                                       child: Icon(
                                                         LucideIcons.user,
                                                         size: 30,
-                                                        color: Colors.black,
+                                                        color: isDarkMode
+                                                            ? Colors.white
+                                                            : Colors
+                                                                .black, // ✅ dynamic icon
                                                       ),
                                                     ),
                                                   );
@@ -465,7 +491,9 @@ class _MainScreenState extends State<MainScreen>
                                           0.06, // Dynamic font size
                                       fontFamily: 'Poppins',
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.black,
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.black, // ✅ dynamic color
                                     ),
                                   ),
                                   TextButton(
@@ -478,7 +506,8 @@ class _MainScreenState extends State<MainScreen>
                                     child: Text(
                                       "See All",
                                       style: TextStyle(
-                                        color: AppColors.blue,
+                                        color: AppColors
+                                            .blue, // 👈 You can make this dynamic if you want
                                         fontFamily: 'Poppins',
                                         fontSize: screenWidth * 0.035,
                                       ),
@@ -487,6 +516,7 @@ class _MainScreenState extends State<MainScreen>
                                 ],
                               ),
                             ),
+
                             SizedBox(
                               height: MediaQuery.of(context).size.height * 0.4,
                               child: SingleChildScrollView(
@@ -534,12 +564,15 @@ class _MainScreenState extends State<MainScreen>
                                           0.06, // Dynamic font size
                                       fontFamily: 'Poppins',
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.black,
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.black, // ✅ dynamic color
                                     ),
                                   ),
                                 ],
                               ),
                             ),
+
                             // SizedBox(height: 6),
                             SizedBox(
                               height: screenHeight * 0.27, // Dynamic height
@@ -601,7 +634,9 @@ class _MainScreenState extends State<MainScreen>
                                       fontSize: screenWidth * 0.06,
                                       fontFamily: 'Poppins',
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.black,
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.black, // ✅ dark mode ready
                                     ),
                                   ),
                                   TextButton(
@@ -612,7 +647,8 @@ class _MainScreenState extends State<MainScreen>
                                     child: Text(
                                       "See All",
                                       style: TextStyle(
-                                        color: AppColors.blue,
+                                        color: AppColors
+                                            .blue, // 🔵 Optional: make dynamic if needed
                                         fontFamily: 'Poppins',
                                         fontSize: screenWidth * 0.035,
                                       ),
@@ -621,6 +657,7 @@ class _MainScreenState extends State<MainScreen>
                                 ],
                               ),
                             ),
+
                             SizedBox(height: 6),
 
                             // ✅ Activity List (Dynamically Loaded)
@@ -629,15 +666,22 @@ class _MainScreenState extends State<MainScreen>
                                     padding: EdgeInsets.all(32),
                                     child: Column(
                                       children: [
-                                        Icon(Icons.warning,
-                                            size: 48, color: Colors.grey),
+                                        Icon(
+                                          Icons.warning,
+                                          size: 48,
+                                          color: isDarkMode
+                                              ? Colors.grey.shade400
+                                              : Colors.grey, // ✅
+                                        ),
                                         SizedBox(height: 10),
                                         Text(
                                           "No recommendations found.",
                                           style: TextStyle(
                                             fontSize: 16,
                                             fontFamily: 'Poppins',
-                                            color: Colors.grey,
+                                            color: isDarkMode
+                                                ? Colors.grey.shade400
+                                                : Colors.grey, // ✅
                                           ),
                                         ),
                                       ],

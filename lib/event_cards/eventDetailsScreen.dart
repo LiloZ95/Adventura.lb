@@ -32,8 +32,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   String? confirmedSlot;
   List<Map<String, String>> tripSteps = [];
   String? activityDuration;
-
   void _openAvailabilityModal() async {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -43,8 +44,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         return BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
           child: Material(
-            // ✅ <--- fix: wrap with Material
-            color: Colors.white.withOpacity(0.87),
+            color: isDarkMode
+                ? const Color(0xFF1E1E1E).withOpacity(0.94)
+                : Colors.white.withOpacity(0.87),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             child: AvailabilityModal(
               activityId: widget.activity["activity_id"],

@@ -26,7 +26,10 @@ class _CancelBookingScreenState extends State<CancelBookingScreen> {
   ];
 
   @override
+  @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     // Adjust horizontal padding based on screen width.
     final double horizontalPadding =
         MediaQuery.of(context).size.width < 360 ? 8.0 : 16.0;
@@ -43,10 +46,12 @@ class _CancelBookingScreenState extends State<CancelBookingScreen> {
           topRight: Radius.circular(16),
         ),
         child: Scaffold(
+          backgroundColor: isDarkMode ? Color(0xFF1F1F1F) : Colors.white,
           appBar: AppBar(
             // Back arrow on the top left.
             leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: Colors.black),
+              icon: Icon(Icons.arrow_back,
+                  color: isDarkMode ? Colors.white : Colors.black),
               onPressed: () => Navigator.pop(context),
               padding: EdgeInsets.zero,
               constraints: BoxConstraints(),
@@ -58,7 +63,7 @@ class _CancelBookingScreenState extends State<CancelBookingScreen> {
                 fontFamily: "Poppins",
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: isDarkMode ? Colors.white : Colors.black,
               ),
             ),
             centerTitle: true,
@@ -89,9 +94,12 @@ class _CancelBookingScreenState extends State<CancelBookingScreen> {
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,
                                   fontFamily: 'Poppins',
+                                  color:
+                                      isDarkMode ? Colors.white : Colors.black,
                                 ),
                               ),
                               SizedBox(height: 16),
+
                               // Outlined buttons for the first four reasons.
                               ...List.generate(4, (index) {
                                 return Padding(
@@ -110,7 +118,9 @@ class _CancelBookingScreenState extends State<CancelBookingScreen> {
                                         side: BorderSide(
                                           color: selectedReason == index
                                               ? Colors.blue
-                                              : Colors.grey[200]!,
+                                              : (isDarkMode
+                                                  ? Colors.grey[700]!
+                                                  : Colors.grey[200]!),
                                           width: 1,
                                         ),
                                         shape: RoundedRectangleBorder(
@@ -127,7 +137,9 @@ class _CancelBookingScreenState extends State<CancelBookingScreen> {
                                           style: TextStyle(
                                             fontFamily: "Poppins",
                                             fontSize: 16,
-                                            color: Colors.black,
+                                            color: isDarkMode
+                                                ? Colors.white
+                                                : Colors.black,
                                           ),
                                         ),
                                       ),
@@ -135,6 +147,7 @@ class _CancelBookingScreenState extends State<CancelBookingScreen> {
                                   ),
                                 );
                               }),
+
                               // "Another reason" acting as a button.
                               Padding(
                                 padding:
@@ -159,7 +172,9 @@ class _CancelBookingScreenState extends State<CancelBookingScreen> {
                                         border: Border.all(
                                           color: selectedReason == 4
                                               ? Colors.blue
-                                              : Colors.grey[200]!,
+                                              : (isDarkMode
+                                                  ? Colors.grey[700]!
+                                                  : Colors.grey[200]!),
                                           width: 1,
                                         ),
                                         borderRadius: BorderRadius.circular(10),
@@ -173,7 +188,9 @@ class _CancelBookingScreenState extends State<CancelBookingScreen> {
                                             fontSize: 18,
                                             color: selectedReason == 4
                                                 ? Colors.blue
-                                                : Colors.grey[600],
+                                                : (isDarkMode
+                                                    ? Colors.grey[500]
+                                                    : Colors.grey[600]),
                                           ),
                                         ),
                                       ),
@@ -181,6 +198,7 @@ class _CancelBookingScreenState extends State<CancelBookingScreen> {
                                   ),
                                 ),
                               ),
+
                               // If "Another reason" is selected, show the text field inline.
                               if (selectedReason == 4)
                                 Padding(
@@ -189,23 +207,34 @@ class _CancelBookingScreenState extends State<CancelBookingScreen> {
                                     controller: reasonController,
                                     maxLines: 3,
                                     textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.black,
+                                    ),
                                     decoration: InputDecoration(
                                       hintText: "Tell us your reason",
                                       hintStyle: TextStyle(
                                         fontFamily: "poppins",
-                                        color: Colors.grey[400],
+                                        color: isDarkMode
+                                            ? Colors.grey[500]
+                                            : Colors.grey[400],
                                       ),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(10),
                                         borderSide: BorderSide(
-                                          color: Colors.grey[400]!,
+                                          color: isDarkMode
+                                              ? Colors.grey[600]!
+                                              : Colors.grey[400]!,
                                           width: 1,
                                         ),
                                       ),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(10),
                                         borderSide: BorderSide(
-                                          color: Colors.grey[400]!,
+                                          color: isDarkMode
+                                              ? Colors.grey[600]!
+                                              : Colors.grey[400]!,
                                           width: 1,
                                         ),
                                       ),
@@ -222,8 +251,10 @@ class _CancelBookingScreenState extends State<CancelBookingScreen> {
                                 ),
                             ],
                           ),
+
                           // Spacer pushes the Cancel button to the bottom if there's extra space.
                           Spacer(),
+
                           // "Cancel Booking" button at the bottom.
                           Padding(
                             padding: EdgeInsets.symmetric(vertical: 16),
@@ -231,16 +262,9 @@ class _CancelBookingScreenState extends State<CancelBookingScreen> {
                               width: double.infinity,
                               child: ElevatedButton(
                                 onPressed: () async {
-                                  // final reason = selectedReason == 4
-                                  //     ? reasonController.text.trim()
-                                  //     : reasons[selectedReason ?? 0];
-
-                                  // final bookingId = widget
-                                  //     .bookingId; // ✅ already passed from parent
-
                                   final response = await http.put(
                                     Uri.parse(
-                                        '$baseUrl/booking/cancel/${widget.bookingId}'), // 👈 no # here
+                                        '$baseUrl/booking/cancel/${widget.bookingId}'),
                                     headers: {
                                       'Content-Type': 'application/json'
                                     },
@@ -260,8 +284,9 @@ class _CancelBookingScreenState extends State<CancelBookingScreen> {
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                          content: Text("❌ Failed to cancel"),
-                                          backgroundColor: Colors.red),
+                                        content: Text("❌ Failed to cancel"),
+                                        backgroundColor: Colors.red,
+                                      ),
                                     );
                                   }
                                 },
