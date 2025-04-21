@@ -1,27 +1,31 @@
+import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:adventura/OrganizerProfile/OrganizerProfile.dart';
+import 'package:adventura/Services/activity_service.dart';
+import 'package:adventura/Services/interaction_service.dart';
 import 'package:adventura/colors.dart';
 import 'package:adventura/config.dart';
-import 'package:flutter/material.dart';
 import 'package:adventura/OrderDetail/Order.dart';
 import 'package:adventura/widgets/availability_modal.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart' as leaflet;
-import 'package:url_launcher/url_launcher.dart';
+import 'package:adventura/event_cards/widgets/readonly_location_map.dart';
+import 'package:hive/hive.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // Define the mainBlue color
-const Color mainBlue = Color(0xFF3D5A8E);
+const Color mainBlue = Color(0xFF007AFF);
 
 class EventDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> activity;
 
-  EventDetailsScreen({
+  const EventDetailsScreen({
+    Key? key,
     required this.activity,
-  });
+  }) : super(key: key);
 
   @override
-  _EventDetailsScreenState createState() => _EventDetailsScreenState();
+  State<EventDetailsScreen> createState() => _EventDetailsScreenState();
 }
 
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
@@ -30,6 +34,42 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   final PageController _pageController = PageController();
   String? confirmedDate;
   String? confirmedSlot;
+  List<Map<String, String>> tripSteps = [];
+  String? activityDuration;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupTripSteps();
+    activityDuration = ActivityService.getDurationDisplay(widget.activity);
+  }
+
+  void _setupTripSteps() {
+    final rawTripPlan = widget.activity["trip_plans"];
+    if (rawTripPlan != null && rawTripPlan is List) {
+      tripSteps = rawTripPlan
+          .where((step) =>
+              step["time"] != null &&
+              step["description"] != null &&
+              step["time"].toString().isNotEmpty &&
+              step["description"].toString().isNotEmpty)
+          .map<Map<String, String>>((step) => {
+                "time": step["time"].toString(),
+                "title": step["description"].toString(),
+              })
+          .toList();
+    }
+    
+    // If trip steps are empty, add some default ones for UI demo
+    if (tripSteps.isEmpty) {
+      tripSteps = [
+        {"time": "8:30 AM", "title": "Meet up"},
+        {"time": "11:00 AM", "title": "Reaching destination"},
+        {"time": "1:00 PM", "title": "Lunch Break"},
+        {"time": "3:00 PM", "title": "Sunset view"},
+      ];
+    }
+  }
 
   void _openAvailabilityModal() async {
     await showModalBottomSheet(
@@ -127,7 +167,18 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             children: [
               IconButton(
                 icon: Icon(Icons.share, color: Colors.grey.shade700),
-                onPressed: () {},
+                onPressed: () async {
+                  final box = await Hive.openBox('authBox');
+                  final userId = int.tryParse(box.get('userId').toString());
+                  final activityId = widget.activity["activity_id"];
+                  if (userId != null) {
+                    await InteractionService.logInteraction(
+                      userId: userId,
+                      activityId: activityId,
+                      type: "share",
+                    );
+                  }
+                },
                 tooltip: "Share",
               ),
               IconButton(
@@ -161,6 +212,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     // REDUCED horizontal padding to take more width
     double horizontalPadding = isLargeScreen ? screenWidth * 0.03 : 12;
 
+    // Get images with proper URL handling
     List<dynamic> rawImages = widget.activity["activity_images"] ?? [];
     List<String> images = rawImages
         .whereType<String>()
@@ -172,7 +224,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       images.add("assets/Pictures/island.jpg");
     }
 
-    // For web, we can create a different layout when screen is large
+    // Check if we're on web with a large screen
     if (kIsWeb && isLargeScreen) {
       return Scaffold(
         backgroundColor: Colors.grey.shade50,
@@ -325,7 +377,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    widget.activity["map_location"] ?? "Seht El-Nour, Tripoli",
+                                    widget.activity["map_location"] ?? widget.activity["location"] ?? "Seht El-Nour, Tripoli",
                                     style: GoogleFonts.poppins(fontSize: 15, color: Colors.black87),
                                   ),
                                   const SizedBox(height: 12),
@@ -368,103 +420,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 16),
-                                  Row(
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 24,
-                                        backgroundColor: Colors.grey.shade200,
-                                        child: ClipOval(
-                                          child: Image.network(
-                                            "https://example.com/organizer_logo.png",
-                                            fit: BoxFit.cover,
-                                            width: 48,
-                                            height: 48,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return const Center(
-                                                child: Icon(Icons.person, color: Colors.grey, size: 28),
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              "We tour Lebanon",
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              "Joined since 2024 · 94+ Listings",
-                                              style: GoogleFonts.poppins(
-                                                color: Colors.grey.shade700,
-                                                fontSize: 13,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Row(
-                                              children: [
-                                                const Icon(Icons.star, color: Colors.amber, size: 14),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  "4.5 Rating",
-                                                  style: GoogleFonts.poppins(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 13,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 20),
-                                  Row(
-                                    children: [
-                                      // MADE RATE BUTTON SMALLER
-                                      SizedBox(
-                                        height: 32,
-                                        child: ElevatedButton(
-                                          onPressed: () {},
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: mainBlue.withOpacity(0.1),
-                                            elevation: 0,
-                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                                          ),
-                                          child: Text(
-                                            "Rate",
-                                            style: GoogleFonts.poppins(
-                                              color: mainBlue,
-                                              fontSize: 13,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      TextButton(
-                                        onPressed: () {},
-                                        style: TextButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                                          minimumSize: const Size(0, 32),
-                                        ),
-                                        child: Text(
-                                          "Report",
-                                          style: GoogleFonts.poppins(
-                                            color: Colors.red,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                  _buildOrganizerSection(false),
                                 ],
                               ),
                             ),
@@ -537,7 +493,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               _buildSectionTitle("Location"),
               const SizedBox(height: 4),
               Text(
-                widget.activity["map_location"] ?? "Seht El-Nour, Tripoli",
+                widget.activity["map_location"] ?? widget.activity["location"] ?? "Seht El-Nour, Tripoli",
                 style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87)
               ),
               const SizedBox(height: 8),
@@ -545,80 +501,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 borderRadius: BorderRadius.circular(12),
                 child: SizedBox(
                   height: 180,
-                  child: kIsWeb ? _buildWebMap() : _buildNativeMap(),
+                  child: _buildWebMap(),
                 ),
               ),
               const SizedBox(height: 16),
               _buildSectionTitle("Organizer"),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: CircleAvatar(
-                  radius: 24,
-                  backgroundColor: Colors.grey.shade200,
-                  child: ClipOval(
-                    child: Image.network(
-                      "https://example.com/organizer_logo.png",
-                      fit: BoxFit.cover,
-                      width: 48,
-                      height: 48,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Center(
-                          child: Icon(Icons.person, color: Colors.grey, size: 28),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                title: Text("We tour Lebanon", style: GoogleFonts.poppins()),
-                subtitle: Text(
-                  "Joined since 2024 · 94+ Listings · 4.5 Rating",
-                  style: GoogleFonts.poppins(fontSize: 12)
-                ),
-                trailing: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 56),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // MADE RATE BUTTON SMALLER
-                      SizedBox(
-                        height: 28,
-                        child: ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: mainBlue.withOpacity(0.1),
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                            minimumSize: const Size(0, 28),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: Text(
-                            "Rate", 
-                            style: GoogleFonts.poppins(
-                              color: mainBlue, 
-                              fontSize: 12,
-                            )
-                          ),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {},
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: const Size(0, 20),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: Text(
-                          "Report", 
-                          style: GoogleFonts.poppins(
-                            color: Colors.red, 
-                            fontSize: 11
-                          )
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-              ),
+              _buildOrganizerSection(true),
               const SizedBox(height: 80), // Extra space at bottom to avoid content being hidden behind bottom bar
             ],
           ),
@@ -663,29 +551,256 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     );
   }
 
-  Widget _buildBookButton(List<String> images) {
-    return ElevatedButton.icon(
-      onPressed: () {
+  Widget _buildOrganizerSection(bool isMobile) {
+    return isMobile 
+      ? ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: _buildOrganizerAvatar(),
+          title: Text("We tour Lebanon", style: GoogleFonts.poppins()),
+          subtitle: Text(
+            "Joined since 2024 · 94+ Listings · 4.5 Rating",
+            style: GoogleFonts.poppins(fontSize: 12)
+          ),
+          trailing: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 56),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // MADE RATE BUTTON SMALLER
+                SizedBox(
+                  height: 28,
+                  child: ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: mainBlue.withOpacity(0.1),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                      minimumSize: const Size(0, 28),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      "Rate", 
+                      style: GoogleFonts.poppins(
+                        color: mainBlue, 
+                        fontSize: 12,
+                      )
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {},
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(0, 20),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    "Report", 
+                    style: GoogleFonts.poppins(
+                      color: Colors.red, 
+                      fontSize: 11
+                    )
+                  ),
+                )
+              ],
+            ),
+          ),
+        )
+      : Row(
+          children: [
+            _buildOrganizerAvatar(),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "We tour Lebanon",
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "Joined since 2024 · 94+ Listings",
+                    style: GoogleFonts.poppins(
+                      color: Colors.grey.shade700,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(Icons.star, color: Colors.amber, size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        "4.5 Rating",
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // MADE RATE BUTTON SMALLER
+                SizedBox(
+                  height: 32,
+                  child: ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: mainBlue.withOpacity(0.1),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                    ),
+                    child: Text(
+                      "Rate",
+                      style: GoogleFonts.poppins(
+                        color: mainBlue,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () {},
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: const Size(0, 32),
+                  ),
+                  child: Text(
+                    "Report",
+                    style: GoogleFonts.poppins(
+                      color: Colors.red,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+  }
+
+  Widget _buildOrganizerAvatar() {
+    return GestureDetector(
+      onTap: () async {
+        final box = await Hive.openBox('authBox');
+        int? providerId = int.tryParse(box.get("providerId")?.toString() ?? "");
+        if (providerId == null) return;
+
+        String organizerName = "${box.get("firstName")} ${box.get("lastName")}";
+        String organizerImage = "${box.get("profilePictureUrl_$providerId") ?? ""}";
+        String bio = "Adventure provider";
+
+        final activities = await ActivityService.fetchProviderListings(providerId);
+
+        if (!context.mounted) return;
+
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => OrderDetailsPage(
-              selectedImage: images[_currentImageIndex],
-              eventTitle: widget.activity["name"] ?? "Event",
-              eventDate: confirmedDate ?? widget.activity["date"] ?? "Date",
-              eventLocation: widget.activity["location"] ?? "Location", 
-              selectedSlot: confirmedSlot ?? '',
+            builder: (context) => OrganizerProfilePage(
+              organizerId: providerId.toString(),
+              organizerName: organizerName,
+              organizerImage: organizerImage,
+              bio: bio,
+              activities: activities,
             ),
           ),
         );
       },
-      icon: const Icon(Icons.local_activity_outlined, color: Colors.white, size: 20),
+      child: CircleAvatar(
+        radius: 24,
+        backgroundColor: Colors.grey.shade200,
+        child: ClipOval(
+          child: Builder(
+            builder: (context) {
+              try {
+                final box = Hive.box('authBox');
+                final profileImage = "${box.get("profilePictureUrl_${box.get("providerId")}") ?? ""}";
+
+                if (profileImage.isNotEmpty) {
+                  return Image.network(
+                    profileImage,
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.person,
+                      color: Colors.grey,
+                      size: 28,
+                    ),
+                  );
+                }
+              } catch (e) {
+                // Do nothing, just fall back to the default icon
+              }
+              
+              return const Center(
+                child: Icon(Icons.person, color: Colors.grey, size: 28),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBookButton(List<String> images) {
+    final box = Hive.box('authBox');
+    final userType = box.get("userType");
+    final providerId = box.get("providerId");
+    final isOwnActivity = userType == 'provider' &&
+        providerId != null &&
+        widget.activity["provider_id"].toString() == providerId.toString();
+
+    return ElevatedButton.icon(
+      onPressed: isOwnActivity
+          ? null
+          : () {
+              if (confirmedDate != null && confirmedSlot != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => OrderDetailsPage(
+                      activityId: widget.activity["activity_id"],
+                      selectedImage: images[_currentImageIndex],
+                      eventTitle: widget.activity["name"] ?? "Event",
+                      eventDate: confirmedDate!,
+                      eventLocation: widget.activity["location"] ?? "Location",
+                      selectedSlot: confirmedSlot!,
+                    ),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("⚠️ Please select a date and time first."),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            },
+      icon: Icon(
+        isOwnActivity ? Icons.block : Icons.local_activity_outlined, 
+        color: Colors.white, 
+        size: 20
+      ),
       label: Text(
-        "Book Ticket", 
+        isOwnActivity ? "Your Listing" : "Book Ticket", 
         style: GoogleFonts.poppins(color: Colors.white)
       ),
       style: ElevatedButton.styleFrom(
-        backgroundColor: mainBlue,
+        backgroundColor: isOwnActivity ? Colors.grey : mainBlue,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 18),
         minimumSize: const Size(double.infinity, 56), // Make button wider
@@ -715,13 +830,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           height: 80,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: _tripSteps.length * 2 - 1, // account for arrows
+            itemCount: tripSteps.length * 2 - 1, // account for arrows
             separatorBuilder: (context, index) => const SizedBox(width: 4),
             itemBuilder: (context, index) {
               if (index.isOdd) {
                 return _arrowConnector();
               } else {
-                final step = _tripSteps[index ~/ 2];
+                final step = tripSteps[index ~/ 2];
                 return _tripCard(step["time"]!, step["title"]!);
               }
             },
@@ -730,13 +845,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       ],
     );
   }
-
-  final List<Map<String, String>> _tripSteps = [
-    {"time": "8:30 AM", "title": "Meet up"},
-    {"time": "11:00 AM", "title": "Reaching destination"},
-    {"time": "1:00 PM", "title": "Lunch Break"},
-    {"time": "3:00 PM", "title": "Sunset view"},
-  ];
 
   Widget _tripCard(String time, String title) {
     return Container(
@@ -781,57 +889,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Widget _buildWebMap() {
-    return FlutterMap(
-      options: MapOptions(
-        center: const leaflet.LatLng(34.4381, 35.8308),
-        zoom: 14,
-        interactiveFlags: InteractiveFlag.all,
-        onTap: (_, __) async {
-          final url = Uri.parse("https://www.google.com/maps/search/?api=1&query=34.4381,35.8308");
-          await launchUrl(url, mode: LaunchMode.externalApplication);
-        },
-      ),
-      children: [
-        TileLayer(
-          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: ['a', 'b', 'c'],
-        ),
-        const MarkerLayer(
-          markers: [
-            Marker(
-              point: leaflet.LatLng(34.4381, 35.8308),
-              width: 40,
-              height: 40,
-              child: Icon(Icons.location_pin, color: Colors.red, size: 32),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNativeMap() {
-    return GestureDetector(
-      onTap: () async {
-        final url = Uri.parse("https://www.google.com/maps/search/?api=1&query=34.4381,35.8308");
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      },
-      child: gmap.GoogleMap(
-        initialCameraPosition: const gmap.CameraPosition(
-          target: gmap.LatLng(34.4381, 35.8308),
-          zoom: 14,
-        ),
-        markers: {
-          const gmap.Marker(
-            markerId: gmap.MarkerId('location'),
-            position: gmap.LatLng(34.4381, 35.8308),
-            infoWindow: gmap.InfoWindow(title: "Seht El-Nour, Tripoli"),
-          ),
-        },
-        zoomControlsEnabled: false,
-        myLocationButtonEnabled: false,
-      ),
-    );
+    final double lat = widget.activity["latitude"] ?? 34.4381;
+    final double lng = widget.activity["longitude"] ?? 35.8308;
+    
+    return ReadOnlyLocationMap(latitude: lat, longitude: lng);
   }
 
   Widget _buildSectionTitle(String text) {
@@ -856,18 +917,32 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Widget _buildTagsSection() {
+    final rawFeatures = widget.activity["features"];
+    List<String> tags = [];
+    
+    if (rawFeatures != null && rawFeatures is List) {
+      tags = rawFeatures
+          .map((f) => f["name"]?.toString())
+          .where((f) => f != null && f.isNotEmpty)
+          .cast<String>()
+          .toList();
+    }
+    
+    // If no tags found, use default ones for UI demo
+    if (tags.isEmpty) {
+      tags = ["Trending", "+16", "Medium", "Entertainment", "BBQ", "Scenery", "Sun Set"];
+    }
+
     return Wrap(
       spacing: 8,
       runSpacing: 4,
-      children: [
-        _tag("Trending", gradient: [Colors.orange, Colors.red]),
-        _tag("+16"),
-        _tag("Medium"),
-        _tag("Entertainment"),
-        _tag("BBQ"),
-        _tag("Scenery"),
-        _tag("Sun Set"),
-      ],
+      children: tags.map((tag) {
+        if (tag.toLowerCase() == "trending") {
+          return _tag(tag, gradient: [Colors.orange, Colors.red]);
+        } else {
+          return _tag(tag);
+        }
+      }).toList(),
     );
   }
 
@@ -904,7 +979,18 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       actions: [
         IconButton(
           icon: Icon(Icons.share, color: Colors.black, size: iconSize),
-          onPressed: () {},
+          onPressed: () async {
+            final box = await Hive.openBox('authBox');
+            final userId = int.tryParse(box.get('userId').toString());
+            final activityId = widget.activity["activity_id"];
+            if (userId != null) {
+              await InteractionService.logInteraction(
+                userId: userId,
+                activityId: activityId,
+                type: "share",
+              );
+            }
+          },
         ),
         IconButton(
           icon: Icon(
@@ -925,7 +1011,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   Widget _buildImageCarousel(List<String> images, double width, double height) {
     return Stack(
       children: [
-        Container(
+        SizedBox(
           height: height,
           width: width,
           child: PageView.builder(
@@ -950,6 +1036,67 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             },
           ),
         ),
+        
+        // Navigation arrows for web/larger screens
+        if (images.length > 1)
+          Positioned.fill(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Left navigation arrow
+                InkWell(
+                  onTap: () {
+                    if (_currentImageIndex > 0) {
+                      _pageController.previousPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  },
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    margin: const EdgeInsets.only(left: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.3),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ),
+                // Right navigation arrow
+                InkWell(
+                  onTap: () {
+                    if (_currentImageIndex < images.length - 1) {
+                      _pageController.nextPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  },
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    margin: const EdgeInsets.only(right: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.3),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        
         Positioned(
           bottom: 8,
           right: 12,
@@ -970,43 +1117,93 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Widget _buildAvailabilitySection() {
-    return confirmedDate != null && confirmedSlot != null
-        ? Row(
+    final type = widget.activity["listing_type"];
+    final startDate = widget.activity["start_date"];
+
+    // If we have confirmed date and slot from user selection
+    if (confirmedDate != null && confirmedSlot != null) {
+      return Row(
+        children: [
+          const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
+          const SizedBox(width: 4),
+          Text(
+            "$confirmedDate at $confirmedSlot",
+            style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
+          ),
+          const SizedBox(width: 6),
+          TextButton(
+            onPressed: _openAvailabilityModal,
+            child: Text(
+              "Change time",
+              style: GoogleFonts.poppins(
+                fontSize: 13, 
+                color: mainBlue, 
+                fontWeight: FontWeight.w500
+              )
+            ),
+          ),
+        ],
+      );
+    } 
+    
+    // For one-time events with a start date
+    if (type == "oneTime" && startDate != null) {
+      try {
+        final parsed = DateTime.tryParse(startDate);
+        final formatted = parsed != null
+            ? "Event Date: ${DateFormat.yMMMd().format(parsed)}"
+            : "Event Date: $startDate";
+
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
-              const SizedBox(width: 4),
+              Icon(Icons.event, size: 20, color: Colors.grey.shade700),
+              const SizedBox(width: 10),
               Text(
-                "$confirmedDate at $confirmedSlot",
-                style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
-              ),
-              const SizedBox(width: 6),
-              TextButton(
-                onPressed: _openAvailabilityModal,
-                child: Text(
-                  "Change time",
-                  style: GoogleFonts.poppins(
-                    fontSize: 13, 
-                    color: mainBlue, 
-                    fontWeight: FontWeight.w500
-                  )
+                formatted,
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey.shade700,
                 ),
               ),
             ],
-          )
-        : ElevatedButton(
-            onPressed: _openAvailabilityModal,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: mainBlue,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Text(
-              "Check Availability", 
-              style: GoogleFonts.poppins(color: Colors.white)
-            ),
-          );
+          ),
+        );
+      } catch (e) {
+        print("❌ Error parsing date: $e");
+      }
+    }
+
+    // Default case - check availability button
+    return ElevatedButton(
+      onPressed: _openAvailabilityModal,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: mainBlue,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      child: Text(
+        "Check Availability", 
+        style: GoogleFonts.poppins(color: Colors.white)
+      ),
+    );
   }
 
   Widget _buildBottomBar(double screenWidth, List<String> images) {
+    final box = Hive.box('authBox');
+    final userType = box.get("userType");
+    final providerId = box.get("providerId");
+    final isOwnActivity = userType == 'provider' &&
+        providerId != null &&
+        widget.activity["provider_id"].toString() == providerId.toString();
+    
     return Container(
       decoration: BoxDecoration(
         boxShadow: [
@@ -1040,7 +1237,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       children: [
                         Text(
                           widget.activity["price"] != null
-                              ? "\$${widget.activity["price"]}"
+                              ? "${widget.activity["price"]}"
                               : "Free",
                           style: GoogleFonts.poppins(
                             fontSize: 20, 
@@ -1061,27 +1258,43 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   ],
                 ),
                 ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => OrderDetailsPage(
-                          selectedImage: images[_currentImageIndex],
-                          eventTitle: widget.activity["name"] ?? "Event",
-                          eventDate: confirmedDate ?? widget.activity["date"] ?? "Date",
-                          eventLocation: widget.activity["location"] ?? "Location",
-                          selectedSlot: confirmedSlot ?? '',
-                        ),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.local_activity_outlined, color: Colors.white, size: 20),
+                  onPressed: isOwnActivity
+                    ? null
+                    : () {
+                        if (confirmedDate != null && confirmedSlot != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OrderDetailsPage(
+                                activityId: widget.activity["activity_id"],
+                                selectedImage: images[_currentImageIndex],
+                                eventTitle: widget.activity["name"] ?? "Event",
+                                eventDate: confirmedDate!,
+                                eventLocation: widget.activity["location"] ?? "Location",
+                                selectedSlot: confirmedSlot!,
+                              ),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("⚠️ Please select a date and time first."),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                        }
+                      },
+                  icon: Icon(
+                    isOwnActivity ? Icons.block : Icons.local_activity_outlined, 
+                    color: Colors.white, 
+                    size: 20
+                  ),
                   label: Text(
-                    "Book Ticket",
+                    isOwnActivity ? "Your Listing" : "Book Ticket",
                     style: GoogleFonts.poppins(color: Colors.white)
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: mainBlue,
+                    backgroundColor: isOwnActivity ? Colors.grey : mainBlue,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 18),
                   ),

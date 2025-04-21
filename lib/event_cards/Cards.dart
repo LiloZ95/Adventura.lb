@@ -345,31 +345,31 @@ Widget EventCard({
                                           ),
                                         ),
                                 ),
-                                if (duration != null)
-                                  Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.deepPurple.shade50,
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.av_timer,
-                                            size: 16, color: Colors.deepPurple),
-                                        SizedBox(width: 6),
-                                        Text(
-                                          duration,
-                                          style: TextStyle(
-                                            color: Colors.deepPurple.shade700,
-                                            fontSize: 13.5,
-                                            fontWeight: FontWeight.w500,
-                                            fontFamily: 'Poppins',
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                // if (duration != null)
+                                //   Container(
+                                //     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                //     decoration: BoxDecoration(
+                                //       color: Colors.deepPurple.shade50,
+                                //       borderRadius: BorderRadius.circular(20),
+                                //     ),
+                                //     child: Row(
+                                //       mainAxisSize: MainAxisSize.min,
+                                //       children: [
+                                //         Icon(Icons.av_timer,
+                                //             size: 16, color: Colors.deepPurple),
+                                //         SizedBox(width: 6),
+                                //         Text(
+                                //           duration,
+                                //           style: TextStyle(
+                                //             color: Colors.deepPurple.shade700,
+                                //             fontSize: 13.5,
+                                //             fontWeight: FontWeight.w500,
+                                //             fontFamily: 'Poppins',
+                                //           ),
+                                //         ),
+                                //       ],
+                                //     ),
+                                //   ),
                               ],
                             ),
                           ],

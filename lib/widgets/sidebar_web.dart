@@ -27,13 +27,13 @@ class SidebarWidget extends StatelessWidget {
             width: 300,
             height: double.infinity,
             color: Colors.white,
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 32),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
             child: Column(
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
+                    const Text(
                       "Menu",
                       style: TextStyle(
                         fontSize: 24,
@@ -43,11 +43,11 @@ class SidebarWidget extends StatelessWidget {
                     ),
                     IconButton(
                       onPressed: onClose,
-                      icon: Icon(Icons.close),
+                      icon: const Icon(Icons.close),
                     ),
                   ],
                 ),
-                SizedBox(height: 32),
+                const SizedBox(height: 32),
                 FutureBuilder(
                   future: Hive.openBox('authBox'),
                   builder: (context, snapshot) {
@@ -61,7 +61,7 @@ class SidebarWidget extends StatelessWidget {
                       if (userBytes != null) {
                         imageProvider = MemoryImage(userBytes);
                       } else {
-                        imageProvider = AssetImage("assets/images/default_user.png");
+                        imageProvider = const AssetImage("assets/images/default_user.png");
                       }
 
                       return Row(
@@ -71,13 +71,13 @@ class SidebarWidget extends StatelessWidget {
                             backgroundColor: Colors.grey.shade300,
                             backgroundImage: imageProvider,
                           ),
-                          SizedBox(width: 16),
+                          const SizedBox(width: 16),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 "$firstName $lastName",
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   fontFamily: 'Poppins',
@@ -96,22 +96,22 @@ class SidebarWidget extends StatelessWidget {
                         ],
                       );
                     }
-                    return CircularProgressIndicator();
+                    return const CircularProgressIndicator();
                   },
                 ),
-                SizedBox(height: 32),
+                const SizedBox(height: 32),
                 _buildMenuItem(Icons.home, "Home", AppColors.blue),
                 _buildMenuItem(Icons.search, "Discover", Colors.grey.shade700),
                 _buildMenuItem(Icons.confirmation_number_outlined, "My Bookings", Colors.grey.shade700),
                 _buildMenuItem(Icons.bookmark_border, "Saved", Colors.grey.shade700),
                 _buildMenuItem(Icons.send_outlined, "Messages", Colors.grey.shade700),
                 if (isProvider) ...[
-                  Divider(height: 32),
+                  const Divider(height: 32),
                   _buildMenuItem(Icons.qr_code_scanner, "Scan Tickets", Colors.grey.shade700),
                   _buildMenuItem(Icons.add_circle_outline, "Create Activity", Colors.grey.shade700),
                   _buildMenuItem(Icons.bar_chart, "Analytics", Colors.grey.shade700),
                 ],
-                Spacer(),
+                const Spacer(),
                 _buildMenuItem(Icons.settings, "Settings", Colors.grey.shade700),
                 _buildMenuItem(Icons.help_outline, "Help", Colors.grey.shade700),
                 _buildMenuItem(Icons.logout, "Logout", Colors.grey.shade700),
@@ -133,11 +133,11 @@ class SidebarWidget extends StatelessWidget {
 
   Widget _buildMenuItem(IconData icon, String title, Color color) {
     return Container(
-      margin: EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 16),
       child: Row(
         children: [
           Icon(icon, color: color),
-          SizedBox(width: 16),
+          const SizedBox(width: 16),
           Text(
             title,
             style: TextStyle(

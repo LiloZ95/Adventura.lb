@@ -19,6 +19,10 @@ const Availability = sequelize.define('availability', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  capacity: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
   available_seats: {
     type: DataTypes.INTEGER,
     allowNull: false,

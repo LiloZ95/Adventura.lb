@@ -322,7 +322,12 @@ class _LoginPageState extends State<LoginPage> {
                         children: [
                           IconButton(
                             onPressed: () {
-                              // Handle Facebook login
+                                 Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => MainScreen(
+                                              onScrollChanged: (bool visible) {})),
+                                    );
                             },
                             icon: Image.asset(
                               'assets/Icons/Facebook.png',

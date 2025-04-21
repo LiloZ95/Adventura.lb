@@ -546,7 +546,7 @@ final List<Map<String, String>> _tripSteps = [
                         eventDate:
                             confirmedDate ?? widget.activity["date"] ?? "Date",
                         eventLocation:
-                            widget.activity["location"] ?? "Location", selectedSlot: '',
+                            widget.activity["location"] ?? "Location", selectedSlot: '', activityId: 1
                       ),
                     ),
                   );

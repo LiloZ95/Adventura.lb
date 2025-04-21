@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:adventura/intro/intro.dart';
 import 'package:adventura/config.dart'; // ✅ Import the global config file
 import 'package:flutter/foundation.dart'
     show kIsWeb; // ✅ Detect if running on Web
@@ -58,7 +57,7 @@ class MainApi extends ChangeNotifier {
     } else if (isFirstTime) {
       print("🎉 First time launching the app! Showing onboarding.");
       storageBox.put("isFirstTime", false);
-      _initialScreen = DynamicOnboarding();
+      _initialScreen = LoginPage();
     } else {
       print("🔍 User is NOT logged in. Redirecting to Login.");
       _initialScreen = LoginPage();
@@ -127,14 +126,14 @@ class MainApi extends ChangeNotifier {
 
       if (isValid) {
         print("✅ User is already logged in. Redirecting to MainScreen...");
-        _initialScreen =  AdventuraWebHomee();
+        _initialScreen =  MainScreen(onScrollChanged: (bool){});
       } else {
         print("❌ Token expired. Trying refresh...");
         bool refreshed = await refreshTokens();
 
         if (refreshed) {
           print("✅ Tokens refreshed. Redirecting to MainScreen...");
-          _initialScreen =  AdventuraWebHomee();
+          _initialScreen = MainScreen(onScrollChanged: (bool){});
         } else {
           print("❌ Token refresh failed. Logging out.");
           await logout();

@@ -28,6 +28,11 @@ const booking = sequelize.define("booking", {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
+  slot: {
+    type: DataTypes.STRING,
+    allowNull: false, // ✅ or true, but should match DB
+  },
+  
 }, {
   tableName: "booking",
   timestamps: true,

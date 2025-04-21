@@ -1,56 +1,119 @@
+import 'package:adventura/Services/NotificationService.dart';
 import 'package:adventura/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-class NotificationScreen extends StatelessWidget {
-  // Sample notifications data
-  final List<Map<String, dynamic>> todayNotifications = [
-    {
-      "icon": Icons.receipt_long,
-      "title": "Booking Successfully",
-      "description": "Your trip has been booked successfully."
-    },
-    {
-      "icon": Icons.lock,
-      "title": "Password Update Successful",
-      "description": "Your password has been placed successfully."
-    },
-    {
-      "icon": Icons.person,
-      "title": "Account Setup Successfully",
-      "description": "Your account has been created."
-    },
-    {
-      "icon": Icons.local_offer,
-      "title": "Best Deal of the Day",
-      "description": "Buy 1 Get 1 Offer on selected product... hurry up"
-    },
-  ];
+class NotificationScreen extends StatefulWidget {
+  const NotificationScreen({Key? key}) : super(key: key);
 
-  final List<Map<String, dynamic>> yesterdayNotifications = [
-    {
-      "icon": Icons.credit_card,
-      "title": "Debit Card Added Successfully",
-      "description": "Your debit card has been added."
-    },
-    {
-      "icon": Icons.confirmation_num,
-      "title": "Get 20% Off On First Trip",
-      "description": "Your order has been placed successfully."
-    },
-  ];
+  @override
+  State<NotificationScreen> createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen> {
+  List<Map<String, dynamic>> notifications = [];
+  bool isLoading = true;
+  
+  // To store organized notifications
+  Map<String, List<Map<String, dynamic>>> groupedNotifications = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      final box = await Hive.openBox('authBox');
+      final userId = box.get('userId');
+
+      final userNotifs = await NotificationService.fetchNotifications(userId);
+      final universalNotifs = await NotificationService.fetchUniversalNotifications();
+
+      // Merge and sort all notifications by created_at
+      final allNotifications = [...userNotifs, ...universalNotifs];
+
+      allNotifications.sort((a, b) {
+        final dateA = DateTime.tryParse(a["created_at"] ?? "") ?? DateTime.now();
+        final dateB = DateTime.tryParse(b["created_at"] ?? "") ?? DateTime.now();
+        return dateB.compareTo(dateA); // Most recent first
+      });
+
+      // Group notifications by date
+      _organizeNotifications(allNotifications);
+
+      setState(() {
+        notifications = allNotifications;
+        isLoading = false;
+      });
+    } catch (e) {
+      print("❌ Error loading notifications: $e");
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void _organizeNotifications(List<Map<String, dynamic>> allNotifications) {
+    groupedNotifications = {};
+    
+    final today = DateTime.now();
+    final yesterday = today.subtract(const Duration(days: 1));
+    
+    for (var notification in allNotifications) {
+      String dateStr = notification["created_at"] ?? "";
+      DateTime? notifDate = DateTime.tryParse(dateStr);
+      
+      if (notifDate == null) continue;
+      
+      String key;
+      
+      if (isSameDay(notifDate, today)) {
+        key = "Today";
+      } else if (isSameDay(notifDate, yesterday)) {
+        key = "Yesterday";
+      } else {
+        // Format as "April 18, 2025" for other dates
+        key = DateFormat('MMMM d, yyyy').format(notifDate);
+      }
+      
+      if (!groupedNotifications.containsKey(key)) {
+        groupedNotifications[key] = [];
+      }
+      
+      groupedNotifications[key]!.add(notification);
+    }
+  }
+  
+  bool isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year && 
+           date1.month == date2.month && 
+           date1.day == date2.day;
+  }
+
+  String formatDate(String timestamp) {
+    try {
+      final date = DateTime.parse(timestamp);
+      return DateFormat('hh:mm a').format(date); // Simplified to just time
+    } catch (e) {
+      return '';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isWeb = kIsWeb;
     final screenWidth = MediaQuery.of(context).size.width;
-    final bool isWeb = kIsWeb;
     
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-            // Header with back arrow (for both web and mobile)
+            // Enhanced Header
             Container(
               padding: EdgeInsets.symmetric(
                 horizontal: 16.0, 
@@ -62,7 +125,7 @@ class NotificationScreen extends StatelessWidget {
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
                     blurRadius: 10,
-                    offset: Offset(0, 4)
+                    offset: const Offset(0, 4)
                   )
                 ] : null,
               ),
@@ -88,16 +151,25 @@ class NotificationScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(width: 48), // Balance the layout
+                  const SizedBox(width: 48), // Balance the layout
                 ],
               ),
             ),
             
             // Notifications Content
             Expanded(
-              child: isWeb
-                ? _buildWebLayout(screenWidth)
-                : _buildMobileLayout(),
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : notifications.isEmpty
+                      ? const Center(
+                          child: Text(
+                            "No notifications yet.",
+                            style: TextStyle(fontFamily: "Poppins"),
+                          ),
+                        )
+                      : isWeb
+                          ? _buildWebLayout(screenWidth)
+                          : _buildMobileLayout(),
             ),
           ],
         ),
@@ -105,84 +177,76 @@ class NotificationScreen extends StatelessWidget {
     );
   }
 
-  // Web-optimized layout using full width
+  // Web-optimized layout
   Widget _buildWebLayout(double screenWidth) {
-    // Determine grid columns based on screen width
-    int columns = screenWidth > 1400 ? 3 : (screenWidth > 900 ? 2 : 1);
+        int columns = screenWidth > 1400 ? 3 : (screenWidth > 900 ? 2 : 1);
     
     return Container(
       width: double.infinity,
-      color: Colors.grey.shade50, // Subtle background color for contrast
-      padding: EdgeInsets.all(24.0),
-      child: ListView(
-        children: [
-          _buildSectionTitle("Today"),
-          SizedBox(height: 16),
+      color: Colors.grey.shade50,
+      padding: const EdgeInsets.all(24.0),
+      child: ListView.builder(
+        itemCount: groupedNotifications.length,
+        itemBuilder: (context, sectionIndex) {
+          String dateSection = groupedNotifications.keys.elementAt(sectionIndex);
+          List<Map<String, dynamic>> sectionNotifications = groupedNotifications[dateSection]!;
           
-          // Grid layout for today's notifications
-          GridView.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columns,
-              childAspectRatio: 4.0,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemCount: todayNotifications.length,
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            itemBuilder: (context, index) {
-              return _buildWebNotificationItem(todayNotifications[index]);
-            },
-          ),
-          
-          SizedBox(height: 32),
-          
-          _buildSectionTitle("Yesterday"),
-          SizedBox(height: 16),
-          
-          // Grid layout for yesterday's notifications
-          GridView.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columns,
-              childAspectRatio: 4.0,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemCount: yesterdayNotifications.length,
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            itemBuilder: (context, index) {
-              return _buildWebNotificationItem(yesterdayNotifications[index]);
-            },
-          ),
-        ],
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionTitle(dateSection),
+              const SizedBox(height: 16),
+              
+              // Grid layout for notifications
+              GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columns,
+                  childAspectRatio: 4.0,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                ),
+                itemCount: sectionNotifications.length,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemBuilder: (context, index) {
+                  return _buildWebNotificationItem(sectionNotifications[index]);
+                },
+              ),
+              
+              const SizedBox(height: 32),
+            ],
+          );
+        },
       ),
     );
   }
 
-  // Original mobile layout with small enhancements
   Widget _buildMobileLayout() {
-    return ListView(
-      padding: EdgeInsets.all(16.0),
-      children: [
-        _buildSectionTitle("Today"),
-        SizedBox(height: 12),
-        ...todayNotifications.map((notification) => 
-          _buildMobileNotificationItem(notification)
-        ).toList(),
+    return ListView.builder(
+      padding: const EdgeInsets.all(16.0),
+      itemCount: groupedNotifications.length,
+      itemBuilder: (context, sectionIndex) {
+        String dateSection = groupedNotifications.keys.elementAt(sectionIndex);
+        List<Map<String, dynamic>> sectionNotifications = groupedNotifications[dateSection]!;
         
-        SizedBox(height: 24),
-        
-        _buildSectionTitle("Yesterday"),
-        SizedBox(height: 12),
-        ...yesterdayNotifications.map((notification) => 
-          _buildMobileNotificationItem(notification)
-        ).toList(),
-      ],
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionTitle(dateSection),
+            const SizedBox(height: 12),
+            
+            ...sectionNotifications.map((notification) => 
+              _buildMobileNotificationItem(notification)
+            ).toList(),
+            
+            const SizedBox(height: 24),
+          ],
+        );
+      },
     );
   }
 
-  // Attractive web notification item
+  // Web notification item
   Widget _buildWebNotificationItem(Map<String, dynamic> notification) {
     return Container(
       decoration: BoxDecoration(
@@ -193,19 +257,19 @@ class NotificationScreen extends StatelessWidget {
             color: Colors.black.withOpacity(0.04),
             blurRadius: 8,
             spreadRadius: 1,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      clipBehavior: Clip.antiAlias, // For the InkWell effect
+      clipBehavior: Clip.antiAlias,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () {},
-          splashColor: Color.fromARGB(255, 134, 124, 224).withOpacity(0.1),
-          highlightColor: Color.fromARGB(255, 134, 124, 224).withOpacity(0.05),
+          splashColor: AppColors.mainBlue,
+          highlightColor: AppColors.mainBlue,
           child: Padding(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 // Circular Icon with improved styling
@@ -213,24 +277,24 @@ class NotificationScreen extends StatelessWidget {
                   width: 54,
                   height: 54,
                   decoration: BoxDecoration(
-                    color:AppColors.mainBlue,
+                    color: _getNotificationColor(notification["icon"]),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.mainBlue.withOpacity(0.3),
+                        color: _getNotificationColor(notification["icon"]).withOpacity(0.3),
                         blurRadius: 8,
                         spreadRadius: 0,
-                        offset: Offset(0, 3),
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
                   child: Icon(
-                    notification["icon"], 
-                    color: Colors.white, 
+                    _getNotificationIcon(notification["icon"]),
+                    color: Colors.white,
                     size: 26
                   ),
                 ),
-                SizedBox(width: 18),
+                const SizedBox(width: 18),
 
                 // Notification Text
                 Expanded(
@@ -239,24 +303,33 @@ class NotificationScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        notification["title"]!,
-                        style: TextStyle(
+                        notification["title"] ?? '',
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 17,
                           fontFamily: "Poppins",
                           color: Colors.black87,
                         ),
                       ),
-                      SizedBox(height: 5),
+                      const SizedBox(height: 5),
                       Text(
-                        notification["description"]!,
-                        style: TextStyle(
+                        notification["description"] ?? '',
+                        style: const TextStyle(
                           fontSize: 15, 
                           fontFamily: "Poppins", 
                           color: Colors.black54
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        formatDate(notification["created_at"] ?? ''),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontFamily: "Poppins",
+                          color: Colors.grey,
+                        ),
                       ),
                     ],
                   ),
@@ -268,7 +341,7 @@ class NotificationScreen extends StatelessWidget {
                     color: Colors.grey.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  padding: EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(8),
                   child: Icon(
                     Icons.arrow_forward_ios,
                     color: Colors.grey.shade600,
@@ -283,10 +356,10 @@ class NotificationScreen extends StatelessWidget {
     );
   }
 
-  // Enhanced mobile notification item
+  // Mobile notification item
   Widget _buildMobileNotificationItem(Map<String, dynamic> notification) {
     return Container(
-      margin: EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 16),
       child: Column(
         children: [
           Row(
@@ -296,49 +369,66 @@ class NotificationScreen extends StatelessWidget {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: Color.fromARGB(255, 134, 124, 224),
+                  color: _getNotificationColor(notification["icon"]),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Color.fromARGB(255, 134, 124, 224).withOpacity(0.2),
+                      color: _getNotificationColor(notification["icon"]).withOpacity(0.2),
                       blurRadius: 6,
-                      offset: Offset(0, 2),
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                child: Icon(notification["icon"], color: Colors.white, size: 24),
+                child: Icon(
+                  _getNotificationIcon(notification["icon"]),
+                  color: Colors.white,
+                  size: 24
+                ),
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
 
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      notification["title"]!,
-                      style: TextStyle(
+                      notification["title"] ?? '',
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                         fontFamily: "Poppins",
                         color: Colors.black,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      notification["description"]!,
-                      style: TextStyle(fontSize: 14, fontFamily: "Poppins", color: Colors.black54),
+                      notification["description"] ?? '',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontFamily: "Poppins",
+                        color: Colors.black54
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      formatDate(notification["created_at"] ?? ''),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontFamily: "Poppins",
+                        color: Colors.grey,
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
 
           // Enhanced divider with gradient
           Container(
             height: 1.5,
-            margin: EdgeInsets.only(left: 30, right: 16),
+            margin: const EdgeInsets.only(left: 30, right: 16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -347,7 +437,7 @@ class NotificationScreen extends StatelessWidget {
                   Colors.grey.shade300,
                   Colors.grey.shade300.withOpacity(0.1),
                 ],
-                stops: [0.0, 0.2, 0.8, 1.0],
+                stops: const [0.0, 0.2, 0.8, 1.0],
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
               ),
@@ -366,11 +456,11 @@ class NotificationScreen extends StatelessWidget {
           width: 4,
           height: 20,
           decoration: BoxDecoration(
-            color: Color.fromARGB(255, 134, 124, 224),
+            color: AppColors.mainBlue,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         Text(
           title,
           style: TextStyle(
@@ -383,5 +473,44 @@ class NotificationScreen extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  IconData _getNotificationIcon(String? type) {
+    switch (type) {
+      case 'book':
+        return Icons.receipt_long;
+      case 'cancel':
+        return Icons.cancel;
+      case 'password':
+        return Icons.lock;
+      case 'account':
+        return Icons.person;
+      case 'deal':
+        return Icons.local_offer;
+      case 'card':
+        return Icons.credit_card;
+      case 'ticket':
+        return Icons.confirmation_num;
+      default:
+        return Icons.notifications;
+    }
+  }
+
+  Color _getNotificationColor(String? iconType) {
+    switch (iconType) {
+      case 'book':
+        return const Color(0xFF4CAF50); // Green
+      case 'cancel':
+        return const Color(0xFFF44336); // Red
+      case 'password':
+        return const Color(0xFF3F51B5); // Indigo
+      case 'account':
+        return const Color(0xFF2196F3); // Blue
+      case 'deal':
+      case 'offer':
+        return const Color(0xFFFF9800); // Orange
+      default:
+        return AppColors.mainBlue; // Default purple
+    }
   }
 }

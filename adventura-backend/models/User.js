@@ -39,12 +39,27 @@ const User = sequelize.define(
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
+		auth_provider_type: {
+			type: DataTypes.STRING,
+			allowNull: true,
+		  },
+		  auth_provider_id: {
+			type: DataTypes.STRING,
+			allowNull: true,
+		  },
+		  external_profile_picture: {
+			type: DataTypes.TEXT,
+			allowNull: true,
+		  },
+		  
 	},
+
 	{
 		tableName: "USER", // **Ensure this matches the table name in pgAdmin**
 		timestamps: false, // **Disable timestamps if not present in your DB**
 		freezeTableName: true, // Prevent Sequelize from pluralizing table names
 	}
 );
+
 
 module.exports = User ;

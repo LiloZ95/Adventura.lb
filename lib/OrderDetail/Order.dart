@@ -1,5 +1,7 @@
 import 'package:adventura/OrderDetail/PurchaseConfiramtion.dart';
 import 'package:adventura/OrderDetail/countries.dart';
+import 'package:adventura/Services/booking_service.dart';
+import 'package:adventura/Services/interaction_service.dart';
 import 'package:adventura/widgets/payment_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,9 +9,10 @@ import 'package:adventura/colors.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:hive/hive.dart';
 
 // Main Blue color
-const Color mainBlue = Color(0xFF3D5A8E);
+const Color mainBlue = Color(0xFF007AFF);
 
 /// Custom enforcer that rejects any new character if max length is exceeded.
 class MaxDigitsEnforcer extends TextInputFormatter {
@@ -36,6 +39,7 @@ class OrderDetailsPage extends StatefulWidget {
   final String eventDate;
   final String eventLocation;
   final String selectedSlot;
+  final int activityId;
 
   const OrderDetailsPage({
     Key? key,
@@ -44,6 +48,7 @@ class OrderDetailsPage extends StatefulWidget {
     required this.eventDate,
     required this.eventLocation,
     required this.selectedSlot,
+    required this.activityId,
   }) : super(key: key);
 
   @override
@@ -466,13 +471,8 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
-                                        onPressed: () {
-                                          showModalBottomSheet(
-                                            context: context,
-                                            isScrollControlled: true,
-                                            backgroundColor: Colors.transparent,
-                                            builder: (context) => const PaymentModal(),
-                                          );
+                                        onPressed: () async {
+                                          await _processBooking(context);
                                         },
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: mainBlue,
@@ -809,13 +809,8 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      onPressed: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (context) => const PaymentModal(),
-                        );
+                      onPressed: () async {
+                        await _processBooking(context);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: mainBlue,
@@ -834,6 +829,70 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
         ),
       ],
     );
+  }
+  
+  // Process the booking (Functionality from the second code)
+  Future<void> _processBooking(BuildContext context) async {
+    final box = await Hive.openBox('authBox');
+    final clientId = int.tryParse(box.get('userId') ?? '');
+
+    if (clientId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("❌ User not logged in")),
+      );
+      return;
+    }
+
+    print("🟢 Proceed tapped - sending booking");
+    
+    // Calculate total due for the booking
+    final double ticketsTotal = tickets * ticketPrice;
+    final double bbqTotal = bbqShare * bbqPrice;
+    final double waterTotal = waterBottles * waterPrice;
+    final double energyTotal = energyDrinks * energyPrice;
+    final double subtotal = ticketsTotal + bbqTotal + waterTotal + energyTotal;
+    final double totalDue = subtotal + 3.50;
+
+    final success = await BookingService.createBooking(
+      activityId: widget.activityId,
+      clientId: clientId,
+      date: widget.eventDate,
+      slot: widget.selectedSlot,
+      totalPrice: totalDue,
+    );
+
+    if (success) {
+      print("✅ Booking confirmed");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("✅ Booking successful")),
+      );
+
+      // Log the 'purchase' interaction
+      await InteractionService.logInteraction(
+        userId: clientId,
+        activityId: widget.activityId,
+        type: "purchase",
+      );
+
+      // Show the payment modal after successful booking
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => const PaymentModal(),
+      );
+
+      // TODO: Navigate to success screen
+      // Navigator.push(...);
+    } else {
+      print("❌ Booking failed");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("❌ Booking failed. Please try again."),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
   
   // Event detail pill for web layout
@@ -1017,7 +1076,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
               ),
             ),
           Text(
-            '\$${cost.toStringAsFixed(2)}',
+            '\${cost.toStringAsFixed(2)}',
             style: GoogleFonts.poppins(
               fontSize: isWeb ? 15 : 14,
               fontWeight: isSubtotal ? FontWeight.w500 : FontWeight.normal,

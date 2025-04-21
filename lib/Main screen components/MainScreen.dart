@@ -296,7 +296,7 @@ class _MainScreenState extends State<MainScreen>
                                                 pageBuilder: (context,
                                                         animation,
                                                         secondaryAnimation) =>
-                                                    AdventuraChatPage(
+                                                    AdventuraChatPage(userName: '', userId: '',
                                                  
                                                 ),
                                                 transitionsBuilder: (context,

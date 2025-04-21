@@ -1,3 +1,4 @@
+import 'package:adventura/Booking/MyBooking.dart';
 import 'package:adventura/search%20screen/searchScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/widgets/activitiess_web.dart';
@@ -12,6 +13,7 @@ import 'package:adventura/Services/activity_service.dart';
 import 'package:adventura/web/bookingweb.dart';
 import 'package:hive/hive.dart';
 import 'dart:convert';
+import 'package:scroll_to_index/scroll_to_index.dart'; // Add this import
 
 class AdventuraWebHomee extends StatefulWidget {
   const AdventuraWebHomee({Key? key}) : super(key: key);
@@ -33,17 +35,31 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
   
   // Controller for the page navigation
   final PageController _pageController = PageController();
+  
+  // Add AutoScrollController for vertical scrolling
+  late AutoScrollController _scrollController;
+
+  // Define index constants for auto-scrolling
+  static const int ACTIVITIES_SECTION_INDEX = 1;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
     loadActivities();
+    
+    // Initialize the auto scroll controller
+    _scrollController = AutoScrollController(
+      viewportBoundaryGetter: () => 
+          Rect.fromLTRB(0, 0, 0, MediaQuery.of(context).padding.bottom),
+      axis: Axis.vertical,
+    );
   }
   
   @override
   void dispose() {
     _pageController.dispose();
+    _scrollController.dispose(); // Dispose the scroll controller
     super.dispose();
   }
 
@@ -69,6 +85,9 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
   void loadActivities() async {
     try {
       final box = await Hive.openBox('cacheBox');
+      
+      // Clear existing recommendations to force a fresh fetch
+      await box.delete('recommendations');
 
       final String? cachedActivities = box.get('activities');
       final String? cachedRecommendations = box.get('recommendations');
@@ -90,10 +109,14 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
       }
 
       int userIdInt = int.tryParse(userIdString) ?? 0;
+      print("🔍 Fetching recommended activities for user ID: $userIdInt");
 
       List<dynamic> fetchedActivities = await ActivityService.fetchActivities();
       List<dynamic> fetchedRecommended =
           await ActivityService.fetchRecommendedActivities(userIdInt);
+
+      print("✅ Fetched Activities: ${fetchedActivities.length}");
+      print("✅ Fetched Recommendations: ${fetchedRecommended.length}");
 
       setState(() {
         activities = fetchedActivities;
@@ -143,9 +166,10 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
     final bool isMobile = screenWidth < 768;
     final bool isTablet = screenWidth >= 768 && screenWidth < 1200;
     final bool isDesktop = screenWidth >= 1200;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDarkMode ? const Color(0xFF121212) : Colors.white,
       body: Stack(
         children: [
           Column(
@@ -178,21 +202,97 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
                   children: [
                     // Home Page Content
                     SingleChildScrollView(
+                      controller: _scrollController, // Use the AutoScrollController here
                       child: Column(
                         children: [
-                          // Pass the search tap handler to the hero section
+                          // Pass the scroll controller to the hero section
                           HeroSectionWidget(
                             isLoading: isLoading,
                             onSearchTap: handleSearchTap,
+                            scrollController: _scrollController, // Pass the controller here
                           ),
-                          if (!isLoading) LimitedTimeActivitiesWeb(),
+                          
+                          // Wrap LimitedTimeActivitiesWeb with AutoScrollTag
+                          if (!isLoading) 
+                            AutoScrollTag(
+                              key: ValueKey(ACTIVITIES_SECTION_INDEX),
+                              controller: _scrollController,
+                              index: ACTIVITIES_SECTION_INDEX,
+                              child: LimitedTimeActivitiesWeb(),
+                            ),
+                            
                           if (!isLoading) CategoriesWebWidget(),
-                          if (!isLoading)
-                            RecommendationsWidget(
-                              title: "You Might Like",
-                              activities: recommendedActivities,
-                              isMobile: isMobile,
-                              isTablet: isTablet,
+                          if (!isLoading) 
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                                    textBaseline: TextBaseline.alphabetic,
+                                    children: [
+                                      Text(
+                                        "You Might Like",
+                                        style: TextStyle(
+                                          fontSize: isMobile ? 20 : 24,
+                                          fontFamily: 'Poppins',
+                                          fontWeight: FontWeight.bold,
+                                          color: isDarkMode ? Colors.white : Colors.black,
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          // Navigate to the discover tab
+                                          navigateToTab(1);
+                                        },
+                                        child: Text(
+                                          "See All",
+                                          style: TextStyle(
+                                            color: AppColors.blue,
+                                            fontFamily: 'Poppins',
+                                            fontSize: isMobile ? 14 : 16,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 16),
+                                  recommendedActivities.isEmpty
+                                    ? Padding(
+                                        padding: EdgeInsets.all(32),
+                                        child: Column(
+                                          children: [
+                                            Icon(
+                                              Icons.warning,
+                                              size: 48,
+                                              color: isDarkMode
+                                                  ? Colors.grey.shade400
+                                                  : Colors.grey,
+                                            ),
+                                            SizedBox(height: 10),
+                                            Text(
+                                              "No recommendations found.",
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontFamily: 'Poppins',
+                                                color: isDarkMode
+                                                    ? Colors.grey.shade400
+                                                    : Colors.grey,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    : RecommendationsWidget(
+                                        title: "",  // Empty title since we're adding our own
+                                        activities: recommendedActivities.where((activity) => 
+                                            activity['availability_status'] == true).toList(),
+                                        isMobile: isMobile,
+                                        isTablet: isTablet,
+                                      ),
+                                ],
+                              ),
                             ),
                           const FooterWidget(),
                         ],
@@ -200,7 +300,8 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
                     ),
 
                     // Discover/Search Page Content
-                   SearchScreen(onScrollChanged: (bool) { },),
+                    SearchScreen(onScrollChanged: (bool) { },),
+                    MyBookingsPage(onScrollChanged: (bool) { }),
 
                     // Saved Page
                     const Center(child: Text("Saved Page")),
@@ -229,7 +330,7 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
               child: Container(
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.8),
+                  color: (isDarkMode ? Colors.grey.shade800 : Colors.white).withOpacity(0.8),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(

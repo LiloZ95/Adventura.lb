@@ -537,7 +537,6 @@ class _UserInfoState extends State<UserInfo> {
     );
   }
 
-  // ✅ Delete Account Button
   Widget _deleteAccountOption(BuildContext context) {
     return GestureDetector(
       onTap: () {
@@ -555,7 +554,6 @@ class _UserInfoState extends State<UserInfo> {
     );
   }
 
-  // ✅ Delete Account Confirmation Dialog
   void _showDeleteConfirmationDialog(BuildContext context) {
     showDialog(
       context: context,

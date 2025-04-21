@@ -1,14 +1,22 @@
 // controllers/userController.js
+require("dotenv").config();
+
 const bcrypt = require("bcryptjs"); // Use bcryptjs instead of bcrypt
 const jwt = require("jsonwebtoken");
 const { sequelize } = require("../db/db.js"); // Import Sequelize instance
+const { softDeleteActivity } = require("../controllers/activityController");
 const User = require("../models/User");
 const UserPfp = require("../models/UserPfp");
 const UserActivityInteraction = require("../models/UserActivityInteraction");
 const Provider = require("../models/Provider"); // Import Provider model
 const otpStore = {}; // Temporary storage for OTPs (replace with Redis or DB in production)
-const { QueryTypes } = require("sequelize");
+const { QueryTypes, where } = require("sequelize");
 const { distributeUser } = require("../distributeUsers.js");
+const nodemailer = require("nodemailer");
+const Client = require("../models/client.js");
+const Administrator = require("../models/Administrator.js");
+const Booking = require("../models/Booking");
+const Activity = require("../models/Activity");
 
 const refreshTokens = new Set(); // Store refresh tokens (replace with DB for production)
 const getProviderId = async (userId) => {
@@ -31,29 +39,41 @@ const getAllUsers = async (req, res) => {
 };
 
 const getUserById = async (req, res) => {
-	console.log("🔍 Incoming request to getUserById...");
-	console.log("🔹 Checking `req.user`: ", req.user);
+	const userId = req.user?.userId;
 
-	if (!req.user || !req.user.userId) {
-		console.error("❌ Missing userId in request.");
-		return res.status(400).json({ error: "User ID is required." });
+	if (!userId) {
+		console.error("❌ Missing user ID from token.");
+		return res.status(401).json({ error: "Unauthorized" });
 	}
 
-	const userId = req.user.userId;
-
 	try {
-		console.log(`🔍 Fetching user with ID: ${userId}`);
-		const user = await User.findByPk(userId); // ✅ Query the correct user_id
-
+		const user = await User.findByPk(userId);
 		if (!user) {
-			console.log("❌ User not found.");
 			return res.status(404).json({ error: "User not found." });
 		}
-
-		console.log("✅ User found:", user);
 		res.status(200).json(user);
 	} catch (error) {
 		console.error("❌ Database error:", error);
+		res.status(500).json({ error: "Server error" });
+	}
+};
+
+// ✅ Admin-only: Fetch user by ID from URL
+const getUserByIdPublic = async (req, res) => {
+	const userId = req.params.id;
+
+	if (!userId) {
+		return res.status(400).json({ error: "User ID is required." });
+	}
+
+	try {
+		const user = await User.findByPk(userId);
+		if (!user) {
+			return res.status(404).json({ error: "User not found." });
+		}
+		res.status(200).json(user);
+	} catch (error) {
+		console.error("❌ Error fetching user:", error);
 		res.status(500).json({ error: "Server error" });
 	}
 };
@@ -64,34 +84,25 @@ const createUser = async (req, res) => {
 		last_name,
 		password,
 		email,
-		phone_number,
+		otp,
 		location,
 		user_type,
-		otp,
+		phone_number, // optional now
 	} = req.body;
 
-	// Validate required fields
-	if (
-		!first_name ||
-		!last_name ||
-		!password ||
-		!email ||
-		!phone_number ||
-		!otp
-	) {
-		return res
-			.status(400)
-			.json({ error: "All fields are required, including OTP" });
+	// ✅ Validate required fields
+	if (!first_name || !last_name || !password || !email || !otp) {
+		return res.status(400).json({ error: "Missing required fields." });
 	}
 
-	// Validate email format
+	// ✅ Validate email format
 	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 	if (!emailRegex.test(email)) {
 		return res.status(400).json({ error: "Invalid email format" });
 	}
 
 	try {
-		// Check if user already exists
+		// ✅ Check if user already exists
 		const existingUser = await User.findOne({ where: { email } });
 		if (existingUser) {
 			return res
@@ -99,36 +110,33 @@ const createUser = async (req, res) => {
 				.json({ error: "User with this email already exists" });
 		}
 
-		// **Validate OTP before proceeding**
+		// ✅ Validate OTP
 		if (!otpStore[email] || otpStore[email].otp !== otp) {
 			return res.status(400).json({ error: "Invalid or expired OTP" });
 		}
-
-		// **OTP is valid, delete it from storage**
 		delete otpStore[email];
 
-		// Hash the password
+		// ✅ Hash password
 		const hashedPassword = await bcrypt.hash(password, 10);
 
-		// Create new user
+		// ✅ Create new user without requiring phone
 		const newUser = await User.create({
 			first_name,
 			last_name,
 			password_hash: hashedPassword,
 			email,
-			phone_number,
+			phone_number: phone_number || null, // optional
 			location,
-			user_type: user_type || "client", // Default to client if not specified
+			user_type: user_type || "client",
 		});
 
 		console.log(
 			`✅ New user "${newUser.first_name} ${newUser.last_name}" registered.`
 		);
 
-		// **Distribute the user to the correct category (client, provider, admin)**
-		await distributeUsers(newUser);
+		await distributeUser(newUser);
 
-		// **Generate JWT tokens**
+		// ✅ Generate JWT
 		const accessToken = jwt.sign(
 			{
 				userId: newUser.user_id,
@@ -136,26 +144,23 @@ const createUser = async (req, res) => {
 				userType: newUser.user_type,
 			},
 			process.env.JWT_SECRET,
-			{ expiresIn: "7d" } // Access token expires in 15 minutes
+			{ expiresIn: "7d" }
 		);
 
 		const refreshToken = jwt.sign(
 			{ userId: newUser.user_id },
 			process.env.JWT_REFRESH_SECRET,
-			{ expiresIn: "7d" } // Refresh token expires in 7 days
+			{ expiresIn: "7d" }
 		);
 
-		// Store refresh token in memory (replace with database storage in production)
 		refreshTokens.add(refreshToken);
 
-		// **Send refresh token as HTTP-only cookie**
 		res.cookie("refreshToken", refreshToken, {
 			httpOnly: true,
-			secure: true, // Use `true` in production (requires HTTPS)
+			secure: true,
 			sameSite: "Strict",
 		});
 
-		// **Return tokens to frontend**
 		res.status(201).json({
 			message: "User registered successfully!",
 			accessToken,
@@ -308,91 +313,86 @@ const deleteUser = async (req, res) => {
 
 	console.log(`🗑 Attempting to delete user with ID: ${id}`);
 	const transaction = await sequelize.transaction();
-	let deletionFailed = false;
 
 	try {
-		// Delete from provider table
-		try {
-			await sequelize.query(`DELETE FROM provider WHERE user_id = :id`, {
-				replacements: { id },
-				type: QueryTypes.DELETE,
-				transaction,
-			});
-			console.log(`✅ Deleted from provider for user ${id}`);
-		} catch (err) {
-			console.error(`❌ Failed to delete from provider:`, err.message);
-			deletionFailed = true;
-		}
-
-		// Delete from administrator table
-		try {
-			await sequelize.query(`DELETE FROM administrator WHERE user_id = :id`, {
-				replacements: { id },
-				type: QueryTypes.DELETE,
-				transaction,
-			});
-			console.log(`✅ Deleted from administrator for user ${id}`);
-		} catch (err) {
-			console.error(`❌ Failed to delete from administrator:`, err.message);
-			deletionFailed = true;
-		}
-
-		// Delete from client table
-		try {
-			await sequelize.query(`DELETE FROM client WHERE user_id = :id`, {
-				replacements: { id },
-				type: QueryTypes.DELETE,
-				transaction,
-			});
-			console.log(`✅ Deleted from client for user ${id}`);
-		} catch (err) {
-			console.error(`❌ Failed to delete from client:`, err.message);
-			deletionFailed = true;
-		}
-
-		// Delete from user_activity_interaction table using Sequelize model
-		try {
-			await UserActivityInteraction.destroy({
-				where: { user_id: id },
-				transaction,
-			});
-			console.log(`✅ Deleted from user_activity_interaction for user ${id}`);
-		} catch (err) {
-			console.error(
-				`❌ Failed to delete from user_activity_interaction:`,
-				err.message
-			);
-			deletionFailed = true;
-		}
-
-		// If any step failed, rollback
-		if (deletionFailed) {
-			console.warn("⚠️ One or more deletions failed. Rolling back...");
-			await transaction.rollback();
-			return res.status(500).json({
-				success: false,
-				error: "Failed to delete user from one or more related tables.",
-			});
-		}
-
-		// Delete from USER table
-		await User.destroy({
+		// 1️⃣ Handle client bookings
+		const client = await Client.findOne({
 			where: { user_id: id },
 			transaction,
 		});
-		console.log(`✅ User ${id} deleted from USER table.`);
+		if (client) {
+			const clientId = client.client_id;
+			console.log("→ Deleting bookings for client_id:", clientId);
+			await Booking.destroy({ where: { client_id: clientId }, transaction });
+			console.log("   ✅ Client bookings deleted");
+		}
+
+		// 2️⃣ Handle provider activity bookings & soft delete activities
+		const provider = await Provider.findOne({
+			where: { user_id: id },
+			transaction,
+		});
+		if (provider) {
+			const providerId = provider.provider_id;
+
+			const activities = await Activity.findAll({
+				where: { provider_id: providerId },
+				transaction,
+			});
+
+			const activityIds = activities.map((a) => a.activity_id);
+			if (activityIds.length > 0) {
+				console.log(
+					"→ Deleting bookings for provider's activities:",
+					activityIds
+				);
+				await Booking.destroy({
+					where: { activity_id: activityIds },
+					transaction,
+				});
+				console.log("   ✅ Provider's activity bookings deleted");
+
+				console.log("→ Soft-deleting provider's activities...");
+				for (const activity of activities) {
+					await activity.update(
+						{ availability_status: false },
+						{ transaction }
+					);
+					console.log(`   ⛔ Soft-deleted activity ID ${activity.activity_id}`);
+				}
+			}
+		}
+
+		// 3️⃣ Admins — informational only
+		const admin = await Administrator.findOne({
+			where: { user_id: id },
+			transaction,
+		});
+		if (admin) {
+			console.log("ℹ️ Admin account found. Proceeding with deletion.");
+		}
+
+		// 4️⃣ Delete from other tables
+		await Provider.destroy({ where: { user_id: id }, transaction });
+		await Administrator.destroy({ where: { user_id: id }, transaction });
+		await Client.destroy({ where: { user_id: id }, transaction });
+		await UserActivityInteraction.destroy({
+			where: { user_id: id },
+			transaction,
+		});
+		await User.destroy({ where: { user_id: id }, transaction });
 
 		await transaction.commit();
 		res.status(200).json({
 			success: true,
-			message: `User ${id} deleted successfully.`,
+			message: `User ${id} and all related data/bookings/activities deleted.`,
 		});
 	} catch (err) {
-		console.error("❌ Error during user deletion:", err.message);
+		console.error("❌ Error during user deletion:", err);
 		await transaction.rollback();
 		res.status(500).json({
 			success: false,
-			error: "Failed to delete user due to internal server error.",
+			error: err.message || "Server error during user deletion.",
 		});
 	}
 };
@@ -601,18 +601,62 @@ const getDashboard = (req, res) => {
 // ✅ OTP Handlers
 const sendOtp = async (req, res) => {
 	const { email, isForSignup } = req.body;
-	if (!isForSignup) {
-		const user = await User.findOne({ where: { email } });
-		if (!user) return res.status(404).json({ error: "User not found" });
+
+	try {
+		if (!isForSignup) {
+			const user = await User.findOne({ where: { email } });
+			if (!user) return res.status(404).json({ error: "User not found" });
+		}
+
+		const otp = Math.floor(100000 + Math.random() * 900000).toString();
+		otpStore[email] = { otp, expiresAt: Date.now() + 5 * 60 * 1000 };
+
+		const transporter = nodemailer.createTransport({
+			host: process.env.SMTP_HOST,
+			port: process.env.SMTP_PORT,
+			secure: true,
+			auth: {
+				user: process.env.EMAIL,
+				pass: process.env.EMAIL_PASSWORD,
+			},
+		});
+
+		const subject = isForSignup
+			? "Welcome to Adventura! Verify Your Email"
+			: "Adventura Password Reset Request";
+
+		const actionText = isForSignup
+			? "sign up for Adventura"
+			: "reset your Adventura password";
+
+		const htmlContent = `
+			<div style="font-family: Arial, sans-serif; color: #333;">
+				<h2>${subject}</h2>
+				<p>We received a request to ${actionText} using this email address.</p>
+				<p><strong>Your One-Time Password (OTP):</strong></p>
+				<p style="font-size: 24px; font-weight: bold;">${otp}</p>
+				<p>This OTP will expire in <strong>5 minutes</strong>.</p>
+				<p>If you didn't request this, please ignore this message.</p>
+				<p>— The Adventura Team</p>
+			</div>
+		`;
+
+		await transporter.sendMail({
+			from: `"noreply" <${process.env.EMAIL}>`,
+			to: email,
+			subject,
+			html: htmlContent,
+		});
+
+		console.log(`🔐 OTP sent to ${email}: ${otp}`);
+		res.status(200).json({ success: true, message: "OTP sent successfully" });
+	} catch (error) {
+		console.error("❌ Error sending OTP:", error);
+		res.status(500).json({ error: "Failed to send OTP" });
 	}
-	const otp = Math.floor(100000 + Math.random() * 900000).toString();
-	otpStore[email] = { otp, expiresAt: Date.now() + 5 * 60 * 1000 };
-	console.log(`🔐 OTP for ${email}: ${otp}`);
-	// Skipping email logic for brevity
-	res.status(200).json({ success: true, message: "OTP sent successfully" });
 };
 
-const resendOtp = sendOtp; // Logic is the same
+const resendOtp = sendOtp;
 
 const verifyOtp = async (req, res) => {
 	const {
@@ -715,6 +759,7 @@ const deleteProfilePicture = async (req, res) => {
 module.exports = {
 	getAllUsers,
 	getUserById,
+	getUserByIdPublic,
 	createUser,
 	updateUserPreferences,
 	updateUser,

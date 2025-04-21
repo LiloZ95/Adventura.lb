@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:adventura/colors.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
-import 'package:cached_network_image/cached_network_image.dart'; // For better image caching
+import 'package:cached_network_image/cached_network_image.dart';
 
 class LimitedTimeActivitiesWeb extends StatefulWidget {
   final Function? onLoginRequired;
@@ -47,21 +47,52 @@ class _LimitedTimeActivitiesWebState extends State<LimitedTimeActivitiesWeb> {
     }
   }
 
+  // Calculate days left until the event
+  int calculateDaysLeft(Map<String, dynamic> activity) {
+    if (activity['event_date'] != null) {
+      // If event_date is available, use it
+      final DateTime eventDate = DateTime.parse(activity['event_date']);
+      return eventDate.difference(DateTime.now()).inDays;
+    } else if (activity['end_date'] != null && activity['end_date'] != '[null]') {
+      // If end_date is available, use it
+      final DateTime endDate = DateTime.parse(activity['end_date']);
+      return endDate.difference(DateTime.now()).inDays;
+    } else {
+      // Default value if no date information is available
+      return 30; // Default to 30 days
+    }
+  }
+
+  // Get number of seats from the activity data
+  int getNumberOfSeats(Map<String, dynamic> activity) {
+    if (activity.containsKey('nb_seats') && activity['nb_seats'] != null) {
+      // Try to parse the nb_seats as an integer
+      try {
+        return int.parse(activity['nb_seats'].toString());
+      } catch (e) {
+        print('Error parsing nb_seats: $e');
+      }
+    }
+    
+    // Default value if nb_seats is not available or cannot be parsed
+    return activity['spotsLeft'] ?? 0;
+  }
+
   // Get event image URL function with URL fixing
-  String getEventImageUrl(Map<String, dynamic> event) {
-    print('Getting image URL for event: ${event['name'] ?? 'Unknown'}');
+  String getEventImageUrl(Map<String, dynamic> activity) {
+    print('Getting image URL for event: ${activity['name'] ?? 'Unknown'}');
     
     String? imageUrl;
     
     // Try to get image URL from various possible fields
-    if (event.containsKey('image_url') && event['image_url'] != null) {
-      imageUrl = event['image_url'].toString();
+    if (activity.containsKey('image_url') && activity['image_url'] != null) {
+      imageUrl = activity['image_url'].toString();
       print('Found image_url: $imageUrl');
-    } else if (event.containsKey('images') && event['images'] is List && (event['images'] as List).isNotEmpty) {
-      imageUrl = (event['images'] as List).first.toString();
+    } else if (activity.containsKey('images') && activity['images'] is List && (activity['images'] as List).isNotEmpty) {
+      imageUrl = (activity['images'] as List).first.toString();
       print('Found image in images array: $imageUrl');
-    } else if (event.containsKey('image') && event['image'] != null) {
-      imageUrl = event['image'].toString();
+    } else if (activity.containsKey('image') && activity['image'] != null) {
+      imageUrl = activity['image'].toString();
       print('Found image: $imageUrl');
     }
     
@@ -224,9 +255,12 @@ class _LimitedTimeActivitiesWebState extends State<LimitedTimeActivitiesWeb> {
         itemCount: limitedTimeActivities.length,
         itemBuilder: (context, index) {
           final activity = limitedTimeActivities[index];
-          final daysLeft = activity['endDate'] != null
-              ? activity['endDate'].difference(DateTime.now()).inDays
-              : 0;
+          
+          // Calculate days left using the new method
+          final daysLeft = calculateDaysLeft(activity);
+          
+          // Get the number of seats using the new method
+          final seats = getNumberOfSeats(activity);
 
           // Get the image URL using the same function as MainScreen
           final imageUrl = getEventImageUrl(activity);
@@ -258,46 +292,33 @@ class _LimitedTimeActivitiesWebState extends State<LimitedTimeActivitiesWeb> {
                 borderRadius: BorderRadius.circular(20),
                 child: Stack(
                   children: [
-                    // Image background with CachedNetworkImage for better image loading
+                    // Image background with either network image or local asset
                     Positioned.fill(
-                      child: CachedNetworkImage(
-                        imageUrl: imageUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: Colors.grey[200],
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.mainBlue),
-                            ),
-                          ),
-                        ),
-                        errorWidget: (context, url, error) {
-                          print('Error loading image: $error for URL: $imageUrl');
-                          return Container(
-                            color: Colors.grey[300],
-                            child: Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.image,
-                                    size: 80,
-                                    color: Colors.grey[500],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    "Image not available",
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
+                      child: imageUrl.startsWith('assets/') 
+                        ? Image.asset(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                          )
+                        : CachedNetworkImage(
+                            imageUrl: imageUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: Colors.grey[200],
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.mainBlue),
+                                ),
                               ),
                             ),
-                          );
-                        },
-                      ),
+                            errorWidget: (context, url, error) {
+                              print('Error loading image: $error for URL: $imageUrl');
+                              // Fall back to local asset image on error
+                              return Image.asset(
+                                'assets/Pictures/island.jpg',
+                                fit: BoxFit.cover,
+                              );
+                            },
+                          ),
                     ),
 
                     // Gradient overlay
@@ -386,8 +407,7 @@ class _LimitedTimeActivitiesWebState extends State<LimitedTimeActivitiesWeb> {
                                 const SizedBox(width: 8),
                                 _buildInfoChip(
                                   icon: Icons.people,
-                                  text:
-                                      "${activity['spotsLeft'] ?? 0} spots left",
+                                  text: "$seats seats available",
                                   color: Colors.black.withOpacity(0.5),
                                 ),
                               ],
@@ -445,7 +465,7 @@ class _LimitedTimeActivitiesWebState extends State<LimitedTimeActivitiesWeb> {
                     ),
 
                     // Date ribbon
-                    if (activity['event_date'] != null)
+                    if (activity['event_date'] != null && activity['event_date'] != '[null]')
                       Positioned(
                         top: 0,
                         left: 20,

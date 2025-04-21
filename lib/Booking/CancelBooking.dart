@@ -1,6 +1,13 @@
+import 'dart:convert';
+
+import 'package:adventura/config.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class CancelBookingScreen extends StatefulWidget {
+  final String bookingId;
+  const CancelBookingScreen({Key? key, required this.bookingId})
+      : super(key: key);
   @override
   _CancelBookingScreenState createState() => _CancelBookingScreenState();
 }
@@ -177,8 +184,7 @@ class _CancelBookingScreenState extends State<CancelBookingScreen> {
                               // If "Another reason" is selected, show the text field inline.
                               if (selectedReason == 4)
                                 Padding(
-                                  padding:
-                                      const EdgeInsets.only(top: 16.0),
+                                  padding: const EdgeInsets.only(top: 16.0),
                                   child: TextField(
                                     controller: reasonController,
                                     maxLines: 3,
@@ -190,24 +196,21 @@ class _CancelBookingScreenState extends State<CancelBookingScreen> {
                                         color: Colors.grey[400],
                                       ),
                                       border: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10),
+                                        borderRadius: BorderRadius.circular(10),
                                         borderSide: BorderSide(
                                           color: Colors.grey[400]!,
                                           width: 1,
                                         ),
                                       ),
                                       enabledBorder: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10),
+                                        borderRadius: BorderRadius.circular(10),
                                         borderSide: BorderSide(
                                           color: Colors.grey[400]!,
                                           width: 1,
                                         ),
                                       ),
                                       focusedBorder: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10),
+                                        borderRadius: BorderRadius.circular(10),
                                         borderSide: BorderSide(
                                           color: Colors.blue,
                                           width: 1,
@@ -227,13 +230,40 @@ class _CancelBookingScreenState extends State<CancelBookingScreen> {
                             child: SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
-                                onPressed: () {
-                                  print(
-                                      "Cancelled for reason: ${selectedReason != null ? reasons[selectedReason!] : reasons[0]}");
-                                  if (selectedReason == 4) {
-                                    print("Additional comment: ${reasonController.text}");
+                                onPressed: () async {
+                                  // final reason = selectedReason == 4
+                                  //     ? reasonController.text.trim()
+                                  //     : reasons[selectedReason ?? 0];
+
+                                  // final bookingId = widget
+                                  //     .bookingId; // ✅ already passed from parent
+
+                                  final response = await http.put(
+                                    Uri.parse(
+                                        '$baseUrl/booking/cancel/${widget.bookingId}'), // 👈 no # here
+                                    headers: {
+                                      'Content-Type': 'application/json'
+                                    },
+                                    body: jsonEncode({
+                                      'reason': selectedReason == 4
+                                          ? reasonController.text
+                                          : reasons[selectedReason ?? 0],
+                                    }),
+                                  );
+
+                                  if (response.statusCode == 200) {
+                                    Navigator.pop(context); // Close modal
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text("✅ Booking cancelled")),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text("❌ Failed to cancel"),
+                                          backgroundColor: Colors.red),
+                                    );
                                   }
-                                  Navigator.pop(context);
                                 },
                                 child: Text(
                                   "Cancel Booking",

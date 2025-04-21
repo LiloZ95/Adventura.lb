@@ -1,7 +1,9 @@
 const jwt = require("jsonwebtoken");
+const Provider = require("../models/Provider");
+const User = require("../models/User");
 require("dotenv").config();
 
-function authenticateToken(req, res, next) {
+async function authenticateToken(req, res, next) {
 	const authHeader = req.headers["authorization"];
 	const token = authHeader && authHeader.split(" ")[1];
 
@@ -12,23 +14,40 @@ function authenticateToken(req, res, next) {
 
 	console.log("🔍 Received Token:", token);
 
-	jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-		if (err) {
-			console.error("❌ Token verification failed:", err.message);
-			return res.status(403).json({ error: "Invalid token" });
-		}
+	try {
+		const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-		console.log("✅ Decoded User:", user);
-
-		if (!user.userId) {
-			console.error("❌ Token payload does not contain userId:", user);
+		if (!decoded.userId) {
+			console.error("❌ Token payload does not contain userId:", decoded);
 			return res.status(400).json({ error: "Invalid token payload" });
 		}
 
-		req.user = user; // ✅ Attach the userId to `req.user`
-		console.log("🔹 User attached to request:", req.user);
+		const user = await User.findByPk(decoded.userId);
+
+		if (!user) {
+			console.error("❌ User not found in database.");
+			return res.status(403).json({ error: "User not found" });
+		}
+
+		// ✅ Now safely fetch provider after decoding userId
+		const provider = await Provider.findOne({
+			where: { user_id: user.user_id },
+		});
+
+		req.user = {
+			userId: user.user_id,
+			provider_id: provider?.provider_id || null,
+			user_type: user.user_type,
+			email: user.email,
+		};
+
+		console.log("🔐 ✅ Final decoded user:", req.user);
+
 		next();
-	});
+	} catch (err) {
+		console.error("❌ Token verification failed:", err.message);
+		return res.status(403).json({ error: "Invalid token" });
+	}
 }
 
 module.exports = { authenticateToken };

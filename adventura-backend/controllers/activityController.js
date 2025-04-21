@@ -3,6 +3,7 @@ const { Op, Sequelize, QueryTypes } = require("sequelize");
 const { sequelize } = require("../db/db");
 const TripPlan = require("../models/TripPlan");
 const Feature = require("../models/Feature");
+const Availability = require("../models/Availability");
 
 // Utility to extract latitude & longitude from Google Maps URL
 function extractLatLonFromUrl(googleMapsUrl) {
@@ -16,6 +17,23 @@ function extractLatLonFromUrl(googleMapsUrl) {
 
 function isValid12HourTime(time) {
 	return /^(0?[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$/i.test(time);
+}
+
+function parseTime(timeStr) {
+	const [time, modifier] = timeStr.split(" ");
+	let [hours, minutes] = time.split(":").map(Number);
+
+	if (modifier === "PM" && hours < 12) hours += 12;
+	if (modifier === "AM" && hours === 12) hours = 0;
+
+	const now = new Date();
+	return new Date(
+		now.getFullYear(),
+		now.getMonth(),
+		now.getDate(),
+		hours,
+		minutes
+	);
 }
 
 // 🟢 Create new activity
@@ -39,6 +57,10 @@ const createActivity = async (req, res) => {
 			from_time,
 			to_time,
 			listing_type,
+			duration_minutes,
+			repeat_days,
+			start_date,
+			end_date,
 		} = req.body;
 
 		console.log("🧠 [createActivity] req.user:", req.user);
@@ -78,9 +100,72 @@ const createActivity = async (req, res) => {
 				to_time,
 				provider_id,
 				listing_type,
+				duration_minutes,
+				start_date, 
+				end_date,
 			},
 			{ transaction: t }
 		);
+
+		if (
+			listing_type === "recurrent" &&
+			duration_minutes &&
+			Array.isArray(repeat_days)
+		) {
+			const start = parseTime(from_time);
+			const end = parseTime(to_time);
+			const slots = [];
+
+			// 1. Generate time slots based on duration
+			for (
+				let current = new Date(start);
+				current < end;
+				current.setMinutes(current.getMinutes() + duration_minutes)
+			) {
+				const timeStr = current.toLocaleTimeString([], {
+					hour: "2-digit",
+					minute: "2-digit",
+					hour12: true,
+				});
+				slots.push(timeStr);
+			}
+
+			// 2. Create recurrence dates based on selected range and weekdays
+			const recurrenceDates = [];
+			const startDate = new Date(req.body.start_date);
+			const endDate = new Date(req.body.end_date);
+
+			for (
+				let date = new Date(startDate);
+				date <= endDate;
+				date.setDate(date.getDate() + 1)
+			) {
+				const weekday = date.toLocaleDateString("en-US", { weekday: "long" });
+				if (repeat_days.includes(weekday)) {
+					recurrenceDates.push(date.toISOString().split("T")[0]);
+				}
+			}
+
+			// 3. Create availability entries
+			const availabilityEntries = [];
+			for (const date of recurrenceDates) {
+				for (const slot of slots) {
+					availabilityEntries.push({
+						activity_id: newActivity.activity_id,
+						date,
+						slot,
+						capacity: nb_seats,
+						available_seats: nb_seats,
+					});
+				}
+			}
+
+			console.log("🧪 repeat_days:", repeat_days);
+			console.log("🧪 slots to insert:", availabilityEntries.length);
+			console.log("🧪 First few slots:", availabilityEntries.slice(0, 3));
+
+			await Availability.bulkCreate(availabilityEntries, { transaction: t });
+		}
 
 		// 🧠 Save trip plans (MUST BE valid array)
 		if (trip_plan && Array.isArray(trip_plan)) {
@@ -178,11 +263,24 @@ const getAllActivities = async (req, res) => {
 		const activities = await Activity.findAll({
 			where,
 			attributes: [
-				"activity_id", "name", "description", "location", "price", "availability_status",
-				"nb_seats", "category_id", "latitude", "longitude",
-				"from_time", "to_time", "provider_id", "listing_type", "event_date",
-				"createdAt", "updatedAt"
-			  ],
+				"activity_id",
+				"name",
+				"description",
+				"location",
+				"price",
+				"availability_status",
+				"nb_seats",
+				"category_id",
+				"latitude",
+				"longitude",
+				"from_time",
+				"to_time",
+				"provider_id",
+				"listing_type",
+				"event_date",
+				"createdAt",
+				"updatedAt",
+			],
 			include: [
 				{
 					model: ActivityImage,
@@ -424,7 +522,6 @@ const softDeleteActivity = async (req, res) => {
 async function deactivatePastEvents() {
 	// try {
 	// 	const now = new Date();
-
 	// 	const expiredEvents = await Activity.update(
 	// 		{ availability_status: false },
 	// 		{
@@ -435,7 +532,6 @@ async function deactivatePastEvents() {
 	// 			},
 	// 		}
 	// 	);
-
 	// 	console.log(`🕒 Deactivated ${expiredEvents[0]} expired one-time events`);
 	// } catch (error) {
 	// 	console.error("❌ Error deactivating past events:", error);
@@ -478,40 +574,40 @@ const getExpiredActivitiesByProvider = async (req, res) => {
 
 const getAllEvents = async (req, res) => {
 	try {
-	  const { search, category, location, min_price, max_price } = req.query;
-	  const where = {
-		listing_type: 'one_time', // 🎯 fetch events only
-	  };
-  
-	  if (category) where.category_id = parseInt(category);
-	  if (search) where.name = { [Op.iLike]: `%${search}%` };
-	  if (location) where.location = { [Op.iLike]: `%${location}%` };
-	  if (min_price) where.price = { [Op.gte]: parseFloat(min_price) };
-	  if (max_price) {
-		where.price = {
-		  ...(where.price || {}),
-		  [Op.lte]: parseFloat(max_price),
+		const { search, category, location, min_price, max_price } = req.query;
+		const where = {
+			listing_type: "one_time", // 🎯 fetch events only
 		};
-	  }
-  
-	  const events = await Activity.findAll({
-		where,
-		include: [
-		  {
-			model: ActivityImage,
-			as: "activity_images",
-			attributes: ["image_url"],
-		  },
-		],
-	  });
-  
-	  res.status(200).json({ events }); // ⚠️ important: wrap in `events` for frontend
+
+		if (category) where.category_id = parseInt(category);
+		if (search) where.name = { [Op.iLike]: `%${search}%` };
+		if (location) where.location = { [Op.iLike]: `%${location}%` };
+		if (min_price) where.price = { [Op.gte]: parseFloat(min_price) };
+		if (max_price) {
+			where.price = {
+				...(where.price || {}),
+				[Op.lte]: parseFloat(max_price),
+			};
+		}
+
+		const events = await Activity.findAll({
+			where,
+			include: [
+				{
+					model: ActivityImage,
+					as: "activity_images",
+					attributes: ["image_url"],
+				},
+			],
+		});
+
+		res.status(200).json({ events }); // ⚠️ important: wrap in `events` for frontend
 	} catch (error) {
-	  console.error("❌ Error fetching events:", error);
-	  res.status(500).json({ error: "Server error." });
+		console.error("❌ Error fetching events:", error);
+		res.status(500).json({ error: "Server error." });
 	}
-  };
-  
+};
+
 module.exports = {
 	createActivity,
 	getAllActivities,
@@ -524,5 +620,5 @@ module.exports = {
 	softDeleteActivity,
 	deactivatePastEvents,
 	getExpiredActivitiesByProvider,
-	getAllEvents
+	getAllEvents,
 };

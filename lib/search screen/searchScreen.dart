@@ -88,36 +88,64 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   // Show filter dialog - improved for web
-  void showFilterDialog() {
-    if (kIsWeb) {
-      // Web-specific filter dialog (wider, more space)
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              return Dialog(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+void showFilterDialog() {
+  if (kIsWeb) {
+    // Enhanced web-specific filter dialog with improved design
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.6,
+                height: MediaQuery.of(context).size.height * 0.8,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: Container(
-                  width: MediaQuery.of(context).size.width * 0.75,
-                  padding: const EdgeInsets.all(32.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
+                child: Column(
+                  children: [
+                    // Header section with improved styling
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(32, 24, 32, 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
                             "Filters",
                             style: TextStyle(
-                              fontSize: 28,
+                              fontSize: 24,
                               fontWeight: FontWeight.bold,
                               fontFamily: 'Poppins',
+                              color: Color(0xFF333333),
                             ),
                           ),
-                          TextButton(
+                          TextButton.icon(
                             onPressed: () {
                               setState(() {
                                 selectedRatings.clear();
@@ -131,437 +159,486 @@ class _SearchScreenState extends State<SearchScreen>
                                 budgetMaxController.clear();
                               });
                             },
-                            child: const Text(
+                            icon: const Icon(
+                              Icons.refresh_rounded,
+                              color: AppColors.mainBlue,
+                              size: 18,
+                            ),
+                            label: const Text(
                               "Reset All",
                               style: TextStyle(
                                 color: AppColors.mainBlue,
                                 fontSize: 16,
+                                fontWeight: FontWeight.w500,
                                 fontFamily: 'Poppins',
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const Divider(thickness: 1.5),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Categories for web (grid layout)
-                              const Text(
-                                "Categories",
-                                style: TextStyle(
-                                  fontFamily: 'poppins',
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                    ),
+                    
+                    const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
+                    
+                    // Main content area
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Categories with improved styling
+                            Row(
+                              children: [
+                                const Icon(Icons.category_outlined, color: AppColors.mainBlue, size: 22),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  "Categories",
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF333333),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 12),
-                              Wrap(
-                                spacing: 12,
-                                runSpacing: 12,
-                                children: categories.map((category) {
-                                  bool isSelected =
-                                      selectedCategories.contains(category);
-                                  return FilterChip(
-                                    label: Text(category),
-                                    selected: isSelected,
-                                    onSelected: (bool selected) {
-                                      setState(() {
-                                        if (selected) {
-                                          selectedCategories.clear();
-                                          selectedCategories.add(category);
-                                        } else {
-                                          selectedCategories.remove(category);
-                                        }
-                                      });
-                                    },
-                                    backgroundColor: Colors.white,
-                                    selectedColor:
-                                        AppColors.mainBlue.withOpacity(0.9),
-                                    checkmarkColor: Colors.white,
-                                    labelStyle: TextStyle(
-                                      color: isSelected
-                                          ? Colors.white
-                                          : Colors.black,
-                                      fontSize: 15,
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: categories.map((category) {
+                                bool isSelected = selectedCategories.contains(category);
+                                return FilterChip(
+                                  label: Text(category),
+                                  selected: isSelected,
+                                  onSelected: (bool selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        selectedCategories.clear();
+                                        selectedCategories.add(category);
+                                      } else {
+                                        selectedCategories.remove(category);
+                                      }
+                                    });
+                                  },
+                                  backgroundColor: Colors.white,
+                                  selectedColor: AppColors.mainBlue.withOpacity(0.9),
+                                  checkmarkColor: Colors.white,
+                                  labelStyle: TextStyle(
+                                    color: isSelected ? Colors.white : Colors.black87,
+                                    fontSize: 14,
+                                    fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    side: BorderSide(
+                                      color: isSelected ? Colors.transparent : Colors.grey.shade300,
+                                      width: 1.5,
                                     ),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 12),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      side: BorderSide(
-                                        color: isSelected
-                                            ? Colors.transparent
-                                            : Colors.grey.shade300,
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                              const SizedBox(height: 28),
+                                  ),
+                                  elevation: isSelected ? 1 : 0,
+                                  pressElevation: 2,
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 28),
 
-                              // Rating section
-                              const Text(
-                                "Rating",
-                                style: TextStyle(
-                                  fontFamily: 'poppins',
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                            // Rating section with improved styling
+                            Row(
+                              children: [
+                                const Icon(Icons.star_border_rounded, color: AppColors.mainBlue, size: 22),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  "Rating",
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF333333),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 12),
-                              Wrap(
-                                spacing: 12,
-                                children: List.generate(
-                                  5,
-                                  (index) {
-                                    int rating = index + 1;
-                                    return FilterChip(
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Wrap(
+                              spacing: 10,
+                              children: List.generate(
+                                5,
+                                (index) {
+                                  int rating = index + 1;
+                                  bool isSelected = selectedRatings.contains(rating);
+                                  return AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    child: FilterChip(
                                       label: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Icon(
-                                            Icons.star,
+                                            isSelected ? Icons.star_rounded : Icons.star_outline_rounded,
                                             size: 18,
-                                            color:
-                                                selectedRatings.contains(rating)
-                                                    ? Colors.amber
-                                                    : Colors.grey,
+                                            color: isSelected ? Colors.amber : Colors.grey.shade600,
                                           ),
-                                          const SizedBox(width: 6),
+                                          const SizedBox(width: 4),
                                           Text(
                                             "$rating",
-                                            style: const TextStyle(
-                                              fontSize: 15,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: isSelected ? Colors.white : Colors.black87,
+                                              fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
                                             ),
                                           ),
                                         ],
                                       ),
-                                      selected:
-                                          selectedRatings.contains(rating),
+                                      selected: isSelected,
                                       onSelected: (bool selected) {
                                         setState(() {
-                                          selected
-                                              ? selectedRatings.add(rating)
-                                              : selectedRatings.remove(rating);
+                                          selected ? selectedRatings.add(rating) : selectedRatings.remove(rating);
                                         });
                                       },
                                       backgroundColor: Colors.white,
                                       selectedColor: AppColors.mainBlue,
-                                      labelStyle: TextStyle(
-                                        color: selectedRatings.contains(rating)
-                                            ? Colors.white
-                                            : Colors.black,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 12),
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(8),
                                         side: BorderSide(
-                                          color:
-                                              selectedRatings.contains(rating)
-                                                  ? Colors.transparent
-                                                  : Colors.grey.shade300,
+                                          color: isSelected ? Colors.transparent : Colors.grey.shade300,
                                           width: 1.5,
                                         ),
                                       ),
-                                    );
+                                      elevation: isSelected ? 1 : 0,
+                                      pressElevation: 2,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 28),
+
+                            // Sort by section with improved styling
+                            Row(
+                              children: [
+                                const Icon(Icons.sort_rounded, color: AppColors.mainBlue, size: 22),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  "Sort By",
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF333333),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: ["All", "Limited", "New", "Popular", "Nearby"].map((sortOption) {
+                                bool isSelected = selectedSorts.contains(sortOption);
+                                return FilterChip(
+                                  label: Text(
+                                    sortOption,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: isSelected ? Colors.white : Colors.black87,
+                                      fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                                    ),
+                                  ),
+                                  selected: isSelected,
+                                  onSelected: (bool selected) {
+                                    setState(() {
+                                      selected ? selectedSorts.add(sortOption) : selectedSorts.remove(sortOption);
+                                    });
                                   },
-                                ),
-                              ),
-                              const SizedBox(height: 28),
+                                  backgroundColor: Colors.white,
+                                  selectedColor: AppColors.mainBlue,
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    side: BorderSide(
+                                      color: isSelected ? Colors.transparent : Colors.grey.shade300,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  elevation: isSelected ? 1 : 0,
+                                  pressElevation: 2,
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 28),
 
-                              // Sort by section
-                              const Text(
-                                "Sort By",
-                                style: TextStyle(
-                                  fontFamily: 'poppins',
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                            // Budget and Location in a responsive grid layout
+                            const Row(
+                              children: [
+                                Icon(Icons.tune_rounded, color: AppColors.mainBlue, size: 22),
+                                SizedBox(width: 8),
+                                Text(
+                                  "Additional Filters",
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF333333),
+                                  ),
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            
+                            // Budget section with improved styling
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8F9FA),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFE8E8E8), width: 1),
                               ),
-                              const SizedBox(height: 12),
-                              Wrap(
-                                spacing: 12,
-                                runSpacing: 12,
-                                children: [
-                                  "All",
-                                  "Limited",
-                                  "New",
-                                  "Popular",
-                                  "Nearby"
-                                ]
-                                    .map((sortOption) => FilterChip(
-                                          label: Text(
-                                            sortOption,
-                                            style: const TextStyle(
-                                              fontSize: 15,
-                                            ),
-                                          ),
-                                          selected: selectedSorts
-                                              .contains(sortOption),
-                                          onSelected: (bool selected) {
-                                            setState(() {
-                                              selected
-                                                  ? selectedSorts
-                                                      .add(sortOption)
-                                                  : selectedSorts
-                                                      .remove(sortOption);
-                                            });
-                                          },
-                                          backgroundColor: Colors.white,
-                                          selectedColor: AppColors.mainBlue,
-                                          labelStyle: TextStyle(
-                                            color: selectedSorts
-                                                    .contains(sortOption)
-                                                ? Colors.white
-                                                : Colors.black,
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 12),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            side: BorderSide(
-                                              color: selectedSorts
-                                                      .contains(sortOption)
-                                                  ? Colors.transparent
-                                                  : Colors.grey.shade300,
-                                              width: 1.5,
-                                            ),
-                                          ),
-                                        ))
-                                    .toList(),
-                              ),
-                              const SizedBox(height: 28),
-
-                              // Budget and Location in same row for web
-                              Row(
+                              child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Budget section
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          "Budget",
-                                          style: TextStyle(
-                                            fontFamily: 'poppins',
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
+                                  const Row(
+                                    children: [
+                                      Icon(Icons.account_balance_wallet_outlined, size: 18, color: Color(0xFF666666)),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        "Budget",
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF444444),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(8),
+                                            color: Colors.white,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withOpacity(0.05),
+                                                blurRadius: 4,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: TextField(
+                                            controller: budgetMinController,
+                                            keyboardType: TextInputType.number,
+                                            decoration: InputDecoration(
+                                              labelText: "Min",
+                                              labelStyle: TextStyle(
+                                                color: Colors.grey[700],
+                                                fontSize: 14,
+                                              ),
+                                              prefixIcon: Icon(Icons.remove, size: 18, color: Colors.grey[500]),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                                borderSide: const BorderSide(color: AppColors.mainBlue, width: 1.5),
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                                borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+                                              ),
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                                            ),
+                                            onChanged: (value) {
+                                              setState(() {
+                                                budgetMin = double.tryParse(value) ?? 0;
+                                              });
+                                            },
+                                            style: const TextStyle(fontSize: 14),
                                           ),
                                         ),
-                                        const SizedBox(height: 12),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: TextField(
-                                                controller: budgetMinController,
-                                                keyboardType:
-                                                    TextInputType.number,
-                                                decoration: InputDecoration(
-                                                  labelText: "Min",
-                                                  labelStyle: const TextStyle(
-                                                    color: Colors.black87,
-                                                    fontSize: 16,
-                                                  ),
-                                                  focusedBorder:
-                                                      OutlineInputBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                    borderSide:
-                                                        const BorderSide(
-                                                            color: AppColors
-                                                                .mainBlue,
-                                                            width: 2),
-                                                  ),
-                                                  enabledBorder:
-                                                      OutlineInputBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                    borderSide: BorderSide(
-                                                        color: Colors
-                                                            .grey.shade300,
-                                                        width: 1.5),
-                                                  ),
-                                                  contentPadding:
-                                                      const EdgeInsets
-                                                          .symmetric(
-                                                          horizontal: 16,
-                                                          vertical: 18),
-                                                ),
-                                                onChanged: (value) {
-                                                  setState(() {
-                                                    budgetMin = double.tryParse(
-                                                            value) ??
-                                                        0;
-                                                  });
-                                                },
-                                                style: const TextStyle(
-                                                    fontSize: 16),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(8),
+                                            color: Colors.white,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withOpacity(0.05),
+                                                blurRadius: 4,
+                                                offset: const Offset(0, 2),
                                               ),
-                                            ),
-                                            const SizedBox(width: 20),
-                                            Expanded(
-                                              child: TextField(
-                                                controller: budgetMaxController,
-                                                keyboardType:
-                                                    TextInputType.number,
-                                                decoration: InputDecoration(
-                                                  labelText: "Max",
-                                                  labelStyle: const TextStyle(
-                                                    color: Colors.black87,
-                                                    fontSize: 16,
-                                                  ),
-                                                  focusedBorder:
-                                                      OutlineInputBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                    borderSide:
-                                                        const BorderSide(
-                                                            color: AppColors
-                                                                .mainBlue,
-                                                            width: 2),
-                                                  ),
-                                                  enabledBorder:
-                                                      OutlineInputBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                    borderSide: BorderSide(
-                                                        color: Colors
-                                                            .grey.shade300,
-                                                        width: 1.5),
-                                                  ),
-                                                  contentPadding:
-                                                      const EdgeInsets
-                                                          .symmetric(
-                                                          horizontal: 16,
-                                                          vertical: 18),
-                                                ),
-                                                onChanged: (value) {
-                                                  setState(() {
-                                                    budgetMax =
-                                                        double.tryParse(value);
-                                                  });
-                                                },
-                                                style: const TextStyle(
-                                                    fontSize: 16),
+                                            ],
+                                          ),
+                                          child: TextField(
+                                            controller: budgetMaxController,
+                                            keyboardType: TextInputType.number,
+                                            decoration: InputDecoration(
+                                              labelText: "Max",
+                                              labelStyle: TextStyle(
+                                                color: Colors.grey[700],
+                                                fontSize: 14,
                                               ),
+                                              prefixIcon: Icon(Icons.add, size: 18, color: Colors.grey[500]),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                                borderSide: const BorderSide(color: AppColors.mainBlue, width: 1.5),
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                                borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+                                              ),
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                                             ),
-                                          ],
+                                            onChanged: (value) {
+                                              setState(() {
+                                                budgetMax = double.tryParse(value);
+                                              });
+                                            },
+                                            style: const TextStyle(fontSize: 14),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            
+                            // Location section with improved styling
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8F9FA),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFE8E8E8), width: 1),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Row(
+                                    children: [
+                                      Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF666666)),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        "Location",
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF444444),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                      color: Colors.white,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  const SizedBox(width: 32),
-                                  // Location section
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          "Location",
-                                          style: TextStyle(
-                                            fontFamily: 'poppins',
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
+                                    child: DropdownButtonFormField<String>(
+                                      value: selectedLocation,
+                                      items: [
+                                        "Tripoli",
+                                        "Beirut",
+                                        "Jbeil",
+                                        "Jounieh",
+                                        "all",
+                                      ].map((location) {
+                                        return DropdownMenuItem(
+                                          value: location,
+                                          child: Text(
+                                            location,
+                                            style: const TextStyle(
+                                              color: Colors.black87,
+                                              fontSize: 14,
+                                            ),
                                           ),
+                                        );
+                                      }).toList(),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          selectedLocation = value;
+                                        });
+                                      },
+                                      decoration: InputDecoration(
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
                                         ),
-                                        const SizedBox(height: 12),
-                                        DropdownButtonFormField<String>(
-                                          value: selectedLocation,
-                                          items: [
-                                            "Tripoli",
-                                            "Beirut",
-                                            "Jbeil",
-                                            "Jounieh",
-                                            "all",
-                                          ].map((location) {
-                                            return DropdownMenuItem(
-                                              value: location,
-                                              child: Text(
-                                                location,
-                                                style: const TextStyle(
-                                                  color: Colors.black87,
-                                                  fontSize: 16,
-                                                ),
-                                              ),
-                                            );
-                                          }).toList(),
-                                          onChanged: (value) {
-                                            setState(() {
-                                              selectedLocation = value;
-                                            });
-                                          },
-                                          decoration: InputDecoration(
-                                            border: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            enabledBorder: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              borderSide: BorderSide(
-                                                  color: Colors.grey.shade300,
-                                                  width: 1.5),
-                                            ),
-                                            focusedBorder: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              borderSide: const BorderSide(
-                                                  color: AppColors.mainBlue,
-                                                  width: 2),
-                                            ),
-                                            contentPadding:
-                                                const EdgeInsets.symmetric(
-                                                    horizontal: 16,
-                                                    vertical: 18),
-                                          ),
-                                          style: const TextStyle(fontSize: 16),
-                                          icon: const Icon(
-                                              Icons.keyboard_arrow_down,
-                                              color: AppColors.mainBlue),
-                                          dropdownColor: Colors.white,
-                                          isExpanded: true,
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
                                         ),
-                                      ],
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: const BorderSide(color: AppColors.mainBlue, width: 1.5),
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                        prefixIcon: Icon(Icons.place_outlined, size: 18, color: Colors.grey[500]),
+                                      ),
+                                      style: const TextStyle(fontSize: 14),
+                                      icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.mainBlue, size: 20),
+                                      dropdownColor: Colors.white,
+                                      isExpanded: true,
                                     ),
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      Row(
+                    ),
+                    
+                    // Footer actions with improved styling
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(32, 16, 32, 24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(16),
+                          bottomRight: Radius.circular(16),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, -2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           TextButton(
                             onPressed: () {
                               Navigator.pop(context);
                             },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
-                              child: Text(
-                                "Cancel",
-                                style: TextStyle(
-                                  color: Colors.grey[700],
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              "Cancel",
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
@@ -573,119 +650,127 @@ class _SearchScreenState extends State<SearchScreen>
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.mainBlue,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 32, vertical: 16),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               elevation: 0,
                             ),
-                            child: const Text(
-                              "Apply Filters",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Poppins',
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.filter_list, size: 18),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  "Apply Filters",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              );
-            },
-          );
-        },
-      );
-    } else {
-      // Original mobile bottom sheet for non-web platforms
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        builder: (BuildContext context) {
-          return StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              return Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(32),
-                  color: Colors.white,
-                ),
-                child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Original mobile filter UI
-                          Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      selectedRatings.clear();
-                                      selectedSorts.clear();
-                                      selectedReviews.clear();
-                                      budgetMin = 0;
-                                      budgetMax = 0;
-                                      selectedLocation = "all";
-                                      selectedCategories.clear();
-                                      budgetMinController.clear();
-                                      budgetMaxController.clear();
-                                    });
-                                  },
-                                  child: const Text(
-                                    "Reset",
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      fontFamily: 'Poppins',
-                                    ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  } else {
+    // Original mobile bottom sheet for non-web platforms (unchanged)
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(32),
+                color: Colors.white,
+              ),
+              child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Original mobile filter UI
+                        Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    selectedRatings.clear();
+                                    selectedSorts.clear();
+                                    selectedReviews.clear();
+                                    budgetMin = 0;
+                                    budgetMax = 0;
+                                    selectedLocation = "all";
+                                    selectedCategories.clear();
+                                    budgetMinController.clear();
+                                    budgetMaxController.clear();
+                                  });
+                                },
+                                child: const Text(
+                                  "Reset",
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Poppins',
                                   ),
-                                )
-                              ]),
-                          // Rest of original mobile UI code...
-
-                          // Apply Button
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                                _fetchResults(); // Trigger search when filters are applied
-                              },
-                              child: const Text(
-                                "Apply",
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.white,
-                                    fontFamily: 'poppins'),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.mainBlue,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
                                 ),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 20),
-                              ),
+                              )
+                            ]),
+                        // Rest of original mobile UI code...
+
+                        // Apply Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _fetchResults(); // Trigger search when filters are applied
+                            },
+                            child: const Text(
+                              "Apply",
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                  fontFamily: 'poppins'),
                             ),
-                          )
-                        ],
-                      ),
-                    )),
-              );
-            },
-          );
-        },
-      );
-    }
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.mainBlue,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 20),
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
+                  )),
+            );
+          },
+        );
+      },
+    );
   }
+}
 
   Future<void> _fetchResults() async {
     String searchText = searchController.text.trim();
@@ -807,72 +892,9 @@ class _SearchScreenState extends State<SearchScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    InkWell(
-                      onTap: () {
-                        Navigator.pop(context);
-                      },
-                      child: Container(
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.8),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.arrow_back,
-                          color: Colors.black87,
-                          size: 24,
-                        ),
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        kIsWeb
-                            ? const Expanded(
-                                child: Text(
-                                  "Discover Your Next Adventure",
-                                  style: TextStyle(
-                                    height: 1.1,
-                                    fontSize: 36,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'Poppins',
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              )
-                            : const Text(
-                                "Search what you \ndesire",
-                                style: TextStyle(
-                                  height: 0.96,
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'Poppins',
-                                  color: Colors.black,
-                                ),
-                              ),
-                        if (kIsWeb)
-                          Image.asset(
-                            'assets/images/logo.png',
-                            height: 60,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Container(
-                              height: 60,
-                              width: 60,
-                              color: Colors.grey.shade200,
-                              child: const Center(
-                                child: Text(
-                                  "LOGO",
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
+                   
+           
+               
 
                     // Search and Filter Row
                     Row(
@@ -901,62 +923,48 @@ class _SearchScreenState extends State<SearchScreen>
                         const SizedBox(width: 16),
 
                         // Search Bar
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: TextField(
-                              controller: searchController,
-                              onChanged: (value) => _fetchResults(),
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: Colors.grey.shade100,
-                                hintText:
-                                    "Search destinations, activities, events...",
-                                hintStyle: const TextStyle(
-                                  fontFamily: 'Poppins',
-                                  color: Colors.grey,
-                                  fontSize: 16,
-                                ),
-                                prefixIcon: Padding(
-                                  padding: const EdgeInsets.all(12.0),
-                                  child: Icon(Icons.search,
-                                      color: Colors.grey.shade700, size: 24),
-                                ),
-                                suffixIcon: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.mainBlue,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Icon(Icons.mic,
-                                        color: Colors.white),
-                                  ),
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide.none,
-                                ),
-                                contentPadding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                              ),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
-                          ),
-                        ),
+                       Expanded(
+  child: Container(
+
+    child: Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: searchController,
+            onChanged: (value) => _fetchResults(),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.grey.shade100,
+              hintText: "Search destinations, activities, events...",
+              hintStyle: const TextStyle(
+                fontFamily: 'Poppins',
+                color: Colors.grey,
+                fontSize: 16,
+              ),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Icon(Icons.search,
+                    color: Colors.grey.shade700, size: 24),
+              ),
+           
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(vertical: 16),
+            ),
+            style: const TextStyle(
+              fontSize: 16,
+              fontFamily: 'Poppins',
+            ),
+          ),
+        ),
+        
+      ],
+    ),
+  ),
+),
                       ],
                     ),
                   ],
@@ -1101,7 +1109,7 @@ class _SearchScreenState extends State<SearchScreen>
                                                   : (screenWidth > 800
                                                       ? 2
                                                       : 1)),
-                                          childAspectRatio: 0.85,
+                                          childAspectRatio: 1.1,
                                           crossAxisSpacing: 24,
                                           mainAxisSpacing: 24,
                                         ),
