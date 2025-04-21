@@ -20,7 +20,7 @@ const UniversalNotificationModel = require("./UniversalNotification");
 const Notification = NotificationModel(sequelize, DataTypes);
 const UniversalNotification = UniversalNotificationModel(sequelize, DataTypes);
 const Payment = require('./Payment')(sequelize, DataTypes);
-
+const ProviderRequest = require('./providerRequest'); // ✅ make sure path is correct
 
 
 // ✅ Define Relationships
@@ -135,6 +135,7 @@ module.exports = {
   User,
   Payment,
   Provider,
+  ProviderRequest,
   availability,
   ActivityCategory,
   Notification,
