@@ -1,4 +1,4 @@
-const { sequelize, Booking, Payment, Activity, ActivityCategory, User, Provider, Client, Administrator } = require('../models');
+const { sequelize, Booking, Payment, Notification, ProviderRequest, Activity, ActivityCategory, User, Provider, Client, Administrator } = require('../models');
 // GET all activities with category name
 const getAllActivities = async (req, res) => {
   try {
@@ -364,8 +364,6 @@ const modifyUser = async (req, res) => {
       res.status(500).json({ error: err.message });
     }
   };
-  const ProviderRequest = require('../models/providerRequest'); // make sure this path is correct
-
 // Get all provider requests
 const getAllProviderRequests = async (req, res) => {
   try {
@@ -382,19 +380,43 @@ const getAllProviderRequests = async (req, res) => {
 // Approve provider request
 const approveProviderRequest = async (req, res) => {
   const { id } = req.params;
+
   try {
-    const updated = await ProviderRequest.update(
+    const request = await ProviderRequest.findOne({ where: { request_id: id } });
+
+    if (!request) return res.status(404).json({ message: "Request not found" });
+
+    const user = await User.findOne({ where: { user_id: request.user_id } });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    await ProviderRequest.update(
       { status: 'approved' },
       { where: { request_id: id } }
     );
 
-    if (updated[0] === 0) {
-      return res.status(404).json({ message: "Request not found" });
-    }
+    await Provider.create({
+      user_id: request.user_id,
+      birth_date: request.birth_date || new Date('2000-01-01'),
+      city: request.city || 'Unknown City',
+      address: request.address || 'Unknown Address',
+      gov_id_url: request.gov_id_url || 'default_gov_id_url.jpg',
+      selfie_url: request.selfie_url || 'default_selfie.jpg',
+      certificate_url: request.certificate_url || 'default_certificate.jpg',
+      business_name: user.username || 'Default Business Name'
+    });
 
-    res.json({ message: "Provider request approved" });
+    // 🔔 Send personal notification
+    await Notification.create({
+      user_id: user.user_id,
+      title: 'Request Approved ✅',
+      description: 'Your provider request has been approved. You can now start offering services!',
+      icon: 'CheckCircle'
+    });
+
+    res.json({ message: "Provider request approved, provider created, and notification sent" });
   } catch (err) {
-    console.error("Error approving request:", err);
+    console.error("Error approving request and creating provider:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -402,17 +424,33 @@ const approveProviderRequest = async (req, res) => {
 // Reject provider request
 const rejectProviderRequest = async (req, res) => {
   const { id } = req.params;
+
   try {
-    const updated = await ProviderRequest.update(
+    const request = await ProviderRequest.findOne({ where: { request_id: id } });
+
+    if (!request) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    const user = await User.findOne({ where: { user_id: request.user_id } });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found. Cannot send notification." });
+    }
+
+    await ProviderRequest.update(
       { status: 'rejected' },
       { where: { request_id: id } }
     );
 
-    if (updated[0] === 0) {
-      return res.status(404).json({ message: "Request not found" });
-    }
+    await Notification.create({
+      user_id: user.user_id,
+      title: 'Request Rejected ❌',
+      description: 'Unfortunately, your provider request has been rejected. Please review and try again.',
+      icon: 'XCircle'
+    });
 
-    res.json({ message: "Provider request rejected" });
+    res.json({ message: "Provider request rejected and notification sent" });
   } catch (err) {
     console.error("Error rejecting request:", err);
     res.status(500).json({ error: "Internal server error" });

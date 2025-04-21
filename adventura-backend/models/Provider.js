@@ -2,7 +2,7 @@ const { DataTypes } = require("sequelize");
 const { sequelize } = require("../db/db.js");
 
 const Provider = sequelize.define(
-  "provider",
+"provider",
   {
     provider_id: {
       type: DataTypes.INTEGER,
@@ -28,6 +28,30 @@ const Provider = sequelize.define(
         model: "USER",
         key: "user_id",
       },
+    },
+    birth_date: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    city: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    address: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    certificate_url: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    gov_id_url: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    selfie_url: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
   },
   {
