@@ -277,7 +277,7 @@ const getAllActivities = async (req, res) => {
 				"to_time",
 				"provider_id",
 				"listing_type",
-				"event_date",
+				"start_date",
 				"createdAt",
 				"updatedAt",
 			],
