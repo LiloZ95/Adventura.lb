@@ -13,7 +13,7 @@ import 'package:adventura/event_cards/widgets/readonly_location_map.dart';
 import 'package:hive/hive.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// Define the mainBlue color
+
 const Color mainBlue = Color(0xFF007AFF);
 
 class EventDetailsScreen extends StatefulWidget {
@@ -59,8 +59,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               })
           .toList();
     }
+
     
-    // If trip steps are empty, add some default ones for UI demo
     if (tripSteps.isEmpty) {
       tripSteps = [
         {"time": "8:30 AM", "title": "Meet up"},
@@ -92,7 +92,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     );
   }
 
-  // Custom web header for professional look
+  
   Widget _buildWebHeader() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -108,7 +108,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       ),
       child: Row(
         children: [
-          // Back button with custom styling
+          
           InkWell(
             onTap: () => Navigator.pop(context),
             child: Container(
@@ -118,19 +118,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 children: [
                   Icon(Icons.arrow_back, color: mainBlue, size: 18),
                   const SizedBox(width: 4),
-                  Text(
-                    "Back",
-                    style: GoogleFonts.poppins(
-                      color: mainBlue,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
                 ],
               ),
             ),
           ),
           const SizedBox(width: 20),
-          // Activity title and location instead of website name
+          
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,7 +146,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     Flexible(
                       child: Text(
                         widget.activity["location"] ?? "Location not available",
-                        style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
+                        style: GoogleFonts.poppins(
+                            fontSize: 14, color: Colors.grey),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -162,7 +156,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ],
             ),
           ),
-          // Action buttons for web
+          
           Row(
             children: [
               IconButton(
@@ -191,7 +185,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     isFavorite = !isFavorite;
                   });
                 },
-                tooltip: isFavorite ? "Remove from favorites" : "Add to favorites",
+                tooltip:
+                    isFavorite ? "Remove from favorites" : "Add to favorites",
               ),
             ],
           ),
@@ -202,17 +197,17 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Get screen dimensions
+    
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
+
     
-    // Determine if we're on a large screen (like desktop web)
     bool isLargeScreen = screenWidth > 1000;
+
     
-    // REDUCED horizontal padding to take more width
     double horizontalPadding = isLargeScreen ? screenWidth * 0.03 : 12;
 
-    // Get images with proper URL handling
+    
     List<dynamic> rawImages = widget.activity["activity_images"] ?? [];
     List<String> images = rawImages
         .whereType<String>()
@@ -224,24 +219,25 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       images.add("assets/Pictures/island.jpg");
     }
 
-    // Check if we're on web with a large screen
+    
     if (kIsWeb && isLargeScreen) {
       return Scaffold(
         backgroundColor: Colors.grey.shade50,
         body: Column(
           children: [
-            // Custom web header instead of AppBar
-            _buildWebHeader(),
             
-            // Main content in scrollable area
+            _buildWebHeader(),
+
+            
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    // Main content with white background card - removed hero section
+                    
                     Container(
                       width: double.infinity,
-                      margin: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 20),
+                      margin: EdgeInsets.symmetric(
+                          horizontal: horizontalPadding, vertical: 20),
                       padding: const EdgeInsets.all(0),
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -256,34 +252,39 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       ),
                       child: Column(
                         children: [
-                          // Two column layout inside card
+                          
                           IntrinsicHeight(
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Left column - Images - MODIFIED to use rounded corners on all sides
+                                
                                 Expanded(
                                   flex: 3,
                                   child: Padding(
                                     padding: const EdgeInsets.all(12),
                                     child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(12), // CHANGED to round all corners
-                                      child: _buildImageCarousel(images, screenWidth * 0.5, screenHeight * 0.45),
+                                      borderRadius: BorderRadius.circular(
+                                          12), 
+                                      child: _buildImageCarousel(
+                                          images,
+                                          screenWidth * 0.5,
+                                          screenHeight * 0.45),
                                     ),
                                   ),
                                 ),
+
                                 
-                                // Right column - Details
                                 Expanded(
                                   flex: 2,
                                   child: Container(
                                     padding: const EdgeInsets.all(24),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         _buildAvailabilitySection(),
                                         const SizedBox(height: 24),
-                                        
+
                                         Text(
                                           "Overview",
                                           style: GoogleFonts.poppins(
@@ -293,9 +294,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                         ),
                                         const SizedBox(height: 8),
                                         Text(
-                                          widget.activity["description"] ?? "No description provided",
+                                          widget.activity["description"] ??
+                                              "No description provided",
                                           style: GoogleFonts.poppins(
-                                            fontSize: 15, 
+                                            fontSize: 15,
                                             color: Colors.black87,
                                             height: 1.5,
                                           ),
@@ -303,16 +305,18 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                         const SizedBox(height: 16),
                                         _buildTagsSection(),
                                         const SizedBox(height: 24),
+
                                         
-                                        // Price section and booking button
                                         Container(
                                           padding: const EdgeInsets.all(16),
                                           decoration: BoxDecoration(
                                             color: Colors.grey.shade50,
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               _buildPriceSection(),
                                               const SizedBox(height: 12),
@@ -327,8 +331,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                               ],
                             ),
                           ),
+
                           
-                          // Trip plan section - full width
                           Container(
                             padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
@@ -341,15 +345,16 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         ],
                       ),
                     ),
+
                     
-                    // Additional information cards - ADJUSTED to take more width
                     Container(
                       width: double.infinity,
-                      margin: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 0),
+                      margin: EdgeInsets.symmetric(
+                          horizontal: horizontalPadding, vertical: 0),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Left card - Location
+                          
                           Expanded(
                             child: Container(
                               margin: const EdgeInsets.only(right: 12),
@@ -377,8 +382,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    widget.activity["map_location"] ?? widget.activity["location"] ?? "Seht El-Nour, Tripoli",
-                                    style: GoogleFonts.poppins(fontSize: 15, color: Colors.black87),
+                                    widget.activity["map_location"] ??
+                                        widget.activity["location"] ??
+                                        "Seht El-Nour, Tripoli",
+                                    style: GoogleFonts.poppins(
+                                        fontSize: 15, color: Colors.black87),
                                   ),
                                   const SizedBox(height: 12),
                                   ClipRRect(
@@ -392,8 +400,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                               ),
                             ),
                           ),
+
                           
-                          // Right card - Organizer
                           Expanded(
                             child: Container(
                               margin: const EdgeInsets.only(left: 12),
@@ -428,8 +436,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         ],
                       ),
                     ),
+
                     
-                    // Simplified footer - just padding at bottom
                     const SizedBox(height: 30),
                   ],
                 ),
@@ -440,20 +448,22 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       );
     }
 
-    // Mobile layout (original design)
+    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _buildAppBar(screenWidth),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12), // REDUCED from 16 to 12
+          padding: const EdgeInsets.symmetric(
+              horizontal: 12), 
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 8),
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: _buildImageCarousel(images, screenWidth, screenHeight * 0.3),
+                child: _buildImageCarousel(
+                    images, screenWidth, screenHeight * 0.3),
               ),
               const SizedBox(height: 16),
               Text(
@@ -473,7 +483,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   Expanded(
                     child: Text(
                       widget.activity["location"] ?? "Location not available",
-                      style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
+                      style:
+                          GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
                     ),
                   ),
                 ],
@@ -493,9 +504,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               _buildSectionTitle("Location"),
               const SizedBox(height: 4),
               Text(
-                widget.activity["map_location"] ?? widget.activity["location"] ?? "Seht El-Nour, Tripoli",
-                style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87)
-              ),
+                  widget.activity["map_location"] ??
+                      widget.activity["location"] ??
+                      "Seht El-Nour, Tripoli",
+                  style:
+                      GoogleFonts.poppins(fontSize: 14, color: Colors.black87)),
               const SizedBox(height: 8),
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
@@ -507,12 +520,15 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               const SizedBox(height: 16),
               _buildSectionTitle("Organizer"),
               _buildOrganizerSection(true),
-              const SizedBox(height: 80), // Extra space at bottom to avoid content being hidden behind bottom bar
+              const SizedBox(
+                  height:
+                      80), 
             ],
           ),
         ),
       ),
-      bottomNavigationBar: kIsWeb && isLargeScreen ? null : _buildBottomBar(screenWidth, images),
+      bottomNavigationBar:
+          kIsWeb && isLargeScreen ? null : _buildBottomBar(screenWidth, images),
     );
   }
 
@@ -520,10 +536,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Price", 
-          style: GoogleFonts.poppins(color: Colors.black54)
-        ),
+        Text("Price", style: GoogleFonts.poppins(color: Colors.black54)),
         const SizedBox(height: 2),
         Row(
           children: [
@@ -538,13 +551,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ),
             ),
             const SizedBox(width: 4),
-            Text(
-              "/Person", 
-              style: GoogleFonts.poppins(
-                color: Colors.black54, 
-                fontSize: 14
-              )
-            )
+            Text("/Person",
+                style: GoogleFonts.poppins(color: Colors.black54, fontSize: 14))
           ],
         ),
       ],
@@ -552,142 +560,136 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Widget _buildOrganizerSection(bool isMobile) {
-    return isMobile 
-      ? ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: _buildOrganizerAvatar(),
-          title: Text("We tour Lebanon", style: GoogleFonts.poppins()),
-          subtitle: Text(
-            "Joined since 2024 · 94+ Listings · 4.5 Rating",
-            style: GoogleFonts.poppins(fontSize: 12)
-          ),
-          trailing: ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 56),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // MADE RATE BUTTON SMALLER
-                SizedBox(
-                  height: 28,
-                  child: ElevatedButton(
+    return isMobile
+        ? ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: _buildOrganizerAvatar(),
+            title: Text("We tour Lebanon", style: GoogleFonts.poppins()),
+            subtitle: Text("Joined since 2024 · 94+ Listings · 4.5 Rating",
+                style: GoogleFonts.poppins(fontSize: 12)),
+            trailing: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 56),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  
+                  SizedBox(
+                    height: 28,
+                    child: ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: mainBlue.withOpacity(0.1),
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 0),
+                        minimumSize: const Size(0, 28),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text("Rate",
+                          style: GoogleFonts.poppins(
+                            color: mainBlue,
+                            fontSize: 12,
+                          )),
+                    ),
+                  ),
+                  TextButton(
                     onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: mainBlue.withOpacity(0.1),
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                      minimumSize: const Size(0, 28),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 20),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: Text(
-                      "Rate", 
-                      style: GoogleFonts.poppins(
-                        color: mainBlue, 
-                        fontSize: 12,
-                      )
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {},
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: const Size(0, 20),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text(
-                    "Report", 
-                    style: GoogleFonts.poppins(
-                      color: Colors.red, 
-                      fontSize: 11
-                    )
-                  ),
-                )
-              ],
-            ),
-          ),
-        )
-      : Row(
-          children: [
-            _buildOrganizerAvatar(),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "We tour Lebanon",
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    "Joined since 2024 · 94+ Listings",
-                    style: GoogleFonts.poppins(
-                      color: Colors.grey.shade700,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 14),
-                      const SizedBox(width: 4),
-                      Text(
-                        "4.5 Rating",
+                    child: Text("Report",
                         style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
+                            color: Colors.red, fontSize: 11)),
+                  )
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // MADE RATE BUTTON SMALLER
-                SizedBox(
-                  height: 32,
-                  child: ElevatedButton(
+          )
+        : Row(
+            children: [
+              _buildOrganizerAvatar(),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "We tour Lebanon",
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "Joined since 2024 · 94+ Listings",
+                      style: GoogleFonts.poppins(
+                        color: Colors.grey.shade700,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        const Icon(Icons.star, color: Colors.amber, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          "4.5 Rating",
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  
+                  SizedBox(
+                    height: 32,
+                    child: ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: mainBlue.withOpacity(0.1),
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 0),
+                      ),
+                      child: Text(
+                        "Rate",
+                        style: GoogleFonts.poppins(
+                          color: mainBlue,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
                     onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: mainBlue.withOpacity(0.1),
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: const Size(0, 32),
                     ),
                     child: Text(
-                      "Rate",
+                      "Report",
                       style: GoogleFonts.poppins(
-                        color: mainBlue,
+                        color: Colors.red,
                         fontSize: 13,
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () {},
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    minimumSize: const Size(0, 32),
-                  ),
-                  child: Text(
-                    "Report",
-                    style: GoogleFonts.poppins(
-                      color: Colors.red,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        );
+                ],
+              ),
+            ],
+          );
   }
 
   Widget _buildOrganizerAvatar() {
@@ -698,10 +700,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         if (providerId == null) return;
 
         String organizerName = "${box.get("firstName")} ${box.get("lastName")}";
-        String organizerImage = "${box.get("profilePictureUrl_$providerId") ?? ""}";
+        String organizerImage =
+            "${box.get("profilePictureUrl_$providerId") ?? ""}";
         String bio = "Adventure provider";
 
-        final activities = await ActivityService.fetchProviderListings(providerId);
+        final activities =
+            await ActivityService.fetchProviderListings(providerId);
 
         if (!context.mounted) return;
 
@@ -726,7 +730,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             builder: (context) {
               try {
                 final box = Hive.box('authBox');
-                final profileImage = "${box.get("profilePictureUrl_${box.get("providerId")}") ?? ""}";
+                final profileImage =
+                    "${box.get("profilePictureUrl_${box.get("providerId")}") ?? ""}";
 
                 if (profileImage.isNotEmpty) {
                   return Image.network(
@@ -742,9 +747,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   );
                 }
               } catch (e) {
-                // Do nothing, just fall back to the default icon
+                
               }
-              
+
               return const Center(
                 child: Icon(Icons.person, color: Colors.grey, size: 28),
               );
@@ -790,20 +795,15 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 );
               }
             },
-      icon: Icon(
-        isOwnActivity ? Icons.block : Icons.local_activity_outlined, 
-        color: Colors.white, 
-        size: 20
-      ),
-      label: Text(
-        isOwnActivity ? "Your Listing" : "Book Ticket", 
-        style: GoogleFonts.poppins(color: Colors.white)
-      ),
+      icon: Icon(isOwnActivity ? Icons.block : Icons.local_activity_outlined,
+          color: Colors.white, size: 20),
+      label: Text(isOwnActivity ? "Your Listing" : "Book Ticket",
+          style: GoogleFonts.poppins(color: Colors.white)),
       style: ElevatedButton.styleFrom(
         backgroundColor: isOwnActivity ? Colors.grey : mainBlue,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 18),
-        minimumSize: const Size(double.infinity, 56), // Make button wider
+        minimumSize: const Size(double.infinity, 56), 
       ),
     );
   }
@@ -830,7 +830,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           height: 80,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: tripSteps.length * 2 - 1, // account for arrows
+            itemCount: tripSteps.length * 2 - 1, 
             separatorBuilder: (context, index) => const SizedBox(width: 4),
             itemBuilder: (context, index) {
               if (index.isOdd) {
@@ -851,26 +851,23 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       margin: const EdgeInsets.only(right: 8, left: 8),
       padding: const EdgeInsets.only(left: 10, right: 30, top: 12, bottom: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color.fromARGB(255, 51, 51, 51), width: 0.8),
+        border: Border.all(
+            color: const Color.fromARGB(255, 51, 51, 51), width: 0.8),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            "• $time", 
-            style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600)
-          ),
+          Text("• $time",
+              style: GoogleFonts.poppins(
+                  fontSize: 12, color: Colors.grey.shade600)),
           const SizedBox(height: 4),
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.bold, 
-              fontSize: 14, 
-              color: Colors.black
-            )
-          ),
+          Text(title,
+              style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Colors.black)),
         ],
       ),
     );
@@ -891,7 +888,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   Widget _buildWebMap() {
     final double lat = widget.activity["latitude"] ?? 34.4381;
     final double lng = widget.activity["longitude"] ?? 35.8308;
-    
+
     return ReadOnlyLocationMap(latitude: lat, longitude: lng);
   }
 
@@ -919,7 +916,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   Widget _buildTagsSection() {
     final rawFeatures = widget.activity["features"];
     List<String> tags = [];
-    
+
     if (rawFeatures != null && rawFeatures is List) {
       tags = rawFeatures
           .map((f) => f["name"]?.toString())
@@ -927,10 +924,18 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           .cast<String>()
           .toList();
     }
+
     
-    // If no tags found, use default ones for UI demo
     if (tags.isEmpty) {
-      tags = ["Trending", "+16", "Medium", "Entertainment", "BBQ", "Scenery", "Sun Set"];
+      tags = [
+        "Trending",
+        "+16",
+        "Medium",
+        "Entertainment",
+        "BBQ",
+        "Scenery",
+        "Sun Set"
+      ];
     }
 
     return Wrap(
@@ -966,9 +971,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   AppBar _buildAppBar(double screenWidth) {
-    // Scale icon sizes based on screen width
-    double iconSize = kIsWeb && screenWidth > 1000 ? 24 : screenWidth * 0.07;
     
+    double iconSize = kIsWeb && screenWidth > 1000 ? 24 : screenWidth * 0.07;
+
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -1029,21 +1034,23 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       imageUrl,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Image.asset("assets/Pictures/island.jpg", fit: BoxFit.cover),
+                      errorBuilder: (context, error, stackTrace) => Image.asset(
+                          "assets/Pictures/island.jpg",
+                          fit: BoxFit.cover),
                     )
-                  : Image.asset(imageUrl, width: double.infinity, fit: BoxFit.cover);
+                  : Image.asset(imageUrl,
+                      width: double.infinity, fit: BoxFit.cover);
             },
           ),
         ),
+
         
-        // Navigation arrows for web/larger screens
         if (images.length > 1)
           Positioned.fill(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Left navigation arrow
+                
                 InkWell(
                   onTap: () {
                     if (_currentImageIndex > 0) {
@@ -1068,7 +1075,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     ),
                   ),
                 ),
-                // Right navigation arrow
+                
                 InkWell(
                   onTap: () {
                     if (_currentImageIndex < images.length - 1) {
@@ -1096,7 +1103,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ],
             ),
           ),
-        
+
         Positioned(
           bottom: 8,
           right: 12,
@@ -1120,7 +1127,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final type = widget.activity["listing_type"];
     final startDate = widget.activity["start_date"];
 
-    // If we have confirmed date and slot from user selection
+    
     if (confirmedDate != null && confirmedSlot != null) {
       return Row(
         children: [
@@ -1133,20 +1140,17 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           const SizedBox(width: 6),
           TextButton(
             onPressed: _openAvailabilityModal,
-            child: Text(
-              "Change time",
-              style: GoogleFonts.poppins(
-                fontSize: 13, 
-                color: mainBlue, 
-                fontWeight: FontWeight.w500
-              )
-            ),
+            child: Text("Change time",
+                style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: mainBlue,
+                    fontWeight: FontWeight.w500)),
           ),
         ],
       );
-    } 
+    }
+
     
-    // For one-time events with a start date
     if (type == "oneTime" && startDate != null) {
       try {
         final parsed = DateTime.tryParse(startDate);
@@ -1182,17 +1186,15 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       }
     }
 
-    // Default case - check availability button
+    
     return ElevatedButton(
       onPressed: _openAvailabilityModal,
       style: ElevatedButton.styleFrom(
         backgroundColor: mainBlue,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-      child: Text(
-        "Check Availability", 
-        style: GoogleFonts.poppins(color: Colors.white)
-      ),
+      child: Text("Check Availability",
+          style: GoogleFonts.poppins(color: Colors.white)),
     );
   }
 
@@ -1203,7 +1205,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final isOwnActivity = userType == 'provider' &&
         providerId != null &&
         widget.activity["provider_id"].toString() == providerId.toString();
-    
+
     return Container(
       decoration: BoxDecoration(
         boxShadow: [
@@ -1228,10 +1230,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "Price", 
-                      style: GoogleFonts.poppins(color: Colors.black54)
-                    ),
+                    Text("Price",
+                        style: GoogleFonts.poppins(color: Colors.black54)),
                     const SizedBox(height: 2),
                     Row(
                       children: [
@@ -1240,63 +1240,62 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                               ? "${widget.activity["price"]}"
                               : "Free",
                           style: GoogleFonts.poppins(
-                            fontSize: 20, 
-                            fontWeight: FontWeight.bold, 
-                            color: mainBlue
-                          ),
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: mainBlue),
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          "/Person", 
-                          style: GoogleFonts.poppins(
-                            color: Colors.black54, 
-                            fontSize: 14
-                          )
-                        )
+                        Text("/Person",
+                            style: GoogleFonts.poppins(
+                                color: Colors.black54, fontSize: 14))
                       ],
                     ),
                   ],
                 ),
                 ElevatedButton.icon(
                   onPressed: isOwnActivity
-                    ? null
-                    : () {
-                        if (confirmedDate != null && confirmedSlot != null) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => OrderDetailsPage(
-                                activityId: widget.activity["activity_id"],
-                                selectedImage: images[_currentImageIndex],
-                                eventTitle: widget.activity["name"] ?? "Event",
-                                eventDate: confirmedDate!,
-                                eventLocation: widget.activity["location"] ?? "Location",
-                                selectedSlot: confirmedSlot!,
+                      ? null
+                      : () {
+                          if (confirmedDate != null && confirmedSlot != null) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OrderDetailsPage(
+                                  activityId: widget.activity["activity_id"],
+                                  selectedImage: images[_currentImageIndex],
+                                  eventTitle:
+                                      widget.activity["name"] ?? "Event",
+                                  eventDate: confirmedDate!,
+                                  eventLocation:
+                                      widget.activity["location"] ?? "Location",
+                                  selectedSlot: confirmedSlot!,
+                                ),
                               ),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("⚠️ Please select a date and time first."),
-                              backgroundColor: Colors.orange,
-                            ),
-                          );
-                        }
-                      },
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    "⚠️ Please select a date and time first."),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                          }
+                        },
                   icon: Icon(
-                    isOwnActivity ? Icons.block : Icons.local_activity_outlined, 
-                    color: Colors.white, 
-                    size: 20
-                  ),
-                  label: Text(
-                    isOwnActivity ? "Your Listing" : "Book Ticket",
-                    style: GoogleFonts.poppins(color: Colors.white)
-                  ),
+                      isOwnActivity
+                          ? Icons.block
+                          : Icons.local_activity_outlined,
+                      color: Colors.white,
+                      size: 20),
+                  label: Text(isOwnActivity ? "Your Listing" : "Book Ticket",
+                      style: GoogleFonts.poppins(color: Colors.white)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isOwnActivity ? Colors.grey : mainBlue,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 18),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 25, vertical: 18),
                   ),
                 )
               ],

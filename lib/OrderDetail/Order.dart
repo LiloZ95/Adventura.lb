@@ -1,3 +1,4 @@
+import 'package:adventura/Booking/MyBooking.dart';
 import 'package:adventura/OrderDetail/PurchaseConfiramtion.dart';
 import 'package:adventura/OrderDetail/countries.dart';
 import 'package:adventura/Services/booking_service.dart';
@@ -11,10 +12,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:hive/hive.dart';
 
-// Main Blue color
+
 const Color mainBlue = Color(0xFF007AFF);
 
-/// Custom enforcer that rejects any new character if max length is exceeded.
+
 class MaxDigitsEnforcer extends TextInputFormatter {
   final int maxLength;
   MaxDigitsEnforcer(this.maxLength);
@@ -94,14 +95,14 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     final double screenHeight = MediaQuery.of(context).size.height;
     final double screenWidth = MediaQuery.of(context).size.width;
     
-    // Determine if we're on a large screen (web)
+    
     final bool isLargeScreen = kIsWeb && screenWidth > 1000;
     
-    // Adjusted padding for web
+    
     final double horizontalPadding = isLargeScreen ? screenWidth * 0.05 : screenWidth * 0.05;
 
     return Scaffold(
-      // No AppBar to eliminate white space at top
+      
       body: Container(
         color: Colors.white,
         child: isLargeScreen 
@@ -131,7 +132,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     );
   }
   
-  // Web layout with full-width image and three columns
+  
   Widget _buildWebLayout(
     double screenWidth,
     double screenHeight,
@@ -145,10 +146,10 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
   ) {
     return Column(
       children: [
-        // Full-width hero image with overlay at the top
+        
         Stack(
           children: [
-            // Full-width image
+            
             Container(
               width: double.infinity,
               height: screenHeight * 0.5,
@@ -166,7 +167,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                     ),
             ),
             
-            // Back button overlaid on image
+            
             Positioned(
               top: 16,
               left: 16,
@@ -182,7 +183,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
               ),
             ),
             
-            // Order Details title
+            
             Positioned(
               top: 16,
               left: 0,
@@ -206,7 +207,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
               ),
             ),
             
-            // Gradient overlay
+            
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
@@ -222,7 +223,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
               ),
             ),
             
-            // Event details positioned at the bottom of the image
+            
             Positioned(
               bottom: 0,
               left: 0,
@@ -258,7 +259,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
           ],
         ),
         
-        // Content area with three columns
+        
         Expanded(
           child: SingleChildScrollView(
             child: Padding(
@@ -268,11 +269,11 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                 children: [
                   const SizedBox(height: 8),
                   
-                  // Three column layout
+                  
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Left column - Select Your Items
+                      
                       Expanded(
                         flex: 3,
                         child: Column(
@@ -287,7 +288,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            // Ticket Options
+                            
                             Card(
                               elevation: 2,
                               shape: RoundedRectangleBorder(
@@ -347,7 +348,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                       
                       const SizedBox(width: 20),
                       
-                      // Middle column - Order Summary
+                      
                       Expanded(
                         flex: 3,
                         child: Column(
@@ -362,7 +363,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            // Order Summary
+                            
                             Card(
                               elevation: 2,
                               shape: RoundedRectangleBorder(
@@ -417,7 +418,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                       
                       const SizedBox(width: 20),
                       
-                      // Right column - Payment Method
+                      
                       Expanded(
                         flex: 3,
                         child: Column(
@@ -453,7 +454,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                                       iconPath: 'assets/Icons/wish.png',
                                     ),
                                     const SizedBox(height: 20),
-                                    // Purchase Button in the payment column
+                                    
                                     SizedBox(
                                       width: double.infinity,
                                       height: 56,
@@ -502,7 +503,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     );
   }
   
-  // Mobile layout
+  
   Widget _buildMobileLayout(
     double screenWidth,
     double screenHeight,
@@ -517,10 +518,10 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Full-height image with overlay
+        
         Stack(
           children: [
-            // Background image
+            
             Container(
               width: double.infinity,
               height: screenHeight * 0.3,
@@ -538,7 +539,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                     ),
             ),
             
-            // Back button
+            
             Positioned(
               top: 16,
               left: 16,
@@ -554,7 +555,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
               ),
             ),
             
-            // Order Details title
+            
             Positioned(
               top: 16,
               left: 0,
@@ -578,7 +579,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
               ),
             ),
             
-            // Gradient overlay + text
+            
             Positioned.fill(
               child: Container(
                 decoration: const BoxDecoration(
@@ -640,7 +641,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
           ],
         ),
         
-        // Content area
+        
         Expanded(
           child: SingleChildScrollView(
             child: Padding(
@@ -650,7 +651,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                 children: [
                   const SizedBox(height: 20),
                   
-                  // Ticket Options
+                  
                   Card(
                     elevation: 2,
                     shape: RoundedRectangleBorder(
@@ -700,7 +701,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                   
                   const SizedBox(height: 16),
                   
-                  // Order Summary
+                  
                   Card(
                     elevation: 2,
                     shape: RoundedRectangleBorder(
@@ -755,7 +756,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                   
                   const SizedBox(height: 16),
                   
-                  // Payment Method section
+                  
                   Card(
                     elevation: 2,
                     shape: RoundedRectangleBorder(
@@ -790,7 +791,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                     ),
                   ),
                   
-                  // Purchase Button
+                  
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
@@ -831,71 +832,74 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     );
   }
   
-  // Process the booking (Functionality from the second code)
   Future<void> _processBooking(BuildContext context) async {
-    final box = await Hive.openBox('authBox');
-    final clientId = int.tryParse(box.get('userId') ?? '');
+  final box = await Hive.openBox('authBox');
+  final clientId = int.tryParse(box.get('userId') ?? '');
 
-    if (clientId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("❌ User not logged in")),
-      );
-      return;
-    }
-
-    print("🟢 Proceed tapped - sending booking");
-    
-    // Calculate total due for the booking
-    final double ticketsTotal = tickets * ticketPrice;
-    final double bbqTotal = bbqShare * bbqPrice;
-    final double waterTotal = waterBottles * waterPrice;
-    final double energyTotal = energyDrinks * energyPrice;
-    final double subtotal = ticketsTotal + bbqTotal + waterTotal + energyTotal;
-    final double totalDue = subtotal + 3.50;
-
-    final success = await BookingService.createBooking(
-      activityId: widget.activityId,
-      clientId: clientId,
-      date: widget.eventDate,
-      slot: widget.selectedSlot,
-      totalPrice: totalDue,
+  if (clientId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("❌ User not logged in")),
     );
-
-    if (success) {
-      print("✅ Booking confirmed");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("✅ Booking successful")),
-      );
-
-      // Log the 'purchase' interaction
-      await InteractionService.logInteraction(
-        userId: clientId,
-        activityId: widget.activityId,
-        type: "purchase",
-      );
-
-      // Show the payment modal after successful booking
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) => const PaymentModal(),
-      );
-
-      // TODO: Navigate to success screen
-      // Navigator.push(...);
-    } else {
-      print("❌ Booking failed");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("❌ Booking failed. Please try again."),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+    return;
   }
+
+  print("🟢 Proceed tapped - sending booking");
   
-  // Event detail pill for web layout
+  // Calculate totals
+  final double ticketsTotal = tickets * ticketPrice;
+  final double bbqTotal = bbqShare * bbqPrice;
+  final double waterTotal = waterBottles * waterPrice;
+  final double energyTotal = energyDrinks * energyPrice;
+  final double subtotal = ticketsTotal + bbqTotal + waterTotal + energyTotal;
+  final double totalDue = subtotal + 3.50;
+
+  final success = await BookingService.createBooking(
+    activityId: widget.activityId,
+    clientId: clientId,
+    date: widget.eventDate,
+    slot: widget.selectedSlot,
+    totalPrice: totalDue,
+  );
+
+  if (success) {
+    print("✅ Booking confirmed");
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("✅ Booking successful")),
+    );
+    
+    // Log the 'purchase' interaction
+    await InteractionService.logInteraction(
+      userId: clientId,
+      activityId: widget.activityId,
+      type: "purchase",
+    );
+    
+    // Show payment modal
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const PaymentModal(),
+    );
+    
+    // Navigate to MyBookingsPage
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MyBookingsPage(onScrollChanged: (bool value) {}),
+      ),
+    );
+  } else {
+    print("❌ Booking failed");
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("❌ Booking failed. Please try again."),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+  
   Widget _buildEventDetailPill(IconData icon, String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -922,7 +926,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     );
   }
 
-  // Helper widget for ticket option rows
+  
   Widget _buildTicketOptionRow({
     required String label,
     required int quantity,
@@ -997,7 +1001,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     );
   }
 
-  // Helper widget for payment option rows
+  
   Widget _buildPaymentOptionRow({
     required PaymentMethod method,
     required String label,
@@ -1047,7 +1051,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     );
   }
 
-  // Helper widget for summary rows
+  
   Widget _buildSummaryRow(
     String label, 
     int count, 
@@ -1076,7 +1080,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
               ),
             ),
           Text(
-            '\${cost.toStringAsFixed(2)}',
+            '${cost.toStringAsFixed(2)}',
             style: GoogleFonts.poppins(
               fontSize: isWeb ? 15 : 14,
               fontWeight: isSubtotal ? FontWeight.w500 : FontWeight.normal,

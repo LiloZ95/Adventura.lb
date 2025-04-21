@@ -126,14 +126,14 @@ class MainApi extends ChangeNotifier {
 
       if (isValid) {
         print("✅ User is already logged in. Redirecting to MainScreen...");
-        _initialScreen =  MainScreen(onScrollChanged: (bool){});
+        _initialScreen = AdventuraWebHomee();
       } else {
         print("❌ Token expired. Trying refresh...");
         bool refreshed = await refreshTokens();
 
         if (refreshed) {
           print("✅ Tokens refreshed. Redirecting to MainScreen...");
-          _initialScreen = MainScreen(onScrollChanged: (bool){});
+          _initialScreen =AdventuraWebHomee();
         } else {
           print("❌ Token refresh failed. Logging out.");
           await logout();

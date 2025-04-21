@@ -1,9 +1,10 @@
+import 'package:adventura/web/homeweb.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/Main%20screen%20components/MainScreen.dart';
-// Import the barcode_widget package
 import 'package:barcode_widget/barcode_widget.dart';
 
 /// A page to display a ticket with a QR code (using barcode_widget) and relevant details.
+/// Optimized for web display.
 class ViewTicketPage extends StatelessWidget {
   final String eventTitle;
   final String clientName;
@@ -24,12 +25,32 @@ class ViewTicketPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double screenWidth  = MediaQuery.of(context).size.width;
-    final double screenHeight = MediaQuery.of(context).size.height;
+    // Using MediaQuery to make the UI responsive for web
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isDesktop = screenWidth > 1024;
+    final bool isTablet = screenWidth > 768 && screenWidth <= 1024;
+    
+    // Calculate appropriate container width based on screen size
+    final double containerWidth = isDesktop 
+        ? 600 
+        : isTablet 
+            ? screenWidth * 0.8 
+            : screenWidth * 0.95;
+    
+    // Calculate appropriate font and element sizes for web
+    final double titleSize = isDesktop ? 24 : isTablet ? 22 : 20;
+    final double subtitleSize = isDesktop ? 16 : isTablet ? 14 : 13;
+    final double labelSize = isDesktop ? 16 : isTablet ? 15 : 14;
+    final double valueSize = isDesktop ? 16 : isTablet ? 15 : 14;
+    final double buttonTextSize = isDesktop ? 16 : isTablet ? 15 : 14;
+    
+    // QR code size based on screen type
+    final double qrSize = isDesktop ? 220 : isTablet ? 180 : 150;
+    final double qrContainerSize = qrSize * 1.25;
 
     return Scaffold(
       backgroundColor: Colors.white,
-
+      
       // AppBar with a centered title
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -39,7 +60,7 @@ class ViewTicketPage extends StatelessWidget {
           style: TextStyle(
             color: Colors.black,
             fontFamily: "Poppins",
-            fontSize: screenWidth * 0.05,
+            fontSize: titleSize,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -51,173 +72,216 @@ class ViewTicketPage extends StatelessWidget {
       ),
 
       // Main content
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(screenWidth * 0.05),
-        child: Column(
-          children: [
-            // Title
-            Text(
-              "Scan this QR code",
-              style: TextStyle(
-                fontSize: screenWidth * 0.05,
-                fontWeight: FontWeight.bold,
-                fontFamily: "Poppins",
-                color: Colors.black,
+      body: Center(
+        child: Container(
+          width: containerWidth,
+          padding: const EdgeInsets.all(24),
+          decoration: isDesktop ? BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
               ),
-            ),
-            SizedBox(height: screenHeight * 0.005),
-
-            // Subtitle
-            Text(
-              "Point this QR to the provider's\nQR device to admit ticket",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: screenWidth * 0.035,
-                color: Colors.grey,
-                fontFamily: "Poppins",
-              ),
-            ),
-            SizedBox(height: screenHeight * 0.03),
-
-            // Container wrapping BarcodeWidget
-            Container(
-              width: screenWidth * 0.6,
-              height: screenWidth * 0.6,
-              decoration: BoxDecoration(
-                color: Colors.grey[200], // Background color
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 6,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Center(
-                // BarcodeWidget from the barcode_widget package
-                child: BarcodeWidget(
-                  barcode: Barcode.qrCode(),  // Generate a QR code
-                  data: ticketId,             // The data to encode
-                  width: screenWidth * 0.45,  
-                  height: screenWidth * 0.45,
-                ),
-              ),
-            ),
-
-            SizedBox(height: screenHeight * 0.03),
-
-            // Ticket Details
-            _buildInfoRow("Event", eventTitle, screenWidth),
-            _buildInfoRow("Client name", clientName, screenWidth),
-            _buildInfoRow("Event time", eventTime, screenWidth),
-            _buildInfoRow("Number of attendees", "$numberOfAttendees", screenWidth),
-            _buildInfoRow("Ticket ID", ticketId, screenWidth),
-
-            // Status row with colored background
-            SizedBox(height: screenHeight * 0.01),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            ],
+          ) : null,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // Title
                 Text(
-                  "Status",
+                  "Scan this QR code",
                   style: TextStyle(
-                    fontSize: screenWidth * 0.04,
+                    fontSize: titleSize,
                     fontWeight: FontWeight.bold,
                     fontFamily: "Poppins",
+                    color: Colors.black,
                   ),
                 ),
+                const SizedBox(height: 8),
+
+                // Subtitle
+                Text(
+                  "Point this QR to the provider's\nQR device to admit ticket",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: subtitleSize,
+                    color: Colors.grey,
+                    fontFamily: "Poppins",
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Container wrapping BarcodeWidget
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  width: qrContainerSize,
+                  height: qrContainerSize,
                   decoration: BoxDecoration(
-                    color: (status == "Pending")
-                        ? Colors.orange[100]
-                        : Colors.green[100],
-                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    status,
-                    style: TextStyle(
-                      fontSize: screenWidth * 0.04,
-                      fontFamily: "Poppins",
-                      fontWeight: FontWeight.bold,
-                      color: (status == "Pending") ? Colors.orange : Colors.green,
+                  child: Center(
+                    // BarcodeWidget from the barcode_widget package
+                    child: BarcodeWidget(
+                      barcode: Barcode.qrCode(),
+                      data: ticketId,
+                      width: qrSize,
+                      height: qrSize,
+                      drawText: false,
                     ),
                   ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Ticket Details Container
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildInfoRow("Event", eventTitle, labelSize, valueSize),
+                      _buildInfoRow("Client name", clientName, labelSize, valueSize),
+                      _buildInfoRow("Event time", eventTime, labelSize, valueSize),
+                      _buildInfoRow("Number of attendees", "$numberOfAttendees", labelSize, valueSize),
+                      _buildInfoRow("Ticket ID", ticketId, labelSize, valueSize),
+
+                      // Status row with colored background
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Status",
+                            style: TextStyle(
+                              fontSize: labelSize,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: "Poppins",
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: (status == "Pending")
+                                  ? Colors.orange[100]
+                                  : Colors.green[100],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              status,
+                              style: TextStyle(
+                                fontSize: valueSize,
+                                fontFamily: "Poppins",
+                                fontWeight: FontWeight.bold,
+                                color: (status == "Pending") ? Colors.orange[700] : Colors.green[700],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 32),
+
+                // Bottom Buttons: "Cancel Booking" & "Go To Home"
+                Row(
+                  children: [
+                    // Cancel Booking Button (Outlined)
+                    Expanded(
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            // TODO: Implement cancel booking logic
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.red, width: 2),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: Text(
+                            "Cancel Booking",
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: buttonTextSize,
+                              fontFamily: "Poppins",
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+
+                    // Go To Home Button (Filled)
+                    Expanded(
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // Navigate to home screen
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AdventuraWebHomee()
+                              ),
+                              (route) => false,
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: Text(
+                            "Go To Home",
+                            style: TextStyle(
+                              fontSize: buttonTextSize,
+                              fontFamily: "Poppins",
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            SizedBox(height: screenHeight * 0.03),
-
-            // Bottom Buttons: "Cancel Booking" & "Go To Home"
-            Row(
-              children: [
-                // Cancel Booking Button (Outlined)
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      // TODO: Implement cancel booking logic
-                      // e.g., Navigator.push(context, MaterialPageRoute(builder: (context) => CancelBookingScreen()));
-                    },
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.red, width: 2),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
-                    ),
-                    child: Text(
-                      "Cancel Booking",
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: screenWidth * 0.04,
-                        fontFamily: "Poppins",
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 12),
-
-                // Go To Home Button (Filled)
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Navigate to home screen
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (context) => MainScreen(onScrollChanged: (bool ) {  },)),
-                        (route) => false,
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
-                    ),
-                    child: Text(
-                      "Go To Home",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: screenWidth * 0.04,
-                        fontFamily: "Poppins",
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   /// Helper method to build a row of info (label on the left, value on the right)
-  Widget _buildInfoRow(String label, String value, double screenWidth) {
+  Widget _buildInfoRow(String label, String value, double labelSize, double valueSize) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -225,9 +289,10 @@ class ViewTicketPage extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: screenWidth * 0.04,
+              fontSize: labelSize,
               fontWeight: FontWeight.bold,
               fontFamily: "Poppins",
+              color: Colors.black87,
             ),
           ),
           // Value (right-aligned)
@@ -236,8 +301,9 @@ class ViewTicketPage extends StatelessWidget {
               value,
               textAlign: TextAlign.right,
               style: TextStyle(
-                fontSize: screenWidth * 0.04,
+                fontSize: valueSize,
                 fontFamily: "Poppins",
+                color: Colors.black87,
               ),
             ),
           ),

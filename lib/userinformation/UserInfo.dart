@@ -1,5 +1,14 @@
 import 'dart:io';
 
+import 'package:adventura/MyListings/Mylisting.dart';
+import 'package:adventura/OrganizerProfile/OrganizerProfile.dart';
+import 'package:adventura/userinformation/widgets/Agreements.dart';
+import 'package:adventura/userinformation/widgets/RateUs.dart';
+import 'package:adventura/userinformation/widgets/Security&Privacy.dart';
+import 'package:adventura/userinformation/widgets/report_bug_page.dart';
+import 'package:adventura/userinformation/widgets/theme_button.dart';
+import 'package:adventura/userinformation/widgets/custom_page_route.dart';
+import 'package:adventura/userinformation/widgets/theme_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/login/login.dart';
 import 'package:adventura/Services/profile_service.dart';
@@ -8,9 +17,146 @@ import 'package:adventura/Services/storage_service.dart';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:dotted_border/dotted_border.dart';
-import 'package:adventura/userinformation/profileOptionTile.dart';
 import 'package:hive/hive.dart';
-import 'package:http/http.dart';
+import 'package:adventura/userinformation/widgets/PaymentMethod.dart';
+import 'package:adventura/userinformation/widgets/PersonalInformition.dart';
+import 'package:provider/provider.dart';
+
+class ProfileOptionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final VoidCallback onTap;
+  final bool isDarkMode;
+
+  const ProfileOptionTile({
+    Key? key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.onTap,
+    required this.isDarkMode,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: isDarkMode 
+                ? Colors.black.withOpacity(0.2) 
+                : Colors.grey.withOpacity(0.1),
+            spreadRadius: 0,
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? const Color(0xFF3D3D3D) : const Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: title == "Logout" || title == "Close Account"
+                        ? Colors.red
+                        : isDarkMode 
+                            ? Colors.white 
+                            : Colors.black87,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: title == "Logout" || title == "Close Account"
+                              ? Colors.red
+                              : isDarkMode 
+                                  ? Colors.white 
+                                  : Colors.black87,
+                        ),
+                      ),
+                      if (subtitle != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            subtitle!,
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 12,
+                              color: isDarkMode 
+                                  ? Colors.grey[400] 
+                                  : Colors.grey[600],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class SectionHeader extends StatelessWidget {
+  final String title;
+  final bool isDarkMode;
+
+  const SectionHeader({
+    Key? key,
+    required this.title,
+    required this.isDarkMode,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: isDarkMode ? Colors.white : Colors.black,
+        ),
+      ),
+    );
+  }
+}
 
 class UserInfo extends StatefulWidget {
   @override
@@ -23,6 +169,7 @@ class _UserInfoState extends State<UserInfo> {
   late String lastName;
   late String profilePicture;
   bool isLoading = true;
+  late String userType = "null";
 
   @override
   void initState() {
@@ -30,421 +177,344 @@ class _UserInfoState extends State<UserInfo> {
     _loadUserData();
   }
 
-  // ✅ Load user data from storage and fetch profile picture
   Future<void> _loadUserData() async {
-  Box box = await Hive.openBox('authBox');
+    Box box = await Hive.openBox('authBox');
+    userType = box.get("userType", defaultValue: "client");
 
-  userId = box.get("userId", defaultValue: "");
-  firstName = box.get("firstName", defaultValue: "");
-  lastName = box.get("lastName", defaultValue: "");
+    userId = box.get("userId", defaultValue: "");
+    firstName = box.get("firstName", defaultValue: "");
+    lastName = box.get("lastName", defaultValue: "");
 
-  // Fallback in case it's empty in Hive
-  if (firstName.isEmpty || lastName.isEmpty) {
-    firstName = await StorageService.getFirstName();
-    lastName = await StorageService.getLastName();
+    if (firstName.isEmpty || lastName.isEmpty) {
+      firstName = await StorageService.getFirstName();
+      lastName = await StorageService.getLastName();
+    }
+
+    profilePicture = await ProfileService.fetchProfilePicture(userId);
+
+    setState(() => isLoading = false);
   }
-
-  profilePicture = await ProfileService.fetchProfilePicture(userId);
-
-  setState(() => isLoading = false);
-}
-
 
   @override
   Widget build(BuildContext context) {
-    double screenHeight = MediaQuery.of(context).size.height;
-    double screenWidth = MediaQuery.of(context).size.width;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDarkMode ? const Color(0xFF1F1F1F) : Colors.white;
+    final cardColor = isDarkMode ? const Color(0xFF2A2A2A) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(screenHeight * 0.12),
-        child: Container(
-          padding: EdgeInsets.only(
-            top: screenHeight * 0.05,
-            left: screenWidth * 0.05,
-            right: screenWidth * 0.05,
-          ),
-          color: Colors.white,
-          child: Row(
-            children: [
-              // ✅ Back Arrow
-              IconButton(
-                icon: Icon(Icons.arrow_back, color: Colors.black),
-                onPressed: () => Navigator.pop(context),
-              ),
-              Expanded(
-                child: Text(
-                  "My Profile",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: screenHeight * 0.03,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: "Poppins",
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-              SizedBox(width: 48), // Balancing the row
-            ],
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        backgroundColor: backgroundColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: textColor),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          "My Profile",
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            fontFamily: "Poppins",
+            color: textColor,
           ),
         ),
+        centerTitle: true,
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: screenHeight * 0.02),
-                  GestureDetector(
-                    onTap: () async {
-                      // Pick and upload new profile picture
-                      File? selectedImage = await ProfileService.pickImage();
-                      if (selectedImage != null) {
-                        await ProfileService.uploadProfilePicture(
-                            context, userId, selectedImage);
-                        _loadUserData(); // Reload after updating
-                      }
-                    },
-                    child: Stack(
-                      alignment: Alignment.bottomRight,
+                  // Profile Section
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Column(
                       children: [
-                        Container(
-                          width: screenHeight * 0.13,
-                          height: screenHeight * 0.13,
-                          decoration: BoxDecoration(shape: BoxShape.circle),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(50),
-                            child: _buildProfileImage(),
+                        // Profile Picture
+                        GestureDetector(
+                          onTap: () async {
+                            File? selectedImage = await ProfileService.pickImage();
+                            if (selectedImage != null) {
+                              await ProfileService.uploadProfilePicture(
+                                  context, userId, selectedImage);
+                              _loadUserData();
+                            }
+                          },
+                          child: Stack(
+                            alignment: Alignment.bottomRight,
+                            children: [
+                              Container(
+                                width: 100,
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      spreadRadius: 1,
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(50),
+                                  child: _buildProfileImage(),
+                                ),
+                              ),
+                              Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isDarkMode ? Colors.white : Colors.black,
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      spreadRadius: 1,
+                                      blurRadius: 2,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                                child: CircleAvatar(
+                                  backgroundColor: isDarkMode ? Colors.black : Colors.white,
+                                  radius: 16,
+                                  child: Icon(
+                                    Icons.camera_alt,
+                                    color: isDarkMode ? Colors.white : Colors.black,
+                                    size: 16,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        // ✅ Camera Icon with Border
-                        Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.black, width: 2),
+                        const SizedBox(height: 16),
+                        
+                        // Name
+                        Text(
+                          "$firstName $lastName",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                            fontFamily: "Poppins",
                           ),
-                          child: CircleAvatar(
-                            backgroundColor: Colors.white,
-                            radius: 25,
-                            child: Icon(Icons.camera_alt, color: Colors.black),
+                        ),
+                        
+                        // Account Type
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4, bottom: 16),
+                          child: Text(
+                            userType == "provider" ? "Business Account" : "Personal Account",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                              fontFamily: "Poppins",
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
 
-                  SizedBox(height: 8),
-
-                  // ✅ Display User Name
-                  Text(
-                    "$firstName $lastName",
-                    style: TextStyle(
-                      fontSize: screenHeight * 0.025,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                      fontFamily: "Poppins",
+                  // Organizer Options for Providers
+                  if (userType == "provider") ...[
+                    SectionHeader(
+                      title: "Organizer Options",
+                      isDarkMode: isDarkMode,
                     ),
-                  ),
-
-                  SizedBox(height: screenHeight * 0.01),
-                  // ✅ Personal Account Text
-                  Text(
-                    "Personal Account",
-                    style: TextStyle(
-                      fontSize: screenHeight * 0.018,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey[700],
-                      fontFamily: "Poppins",
+                    ProfileOptionTile(
+                      isDarkMode: isDarkMode,
+                      icon: Icons.pages_rounded,
+                      title: "Landing page",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OrganizerProfilePage(
+                              organizerId: userId,
+                              organizerName: "$firstName $lastName",
+                              organizerImage: profilePicture,
+                              bio: "Welcome",
+                              activities: [],
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  ),
-                  SizedBox(height: screenHeight * 0.02),
-
-                  // ✅ Dotted-Border Button
-                  buildBusinessAccountButton(
-                    screenWidth: screenWidth,
-                    onPressed: () {
-                      print("Open Business Account Tapped");
-                    },
-                  ),
-
-                  SizedBox(height: screenHeight * 0.02),
-                  Padding(
-                    padding: EdgeInsets.only(
-                      left: screenWidth * 0.05,
-                      top: screenHeight * 0.02,
+                    ProfileOptionTile(
+                      isDarkMode: isDarkMode,
+                      icon: Icons.create,
+                      title: "Create Reels",
+                      onTap: () {},
                     ),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Account",
-                        style: TextStyle(
-                          fontSize: screenHeight * 0.025,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                          fontFamily: "Poppins",
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: screenHeight * 0.01),
+                    ProfileOptionTile(
+                      isDarkMode: isDarkMode,
+                      icon: Icons.list_sharp,
+                      title: "My listings",
+                      onTap: () async {
+                        final box = await Hive.openBox('authBox');
+                        final userType = box.get('userType');
+                        final providerId = box.get('providerId');
 
-                  // inbox option
+                        if (userType != 'provider' || providerId == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("Only providers can access My Listings."),
+                            ),
+                          );
+                          return;
+                        }
+
+                        Navigator.push(
+                          context,
+                          SecurityPageRoute(child: const MyListingsPage()),
+                        );
+                      },
+                    ),
+                  ],
+
+                  // Settings Section
+                  SectionHeader(
+                    title: "Settings",
+                    isDarkMode: isDarkMode,
+                  ),
                   ProfileOptionTile(
-                    icon: Icons.inbox,
-                    title: "Inbox",
-                    onTap: () {
-                      // handle tap
-                    },
-                  ),
-                  //help option
-                  ProfileOptionTile(
-                    icon: Icons.help,
-                    title: "Help",
-                    onTap: () {
-                      // handle tap
-                    },
-                  ),
-                  //statement and reports option
-                  ProfileOptionTile(
-                    icon: Icons.report,
-                    title: "Security & Privacy",
-                    onTap: () {
-                      // handle tap
-                    },
-                  ),
-
-                  SizedBox(height: screenHeight * 0.01),
-
-                  Padding(
-                    padding: EdgeInsets.only(
-                      left: screenWidth * 0.05,
-                      top: screenHeight * 0.02,
-                    ),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Settings",
-                        style: TextStyle(
-                          fontSize: screenHeight * 0.025,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                          fontFamily: "Poppins",
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: screenHeight * 0.02),
-                  //pivacy and security option
-                  ProfileOptionTile(
+                    isDarkMode: isDarkMode,
                     icon: Icons.security,
                     title: "Security & Privacy",
                     subtitle: "Change your security and privacy settings",
                     onTap: () {
-                      // handle tap
+                      Navigator.push(
+                        context,
+                        SecurityPageRoute(child: const SecurityPrivacyPage()),
+                      );
                     },
                   ),
-                  //payment methods option
                   ProfileOptionTile(
+                    isDarkMode: isDarkMode,
                     icon: Icons.payment,
                     title: "Payment Methods",
-                    subtitle:
-                        "Manage saved cards and bank accounts that are linked to this account",
+                    subtitle: "Manage saved cards and bank accounts that are linked to this account",
                     onTap: () {
-                      // handle tap
+                      Navigator.push(
+                        context,
+                        SecurityPageRoute(child: const AddPaymentMethodPage()),
+                      );
                     },
                   ),
-
-                  //appearance options
                   ProfileOptionTile(
-                    icon: Icons.dark_mode,
-                    title: "Appearance",
-                    subtitle: "Light",
-                    onTap: () {
-                      // handle tap
-                    },
-                  ),
-
-                  //personal details option
-                  ProfileOptionTile(
+                    isDarkMode: isDarkMode,
                     icon: Icons.person,
                     title: "Personal Details",
-                    subtitle: "Update your personal informatin",
+                    subtitle: "Update your personal information",
                     onTap: () {
-                      // handle tap
+                      Navigator.push(
+                        context,
+                        SecurityPageRoute(child: const PersonalDetailsPage()),
+                      );
                     },
                   ),
-                  SizedBox(height: screenHeight * 0.02),
 
-                  Padding(
-                    padding: EdgeInsets.only(
-                      left: screenWidth * 0.05,
-                      top: screenHeight * 0.02,
-                    ),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Actions And Agreements",
-                        style: TextStyle(
-                          fontSize: screenHeight * 0.025,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                          fontFamily: "Poppins",
-                        ),
-                      ),
-                    ),
+                  // Actions and Agreements
+                  SectionHeader(
+                    title: "Actions And Agreements",
+                    isDarkMode: isDarkMode,
                   ),
-                  //agreements sections
-                  SizedBox(height: screenHeight * 0.02),
                   ProfileOptionTile(
+                    isDarkMode: isDarkMode,
                     icon: Icons.warning,
                     title: "Our Agreements",
                     onTap: () {
-                      // handle tap
+                      Navigator.push(
+                        context,
+                        SecurityPageRoute(child: const ProviderAgreementPage()),
+                      );
                     },
                   ),
-                  //rate us options
                   ProfileOptionTile(
+                    isDarkMode: isDarkMode,
                     icon: Icons.star,
                     title: "Rate Us",
                     subtitle: "Write a review in App store",
                     onTap: () {
-                      // handle tap
+                      Navigator.push(
+                        context,
+                        SecurityPageRoute(child: const RateUsPage()),
+                      );
                     },
                   ),
-                  //report bugs
                   ProfileOptionTile(
+                    isDarkMode: isDarkMode,
                     icon: Icons.bug_report,
                     title: "Report a bug",
                     onTap: () {
-                      // handle tap
+                      Navigator.push(
+                        context,
+                        SecurityPageRoute(child: const ReportBugPage()),
+                      );
                     },
                   ),
-                  //delete account option
                   ProfileOptionTile(
+                    isDarkMode: isDarkMode,
                     icon: Icons.delete,
                     title: "Close Account",
                     subtitle: "Close your personal account",
-                    onTap: () async {
-                      print("🚨 Delete button pressed!");
-                      _showDeleteConfirmationDialog(
-                          context); // ✅ Call dialog directly
+                    onTap: () {
+                      _showDeleteConfirmationDialog(context);
                     },
                   ),
-                  //logout
                   ProfileOptionTile(
+                    isDarkMode: isDarkMode,
                     icon: Icons.logout,
                     title: "Logout",
                     onTap: () async {
-                      print("🚀 Logout button pressed!");
                       await StorageService.logout(context);
                     },
                   ),
-                  //membership section
-                  Padding(
-                    padding: EdgeInsets.only(
-                      left: screenWidth * 0.05,
-                      top: screenHeight * 0.02,
-                    ),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Membership number",
-                        style: TextStyle(
-                          fontSize: screenHeight * 0.020,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                          fontFamily: "Poppins",
-                        ),
-                      ),
-                    ),
+                  
+                  // Membership Section
+                  SectionHeader(
+                    title: "Membership",
+                    isDarkMode: isDarkMode,
                   ),
                   Padding(
-                    padding: EdgeInsets.only(
-                      left: screenWidth * 0.05,
-                      top: screenHeight * 0.02,
-                    ),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "P122312802",
-                        style: TextStyle(
-                          fontSize: screenHeight * 0.015,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                          fontFamily: "Poppins",
-                        ),
+                    padding: const EdgeInsets.only(left: 24, bottom: 32),
+                    child: Text(
+                      "P122312802",
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontFamily: "Poppins",
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-    );
-  }
-
-// ✅ The Dotted-Border Button (Unchanged)
-  Widget buildBusinessAccountButton({
-    required double screenWidth,
-    required VoidCallback onPressed,
-  }) {
-    return InkWell(
-      onTap: onPressed,
-      child: DottedBorder(
-        color: Colors.grey,
-        strokeWidth: 1.5,
-        dashPattern: [5, 5],
-        borderType: BorderType.RRect,
-        radius: Radius.circular(12),
-        child: Container(
-          width: screenWidth * 0.85,
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: Colors.grey[200],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Stack(
-                alignment: Alignment.bottomRight,
-                children: [
-                  Icon(Icons.business, size: 32, color: Colors.black),
-                  Positioned(
-                    right: -2,
-                    bottom: -2,
-                    child: CircleAvatar(
-                      radius: 8,
-                      backgroundColor: Colors.green,
-                      child: Icon(Icons.add, size: 12, color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(width: 12),
-              Text(
-                "Open a new business account",
-                style: TextStyle(
-                  fontFamily: "poppins",
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-              ),
-            ],
-          ),
-        ),
+      floatingActionButton: AppearanceFAB(
+        isDarkMode: Provider.of<ThemeController>(context).isDarkMode,
+        onToggle: () {
+          Provider.of<ThemeController>(context, listen: false).toggleTheme();
+        },
       ),
     );
   }
 
-  // ✅ Profile Picture Handling
   Widget _buildProfileImage() {
     if (profilePicture.isNotEmpty && profilePicture.length > 50) {
       if (profilePicture.startsWith("data:image")) {
         try {
           String base64String = profilePicture.split(",")[1];
-          Uint8List imageBytes = base64Decode(base64String);
+          Uint8List imageBytes = base64Decode(base64String.split(',').last);
 
           return Image.memory(
             imageBytes,
@@ -472,119 +542,76 @@ class _UserInfoState extends State<UserInfo> {
     return Image.asset("assets/images/default_user.png", fit: BoxFit.cover);
   }
 
-// ✅ Original _profileOption (3 parameters)
-// Widget _profileOption(IconData icon, String title, BuildContext context) {
-//   return ListTile(
-//     leading: Icon(icon, color: Colors.black87),
-//     title: Text(
-//       title,
-//       style:
-//           TextStyle(fontSize: 16, color: Colors.black, fontFamily: "Poppins"),
-//     ),
-//     trailing: Icon(Icons.arrow_forward_ios, color: Colors.black),
-//     onTap: () {},
-//   );
-// }
-
-// ✅ OPTIONAL: The new function with subtitles, renamed to avoid conflicts
-//    Use this if you want a bold title + grey subtitle. No lines removed, just placed at the end.
-  Widget _profileOptionWithSubtitle(
-    IconData icon,
-    String title,
-    String subtitle,
-    BuildContext context,
-  ) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.black87),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Colors.black,
-          fontFamily: "Poppins",
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(
-          fontSize: 12,
-          color: Colors.grey[200],
-          fontFamily: "Poppins",
-        ),
-      ),
-      trailing: Icon(Icons.arrow_forward_ios, color: Colors.black),
-      onTap: () {
-        // Handle onTap
-      },
-    );
-  }
-
-  // ✅ Logout Button
-  Widget _logoutOption(BuildContext context) {
-    return ListTile(
-      leading: Icon(Icons.logout, color: Colors.red),
-      title: Text(
-        "Logout",
-        style:
-            TextStyle(fontSize: 16, color: Colors.red, fontFamily: "Poppins"),
-      ),
-      onTap: () async {
-        print("🚀 Logout button pressed!");
-        await StorageService.logout(context);
-        print("✅ Logout function finished!");
-      },
-    );
-  }
-
-  Widget _deleteAccountOption(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        print("🚨 Delete Account button tapped!");
-        _showDeleteConfirmationDialog(context);
-      },
-      child: ListTile(
-        leading: Icon(Icons.delete_forever, color: Colors.red),
-        title: Text(
-          "Delete Account",
-          style:
-              TextStyle(fontSize: 16, color: Colors.red, fontFamily: "Poppins"),
-        ),
-      ),
-    );
-  }
-
   void _showDeleteConfirmationDialog(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final dialogBackgroundColor = isDarkMode ? const Color(0xFF2A2A2A) : Colors.white;
+    
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: Text(
-            "⚠️ Confirm Account Deletion",
-            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+          backgroundColor: dialogBackgroundColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.red[400], size: 28),
+              const SizedBox(width: 12),
+              Text(
+                "Confirm Deletion",
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.red[400],
+                ),
+              ),
+            ],
           ),
           content: Text(
-            "Are you sure you want to delete your account? This action is irreversible.",
-            style: TextStyle(fontSize: 16),
+            "Are you sure you want to delete your account?\nThis action is permanent and cannot be undone.",
+            style: TextStyle(
+              fontSize: 15,
+              fontFamily: 'Poppins',
+              color: isDarkMode ? Colors.white : Colors.black87,
+            ),
           ),
           actions: [
             TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: isDarkMode ? Color(0xFF3D3D3D) : Colors.grey[200],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
               onPressed: () {
-                print("❌ User canceled account deletion.");
                 Navigator.pop(dialogContext);
               },
-              child: Text("Cancel", style: TextStyle(color: Colors.grey)),
+              child: Text(
+                "Cancel",
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  color: isDarkMode ? Colors.white : Colors.black87,
+                ),
+              ),
             ),
-            TextButton(
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[400],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
               onPressed: () async {
-                Navigator.pop(dialogContext); // ✅ Close dialog first
-
-                print("🚨 User confirmed account deletion.");
-
+                Navigator.pop(dialogContext);
+                
                 bool success = await UserService.deleteUser(context);
                 if (success) {
                   if (context.mounted) {
-                    // ✅ Check if the widget is still in the tree
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(builder: (context) => LoginPage()),
@@ -594,16 +621,50 @@ class _UserInfoState extends State<UserInfo> {
                 } else {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Failed to delete account.")),
+                      const SnackBar(
+                        content: Text("Failed to delete account."),
+                      ),
                     );
                   }
                 }
               },
-              child: Text("Delete", style: TextStyle(color: Colors.red)),
+              child: const Text(
+                "Delete",
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         );
       },
+    );
+  }
+}
+
+// You would need to define this AppearanceFAB widget if it doesn't exist already
+// This is just a placeholder implementation
+class AppearanceFAB extends StatelessWidget {
+  final bool isDarkMode;
+  final VoidCallback onToggle;
+
+  const AppearanceFAB({
+    Key? key,
+    required this.isDarkMode,
+    required this.onToggle,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton(
+      onPressed: onToggle,
+      backgroundColor: isDarkMode ? Colors.white : Colors.black,
+      child: Icon(
+        isDarkMode ? Icons.light_mode : Icons.dark_mode,
+        color: isDarkMode ? Colors.black : Colors.white,
+      ),
     );
   }
 }

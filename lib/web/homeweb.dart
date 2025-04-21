@@ -13,7 +13,7 @@ import 'package:adventura/Services/activity_service.dart';
 import 'package:adventura/web/bookingweb.dart';
 import 'package:hive/hive.dart';
 import 'dart:convert';
-import 'package:scroll_to_index/scroll_to_index.dart'; // Add this import
+import 'package:scroll_to_index/scroll_to_index.dart'; 
 
 class AdventuraWebHomee extends StatefulWidget {
   const AdventuraWebHomee({Key? key}) : super(key: key);
@@ -23,7 +23,7 @@ class AdventuraWebHomee extends StatefulWidget {
 }
 
 class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
-  String userId = ''; // Initialize with empty string instead of using late
+  String userId = ''; 
   List<dynamic> activities = [];
   List<dynamic> recommendedActivities = [];
   String selectedLocation = "Tripoli";
@@ -31,15 +31,15 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
   String lastName = "";
   bool isLoading = true;
   bool showSidebar = false;
-  int selectedIndex = 0; // For Navbar Pages switching
+  int selectedIndex = 0; 
   
-  // Controller for the page navigation
+  
   final PageController _pageController = PageController();
   
-  // Add AutoScrollController for vertical scrolling
+  
   late AutoScrollController _scrollController;
 
-  // Define index constants for auto-scrolling
+  
   static const int ACTIVITIES_SECTION_INDEX = 1;
 
   @override
@@ -48,7 +48,7 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
     _loadUserData();
     loadActivities();
     
-    // Initialize the auto scroll controller
+    
     _scrollController = AutoScrollController(
       viewportBoundaryGetter: () => 
           Rect.fromLTRB(0, 0, 0, MediaQuery.of(context).padding.bottom),
@@ -59,7 +59,7 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
   @override
   void dispose() {
     _pageController.dispose();
-    _scrollController.dispose(); // Dispose the scroll controller
+    _scrollController.dispose(); 
     super.dispose();
   }
 
@@ -86,7 +86,7 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
     try {
       final box = await Hive.openBox('cacheBox');
       
-      // Clear existing recommendations to force a fresh fetch
+      
       await box.delete('recommendations');
 
       final String? cachedActivities = box.get('activities');
@@ -138,13 +138,13 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
     });
   }
   
-  // Function to navigate to a specific tab
+  
   void navigateToTab(int index) {
     setState(() {
       selectedIndex = index;
     });
     
-    // Use the PageController to animate to the selected page
+    
     if (_pageController.hasClients) {
       _pageController.animateToPage(
         index,
@@ -154,9 +154,9 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
     }
   }
   
-  // Function to handle search tap from hero section
+  
   void handleSearchTap() {
-    // Navigate to the discover tab (index 1)
+    
     navigateToTab(1);
   }
 
@@ -174,7 +174,7 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
         children: [
           Column(
             children: [
-              // Navbar remains fixed at the top
+              
               NavbarWidget(
                 firstName: firstName,
                 userId: userId,
@@ -186,33 +186,33 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
                   });
                 },
                 selectedIndex: selectedIndex,
-                onTapNavItem: navigateToTab, // Use the navigation function here
+                onTapNavItem: navigateToTab, 
               ),
               
-              // Main content with PageView to handle tab navigation
+              
               Expanded(
                 child: PageView(
                   controller: _pageController,
-                  physics: const NeverScrollableScrollPhysics(), // Disable swiping to maintain control
+                  physics: const NeverScrollableScrollPhysics(), 
                   onPageChanged: (index) {
                     setState(() {
                       selectedIndex = index;
                     });
                   },
                   children: [
-                    // Home Page Content
+                    
                     SingleChildScrollView(
-                      controller: _scrollController, // Use the AutoScrollController here
+                      controller: _scrollController, 
                       child: Column(
                         children: [
-                          // Pass the scroll controller to the hero section
+                          
                           HeroSectionWidget(
                             isLoading: isLoading,
                             onSearchTap: handleSearchTap,
-                            scrollController: _scrollController, // Pass the controller here
+                            scrollController: _scrollController, 
                           ),
                           
-                          // Wrap LimitedTimeActivitiesWeb with AutoScrollTag
+                          
                           if (!isLoading) 
                             AutoScrollTag(
                               key: ValueKey(ACTIVITIES_SECTION_INDEX),
@@ -243,7 +243,7 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
                                       ),
                                       TextButton(
                                         onPressed: () {
-                                          // Navigate to the discover tab
+                                          
                                           navigateToTab(1);
                                         },
                                         child: Text(
@@ -285,7 +285,7 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
                                         ),
                                       )
                                     : RecommendationsWidget(
-                                        title: "",  // Empty title since we're adding our own
+                                        title: "",  
                                         activities: recommendedActivities.where((activity) => 
                                             activity['availability_status'] == true).toList(),
                                         isMobile: isMobile,
@@ -299,11 +299,11 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
                       ),
                     ),
 
-                    // Discover/Search Page Content
+                    
                     SearchScreen(onScrollChanged: (bool) { },),
                     MyBookingsPage(onScrollChanged: (bool) { }),
 
-                    // Saved Page
+                    
                     const Center(child: Text("Saved Page")),
                   ],
                 ),
@@ -311,7 +311,7 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
             ],
           ),
 
-          // Sidebar
+          
           if (showSidebar)
             SidebarWidget(
               userId: userId,
@@ -319,7 +319,7 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
               isProvider: true,
             ),
           
-          // Back button
+          
           Positioned(
             top: 60,
             left: 10,

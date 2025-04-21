@@ -1,11 +1,14 @@
 import 'package:adventura/Chatbot/chatBot.dart';
 import 'package:adventura/Notification/NotificationPage.dart';
+import 'package:adventura/userinformation/UserInfo.dart';
+import 'package:adventura/userinformation/widgets/theme_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/colors.dart';
 import 'package:adventura/components/customdropdown.dart';
 import 'package:hive/hive.dart';
 import 'dart:typed_data';
 import 'package:blurrycontainer/blurrycontainer.dart';
+import 'package:provider/provider.dart';
 
 class NavbarWidget extends StatelessWidget {
   final String firstName;
@@ -149,48 +152,82 @@ class NavbarWidget extends StatelessWidget {
               SizedBox(width: 16),
             ],
             FutureBuilder(
-              future: Hive.openBox('authBox'),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done) {
-                  Box box = Hive.box('authBox');
-                  Uint8List? userBytes = box.get('profileImageBytes_$userId');
-                  ImageProvider<Object> imageProvider;
+  future: Hive.openBox('authBox'),
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.done) {
+      Box box = Hive.box('authBox');
+      Uint8List? userBytes = box.get('profileImageBytes_$userId');
+      ImageProvider<Object> imageProvider;
 
-                  if (userBytes != null) {
-                    imageProvider = MemoryImage(userBytes);
-                  } else {
-                    imageProvider = AssetImage("assets/images/default_user.png");
-                  }
+      if (userBytes != null) {
+        imageProvider = MemoryImage(userBytes);
+      } else {
+        imageProvider = AssetImage("assets/images/default_user.png");
+      }
 
-                  return isTransparent
-                    ? Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: CircleAvatar(
-                          radius: 18,
-                          backgroundColor: Colors.grey.shade300,
-                          backgroundImage: imageProvider,
-                        ),
-                      )
-                    : CircleAvatar(
-                        radius: 18,
-                        backgroundColor: Colors.grey.shade300,
-                        backgroundImage: imageProvider,
-                      );
-                }
-                return CircleAvatar(
-                  radius: 18,
-                  backgroundColor: Colors.grey.shade300,
-                  child: Icon(
-                    Icons.person, 
-                    color: isTransparent ? Colors.white : Colors.black, 
-                    size: 24
-                  ),
-                );
-              },
+      // This will be our clickable avatar widget
+      Widget avatarWidget = isTransparent
+        ? Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2),
             ),
+            child: CircleAvatar(
+              radius: 18,
+              backgroundColor: Colors.grey.shade300,
+              backgroundImage: imageProvider,
+            ),
+          )
+        : CircleAvatar(
+            radius: 18,
+            backgroundColor: Colors.grey.shade300,
+            backgroundImage: imageProvider,
+          );
+
+      // Wrap with GestureDetector to handle tap events
+      return GestureDetector(
+        onTap: () {
+      final themeController = Provider.of<ThemeController>(context, listen: false);
+
+// Navigate with the provider
+Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) =>  UserInfo(),
+  
+  ),
+);
+        },
+        child: avatarWidget,
+      );
+    }
+
+    // Loading placeholder with navigation capability
+    return GestureDetector(
+      onTap: () {
+     final themeController = Provider.of<ThemeController>(context, listen: false);
+
+// Navigate with the provider
+Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) =>  UserInfo(),
+    
+  ),
+);
+      },
+      child: CircleAvatar(
+        radius: 18,
+        backgroundColor: Colors.grey.shade300,
+        child: Icon(
+          Icons.person, 
+          color: isTransparent ? Colors.white : Colors.black, 
+          size: 24
+        ),
+      ),
+    );
+  },
+),
             if (isMobile) IconButton(
               onPressed: onMenuTap,
               icon: Icon(

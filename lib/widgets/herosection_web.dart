@@ -178,7 +178,7 @@ class _HeroSectionWidgetState extends State<HeroSectionWidget>
                                 end: Alignment.bottomCenter,
                                 colors: [
                                   Colors.transparent, 
-                                  Colors.black.withOpacity(0.5), // Increased opacity for better contrast
+                                  Colors.black.withOpacity(0.5), 
                                 ],
                               ).createShader(rect);
                             },
@@ -192,17 +192,17 @@ class _HeroSectionWidgetState extends State<HeroSectionWidget>
                           ),
                         ),
                         
-                        // Blue overlay with darker tint
+                        
                         Positioned.fill(
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(_blueOverlayAnimation.value * 1.2), // Increased opacity for better visibility
+                              color: Colors.blue.withOpacity(_blueOverlayAnimation.value * 1.2), 
                               backgroundBlendMode: BlendMode.overlay,
                             ),
                           ),
                         ),
                         
-                        // Gradient overlay for text contrast
+                        
                         Container(
                           width: double.infinity,
                           height: heroHeight,
@@ -211,9 +211,9 @@ class _HeroSectionWidgetState extends State<HeroSectionWidget>
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                Colors.black.withOpacity(0.3), // Added top gradient for better visibility
+                                Colors.black.withOpacity(0.3), 
                                 Colors.transparent.withOpacity(0.1),
-                                Colors.black.withOpacity(0.7), // Increased bottom opacity
+                                Colors.black.withOpacity(0.7), 
                               ],
                               stops: [0.0, 0.4, 1.0],
                             ),
@@ -281,13 +281,13 @@ class _HeroSectionWidgetState extends State<HeroSectionWidget>
                           const SizedBox(height: 24),
                           _buildHeadline(isMobile),
                           const SizedBox(height: 20),
-                          // Moving subheading toward the bottom to be more visible on the sea
+                          
                           const SizedBox(height: 40),
                           _buildSearchBar(isMobile, screenWidth),
                           const SizedBox(height: 24),
                           _buildCategoryFilters(isMobile),
                           const SizedBox(height: 40),
-                          // Added subheading here - positioned closer to the bottom over the sea
+                          
                           _buildSubheading(isMobile),
                           const SizedBox(height: 24),
                           _buildLimitedTimeButton(),
@@ -408,7 +408,7 @@ class _HeroSectionWidgetState extends State<HeroSectionWidget>
             curve: const Interval(0.2, 0.9, curve: Curves.easeOutQuint),
           ),
         ),
-        // Enhanced container for headline visibility
+        
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           decoration: BoxDecoration(
@@ -435,12 +435,12 @@ class _HeroSectionWidgetState extends State<HeroSectionWidget>
                   letterSpacing: -0.5,
                   shadows: [
                     Shadow(
-                      color: Colors.black.withOpacity(0.8), // Stronger shadow
+                      color: Colors.black.withOpacity(0.8), 
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),
                     Shadow(
-                      color: Colors.black.withOpacity(0.5), // Stronger shadow
+                      color: Colors.black.withOpacity(0.5), 
                       blurRadius: 15,
                       offset: const Offset(0, 6),
                     )
@@ -459,7 +459,7 @@ class _HeroSectionWidgetState extends State<HeroSectionWidget>
                       letterSpacing: -0.5,
                       shadows: [
                         Shadow(
-                          color: Colors.black.withOpacity(0.8), // Stronger shadow
+                          color: Colors.black.withOpacity(0.8), 
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
@@ -487,7 +487,7 @@ class _HeroSectionWidgetState extends State<HeroSectionWidget>
                         letterSpacing: -0.5,
                         shadows: [
                           Shadow(
-                            color: Colors.black.withOpacity(0.8), // Stronger shadow
+                            color: Colors.black.withOpacity(0.8), 
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -517,27 +517,27 @@ class _HeroSectionWidgetState extends State<HeroSectionWidget>
             curve: const Interval(0.3, 1.0, curve: Curves.easeOutQuint),
           ),
         ),
-        // Enhanced subheading with more visible styling
+        
         child: BlurryContainer(
           blur: 5,
-          color: Colors.black.withOpacity(0.5), // Darker background for better contrast
+          color: Colors.black.withOpacity(0.5), 
           borderRadius: BorderRadius.circular(30),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           child: Text(
             "Explore thousands of activities and destinations in Lebanon",
             style: GoogleFonts.lora(  
-              fontSize: isMobile ? 18 : 20, // Slightly larger
-              fontWeight: FontWeight.w700, // Bolder
+              fontSize: isMobile ? 18 : 20, 
+              fontWeight: FontWeight.w700, 
               color: Colors.white,
               letterSpacing: 0.5,
               height: 1.4,
               shadows: [
                 Shadow(
-                  color: Colors.black.withOpacity(0.7), // Stronger shadow
+                  color: Colors.black.withOpacity(0.7), 
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
-                Shadow( // Added second shadow for more visibility
+                Shadow( 
                   color: Colors.black.withOpacity(0.5),
                   blurRadius: 10,
                   offset: const Offset(0, 4),

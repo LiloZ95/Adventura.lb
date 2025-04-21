@@ -1,9 +1,7 @@
-// import 'dart:nativewrappers/_internal/vm/lib/ffi_patch.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:adventura/colors.dart';
-import 'package:adventura/OrderDetail/PurchaseConfiramtion.dart';
+import 'package:adventura/Booking/MyBooking.dart'; // Import MyBooking page
 import 'package:adventura/OrderDetail/countries.dart';
 
 class PaymentModal extends StatefulWidget {
@@ -150,11 +148,21 @@ class _PaymentModalState extends State<PaymentModal> {
                           ),
                         ),
                         onPressed: () {
-                          Navigator.push(
+                          // Show success message to the user
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("✅ Payment successful!"))
+                          );
+                          
+                          // Close the modal first
+                          Navigator.of(context).pop();
+                          
+                          // Navigate directly to the MyBookingsPage
+                          Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => PurchaseConfirmationPage(),
+                              builder: (context) => MyBookingsPage(onScrollChanged: (bool value) {}),
                             ),
+                            (route) => false, // Remove all previous routes
                           );
                         },
                         child: const Text(
