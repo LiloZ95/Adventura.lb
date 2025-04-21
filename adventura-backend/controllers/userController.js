@@ -642,7 +642,7 @@ const sendOtp = async (req, res) => {
 		`;
 
 		await transporter.sendMail({
-			from: `"noreply" <${process.env.EMAIL}>`,
+			from: `"noreply-Adventura" <${process.env.EMAIL}>`,
 			to: email,
 			subject,
 			html: htmlContent,

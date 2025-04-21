@@ -1,27 +1,30 @@
 // utils.dart
 import 'package:adventura/config.dart';
 
-String getImageUrl(Map<String, dynamic> activity) {
+String? getImageUrl(Map<String, dynamic> activity) {
   if (activity.containsKey("activity_images") &&
       activity["activity_images"] is List) {
     List<dynamic> images = activity["activity_images"];
 
-    // ✅ If the list contains strings directly, return the first valid URL
-    if (images.isNotEmpty && images[0] is String) {
-      String imageUrl = images[0];
-
-      if (imageUrl.isNotEmpty) {
-        print("🟢 Valid Image URL: $imageUrl"); // Debugging
-
-        // ✅ Ensure the URL is complete (handles both absolute and relative paths)
-        return imageUrl.startsWith("http") ? imageUrl : "$baseUrl$imageUrl";
+    if (images.isNotEmpty) {
+      var first = images[0];
+      if (first is String && first.isNotEmpty) {
+        return first.startsWith("http") ? first : "$baseUrl$first";
+      } else if (first is Map && first.containsKey("image_url")) {
+        final url = first["image_url"];
+        if (url != null && url.toString().isNotEmpty) {
+          return url.toString().startsWith("http")
+              ? url
+              : "$baseUrl${url.toString()}";
+        }
       }
     }
   }
 
-  print("❌ No valid image found, using default.");
-  return "assets/Pictures/island.jpg"; // ✅ Default image
+  // ⛔️ Return null instead of default asset — so we know it's missing!
+  return null;
 }
+
 
 String getEventImageUrl(Map<String, dynamic> event) {
   if (event.containsKey("activity_images") &&

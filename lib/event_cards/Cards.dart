@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:adventura/Services/interaction_service.dart';
 import 'package:adventura/event_cards/eventDetailsScreen.dart';
 import 'package:adventura/Services/activity_service.dart';
+import 'package:adventura/widgets/safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/utils.dart';
 import 'package:hive/hive.dart';
@@ -11,7 +12,7 @@ Widget EventCard({
   required BuildContext context,
   required Map<String, dynamic> activity,
 }) {
-  String imagePath = getImageUrl(activity);
+  String? imagePath = getImageUrl(activity);
   final duration = ActivityService.getDurationDisplay(activity);
 
   final List<dynamic> rawFeatures = activity["features"] ?? [];
@@ -102,27 +103,11 @@ Widget EventCard({
                     ClipRRect(
                       borderRadius:
                           BorderRadius.vertical(top: Radius.circular(15)),
-                      child: imagePath.isNotEmpty
-                          ? Image.network(
-                              imagePath,
-                              width: 380,
-                              height: 208,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.asset(
-                                  "assets/Pictures/island.jpg",
-                                  width: 380,
-                                  height: 208,
-                                  fit: BoxFit.cover,
-                                );
-                              },
-                            )
-                          : Image.asset(
-                              "assets/Pictures/island.jpg",
-                              width: 380,
-                              height: 208,
-                              fit: BoxFit.cover,
-                            ),
+                      child: safeImage(
+                        imagePath,
+                        width: 380,
+                        height: 208,
+                      ),
                     ),
                     Positioned(
                       bottom: 0,

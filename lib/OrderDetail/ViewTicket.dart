@@ -83,7 +83,7 @@ class ViewTicketPage extends StatelessWidget {
               width: screenWidth * 0.6,
               height: screenWidth * 0.6,
               decoration: BoxDecoration(
-                color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[200],
+                color: isDarkMode ? Colors.white : Colors.grey[200],
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(

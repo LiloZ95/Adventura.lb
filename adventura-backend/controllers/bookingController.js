@@ -103,63 +103,82 @@ const checkAvailability = async (req, res) => {
 
 const createBooking = async (req, res) => {
 	try {
-		console.log("📥 Booking Payload:", req.body); // <-- ADD THIS
-
-		const { activity_id, client_id, booking_date, slot, total_price } =
-			req.body;
-
-		// Check if the activity exists
-		const activity = await Activity.findByPk(activity_id);
-		if (!activity)
-			return res.status(404).json({ message: "Activity not found" });
-
-		// Check for valid availability
-		const availabilitySlot = await availability.findOne({
-			where: {
-				activity_id,
-				date: booking_date,
-				slot,
-			},
-		});
-
-		if (!availabilitySlot) {
-			return res
-				.status(404)
-				.json({ message: "No availability for selected date/slot" });
-		}
-
-		if (availabilitySlot.available_seats <= 0) {
-			return res.status(400).json({ message: "Slot is fully booked" });
-		}
-
-		// Create booking
+	  console.log("📥 Booking Payload:", req.body);
+  
+	  const { activity_id, client_id, booking_date, slot, total_price } = req.body;
+  
+	  // Check if the activity exists
+	  const activity = await Activity.findByPk(activity_id);
+	  if (!activity)
+		return res.status(404).json({ message: "Activity not found" });
+  
+	  // 🟢 Check if it's a one-time activity
+	  if (activity.listing_type === "oneTime") {
+		// Skip availability check
 		const newBooking = await Booking.create({
-			activity_id,
-			client_id,
-			booking_date,
-			slot,
-			total_price,
-			status: "pending",
+		  activity_id,
+		  client_id,
+		  booking_date,
+		  slot,
+		  total_price,
+		  status: "pending",
 		});
-
-		// Decrease available seats
-		availabilitySlot.available_seats -= 1;
-		await availabilitySlot.save();
-
+  
 		await Notification.create({
-			user_id: client_id,
-			title: "Booking Successful",
-			description: `Your booking for "${activity.name}" on ${booking_date} at ${slot} was successful.`,
-			icon: "book",
-		  });
-
-		res.status(201).json({ message: "Booking successful", booking: newBooking });
+		  user_id: client_id,
+		  title: "Booking Successful",
+		  description: `Your booking for "${activity.name}" on ${booking_date} is confirmed.`,
+		  icon: "book",
+		});
+  
+		return res.status(201).json({ message: "Booking successful", booking: newBooking });
+	  }
+  
+	  // 🔁 Recurrent: Check availability
+	  const availabilitySlot = await availability.findOne({
+		where: {
+		  activity_id,
+		  date: booking_date,
+		  slot,
+		},
+	  });
+  
+	  if (!availabilitySlot) {
+		return res.status(404).json({ message: "No availability for selected date/slot" });
+	  }
+  
+	  if (availabilitySlot.available_seats <= 0) {
+		return res.status(400).json({ message: "Slot is fully booked" });
+	  }
+  
+	  const newBooking = await Booking.create({
+		activity_id,
+		client_id,
+		booking_date,
+		slot,
+		total_price,
+		status: "pending",
+	  });
+  
+	  // Decrease available seats
+	  availabilitySlot.available_seats -= 1;
+	  await availabilitySlot.save();
+  
+	  await Notification.create({
+		user_id: client_id,
+		title: "Booking Successful",
+		description: `Your booking for "${activity.name}" on ${booking_date} at ${slot} was successful.`,
+		icon: "book",
+	  });
+  
+	  res.status(201).json({ message: "Booking successful", booking: newBooking });
 	} catch (error) {
-		console.error("❌ Booking error:", error);
-		console.error("🪵 Full stack:", error.stack);
-		res.status(500).json({ message: "Server error" });
+	  console.error("❌ Booking error:", error);
+	  console.error("🪵 Full stack:", error.stack);
+	  res.status(500).json({ message: "Server error" });
 	}
-};
+  };
+  
 
 const updateBookingStatus = async (req, res) => {
 	try {

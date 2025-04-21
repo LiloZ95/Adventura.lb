@@ -5,6 +5,7 @@ import 'package:adventura/OrderDetail/ViewTicket.dart';
 import 'package:adventura/config.dart';
 import 'package:adventura/event_cards/eventDetailsScreen.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 
 /// The BookingCard widget displays booking details with options to cancel or view.
 // DYNAMIC Booking Card
@@ -244,252 +245,255 @@ class BookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final Box storageBox = Hive.box('authBox');
+    final firstName = storageBox.get("firstName", defaultValue: "User");
+    final lastName = storageBox.get("lastName", defaultValue: "User");
 
-return Container(
-  margin: const EdgeInsets.only(bottom: 12),
-  padding: const EdgeInsets.all(12),
-  decoration: BoxDecoration(
-    color: isDarkMode ? const Color(0xFF2B2B2B) : Colors.white,
-    borderRadius: BorderRadius.circular(12),
-    boxShadow: [
-      BoxShadow(
-        color: isDarkMode
-            ? Colors.black.withOpacity(0.1)
-            : Colors.black.withOpacity(0.2),
-        blurRadius: 5,
-        spreadRadius: 2,
-        offset: const Offset(1, 3),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF2B2B2B) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: isDarkMode
+                ? Colors.black.withOpacity(0.1)
+                : Colors.black.withOpacity(0.2),
+            blurRadius: 5,
+            spreadRadius: 2,
+            offset: const Offset(1, 3),
+          ),
+        ],
       ),
-    ],
-  ),
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      // Image & title
-      Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: (activity["activity_images"] != null &&
-                    activity["activity_images"].isNotEmpty)
-                ? Image.network(
-                    activity["activity_images"][0].startsWith("http")
-                        ? activity["activity_images"][0]
-                        : "$baseUrl${activity["activity_images"][0]}",
-                    width: 120,
-                    height: 120,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        Image.asset(
-                      'assets/Pictures/island.jpg',
-                      width: 120,
-                      height: 120,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : Image.asset(
-                    'assets/Pictures/island.jpg',
-                    width: 120,
-                    height: 120,
-                    fit: BoxFit.cover,
-                  ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  activity["name"] ?? "Unknown Activity",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Poppins',
-                    color: isDarkMode ? Colors.white : Colors.black,
-                  ),
-                ),
-                Row(
+          // Image & title
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: (activity["activity_images"] != null &&
+                        activity["activity_images"].isNotEmpty)
+                    ? Image.network(
+                        activity["activity_images"][0].startsWith("http")
+                            ? activity["activity_images"][0]
+                            : "$baseUrl${activity["activity_images"][0]}",
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Image.asset(
+                          'assets/Pictures/island.jpg',
+                          width: 120,
+                          height: 120,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Image.asset(
+                        'assets/Pictures/island.jpg',
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                      ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.location_on,
-                        size: 14,
-                        color:
-                            isDarkMode ? Colors.grey[400] : Colors.grey[600]),
-                    const SizedBox(width: 4),
                     Text(
-                      activity["location"] ?? "Unknown Location",
+                      activity["name"] ?? "Unknown Activity",
                       style: TextStyle(
-                        fontSize: 14,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                         fontFamily: 'Poppins',
+                        color: isDarkMode ? Colors.white : Colors.black,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Icon(Icons.location_on,
+                            size: 14,
+                            color: isDarkMode
+                                ? Colors.grey[400]
+                                : Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Text(
+                          activity["location"] ?? "Unknown Location",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDarkMode ? Colors.grey[400] : Colors.grey,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(status),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        // Assume status is already capitalized
+                        'Confirmed',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Poppins',
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ],
                 ),
-                Container(
-                  margin: const EdgeInsets.symmetric(vertical: 4),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(status),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    // Assume status is already capitalized
-                    'Confirmed',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Poppins',
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text('Booking ID: $bookingId',
+              style: TextStyle(
+                fontSize: 16,
+                color: isDarkMode ? Colors.white : Colors.black,
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.bold,
+              )),
+          Text(guests,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDarkMode ? Colors.grey[400] : Colors.grey,
+                fontFamily: 'Poppins',
+              )),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Divider(
+              color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
             ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Text(activity["date"] ?? "",
+                style: TextStyle(
+                  fontSize: 18,
+                  color: isDarkMode ? Colors.white : Colors.black,
+                  fontFamily: 'Poppins',
+                )),
+          ),
+
+          // Buttons
+          Row(
+            children: isUpcomingSelected
+                ? [
+                    // Cancel Button
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: onCancel,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Poppins',
+                              fontSize: 14),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // View Ticket
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ViewTicketPage(
+                                eventTitle: activity["name"] ?? "",
+                                clientName: '$firstName $lastName',
+                                eventTime: activity["date"] ?? "",
+                                numberOfAttendees:
+                                    int.tryParse(guests.split(' ')[0]) ?? 1,
+                                ticketId: bookingId,
+                                status: status,
+                              ),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text(
+                          'View Ticket',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Poppins',
+                              fontSize: 14),
+                        ),
+                      ),
+                    ),
+                  ]
+                : [
+                    // Review Button
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => showReviewModal(
+                          context,
+                          activity["name"] ?? "",
+                          activity["location"] ?? "",
+                          activity["activity_images"][0] ?? "",
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.blue, width: 1),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text(
+                          'Write a Review',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontFamily: 'Poppins',
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // View Booking
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => navigateToDetails(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text(
+                          'View Booking',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Poppins',
+                              fontSize: 14),
+                        ),
+                      ),
+                    ),
+                  ],
           ),
         ],
       ),
-      const SizedBox(height: 10),
-      Text('Booking ID: $bookingId',
-          style: TextStyle(
-            fontSize: 16,
-            color: isDarkMode ? Colors.white : Colors.black,
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.bold,
-          )),
-      Text(guests,
-          style: TextStyle(
-            fontSize: 14,
-            color: isDarkMode ? Colors.grey[400] : Colors.grey,
-            fontFamily: 'Poppins',
-          )),
-      Align(
-        alignment: Alignment.centerLeft,
-        child: Divider(
-          color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
-        ),
-      ),
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Text(activity["date"] ?? "",
-            style: TextStyle(
-              fontSize: 18,
-              color: isDarkMode ? Colors.white : Colors.black,
-              fontFamily: 'Poppins',
-            )),
-      ),
-
-      // Buttons
-      Row(
-        children: isUpcomingSelected
-            ? [
-                // Cancel Button
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: onCancel,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: const Text(
-                      'Cancel',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Poppins',
-                          fontSize: 14),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                // View Ticket
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ViewTicketPage(
-                            eventTitle: activity["name"] ?? "",
-                            clientName: "John Doe",
-                            eventTime: activity["date"] ?? "",
-                            numberOfAttendees:
-                                int.tryParse(guests.split(' ')[0]) ?? 1,
-                            ticketId: bookingId,
-                            status: status,
-                          ),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: const Text(
-                      'View Ticket',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Poppins',
-                          fontSize: 14),
-                    ),
-                  ),
-                ),
-              ]
-            : [
-                // Review Button
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => showReviewModal(
-                      context,
-                      activity["name"] ?? "",
-                      activity["location"] ?? "",
-                      activity["activity_images"][0] ?? "",
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.blue, width: 1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    child: const Text(
-                      'Write a Review',
-                      style: TextStyle(
-                        color: Colors.blue,
-                        fontFamily: 'Poppins',
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                // View Booking
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => navigateToDetails(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: const Text(
-                      'View Booking',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Poppins',
-                          fontSize: 14),
-                    ),
-                  ),
-                ),
-              ],
-      ),
-    ],
-  ),
-);
-  
+    );
   }
 
   void navigateToDetails(BuildContext context) {

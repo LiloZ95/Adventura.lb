@@ -95,11 +95,18 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     List<dynamic> rawImages = widget.activity["activity_images"] ?? [];
-    List<String> images = rawImages
-        .whereType<String>()
-        .where((img) => img.isNotEmpty)
-        .map((img) => img.startsWith("http") ? img : "$baseUrl$img")
-        .toList();
+    List<String> images = [];
+
+    for (var img in rawImages) {
+      if (img is Map && img.containsKey("image_url")) {
+        final url = img["image_url"];
+        if (url != null && url.toString().isNotEmpty) {
+          images.add(url.toString().startsWith("http") ? url : "$baseUrl$url");
+        }
+      } else if (img is String && img.isNotEmpty) {
+        images.add(img.startsWith("http") ? img : "$baseUrl$img");
+      }
+    }
 
     if (images.isEmpty) {
       images.add("assets/Pictures/island.jpg");
@@ -800,22 +807,15 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 onPressed: isOwnActivity
                     ? null
                     : () {
-                        if (confirmedDate != null && confirmedSlot != null) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => OrderDetailsPage(
-                                activityId: widget.activity["activity_id"],
-                                selectedImage: images[_currentImageIndex],
-                                eventTitle: widget.activity["name"] ?? "Event",
-                                eventDate: confirmedDate!,
-                                eventLocation:
-                                    widget.activity["location"] ?? "Location",
-                                selectedSlot: confirmedSlot!,
-                              ),
-                            ),
-                          );
-                        } else {
+                        final isOneTime =
+                            widget.activity["listing_type"] == "oneTime";
+                        final startDate = widget.activity["start_date"];
+
+                        final shouldAllowBooking = isOneTime
+                            ? startDate != null
+                            : confirmedDate != null && confirmedSlot != null;
+
+                        if (!shouldAllowBooking) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(
@@ -823,7 +823,24 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                               backgroundColor: Colors.orange,
                             ),
                           );
+                          return;
                         }
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OrderDetailsPage(
+                              activityId: widget.activity["activity_id"],
+                              selectedImage: images[_currentImageIndex],
+                              eventTitle: widget.activity["name"] ?? "Event",
+                              eventDate: isOneTime ? startDate : confirmedDate!,
+                              eventLocation:
+                                  widget.activity["location"] ?? "Location",
+                              selectedSlot:
+                                  isOneTime ? "Fixed" : confirmedSlot!,
+                            ),
+                          ),
+                        );
                       },
                 icon: Icon(
                   isOwnActivity ? Icons.block : Icons.local_activity_outlined,
