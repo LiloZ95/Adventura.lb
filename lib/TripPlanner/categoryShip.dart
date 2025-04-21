@@ -19,7 +19,7 @@ class CategoryChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.deepPurple : Colors.grey.shade200,
+          color: isSelected ? Colors.blue : Colors.grey.shade200,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -27,6 +27,7 @@ class CategoryChip extends StatelessWidget {
           style: TextStyle(
             color: isSelected ? Colors.white : Colors.black,
             fontWeight: FontWeight.w500,
+            fontFamily: 'poppins',
           ),
         ),
       ),

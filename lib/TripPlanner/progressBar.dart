@@ -22,7 +22,7 @@ class StepProgressBar extends StatelessWidget {
               margin: const EdgeInsets.symmetric(horizontal: 4),
               height: 8,
               decoration: BoxDecoration(
-                color: isActive ? Colors.deepPurple : Colors.grey[300],
+                color: isActive ? Colors.blue : Colors.grey[300],
                 borderRadius: BorderRadius.circular(10),
               ),
             ),

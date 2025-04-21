@@ -823,7 +823,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
           ),
         ),
       ),
-      _buildLoadingOverlay(), 
+      _buildLoadingOverlay(),
     ]);
   }
 

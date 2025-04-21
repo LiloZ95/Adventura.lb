@@ -24,10 +24,10 @@ class LocationTile extends StatelessWidget {
           margin: const EdgeInsets.symmetric(vertical: 8),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.deepPurple.shade50 : Colors.transparent,
+            color: isSelected ? Colors.blue.shade50 : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? Colors.deepPurple : Colors.grey.shade300,
+              color: isSelected ? Colors.blue : Colors.grey.shade300,
               width: 1.5,
             ),
           ),
@@ -35,12 +35,16 @@ class LocationTile extends StatelessWidget {
             children: [
               Icon(
                 isSelected ? Icons.check_box : Icons.check_box_outline_blank,
-                color: isSelected ? Colors.deepPurple : Colors.grey,
+                color: isSelected ? Colors.blue : Colors.grey,
               ),
               const SizedBox(width: 12),
               Text(
                 location,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: 'poppins',
+                ),
               )
             ],
           ),

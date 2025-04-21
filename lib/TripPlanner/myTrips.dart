@@ -8,35 +8,13 @@ class MyTripsPage extends StatefulWidget {
   State<MyTripsPage> createState() => _MyTripsPageState();
 }
 
-class _MyTripsPageState extends State<MyTripsPage>
-    with SingleTickerProviderStateMixin {
-  List<Map<String, dynamic>> trips = [
-    // {
-    //   'title': 'Dubai for 3 days',
-    //   'date': '3 days',
-    //   'saves': 15,
-    //   'completed': false,
-    // },
-    // {
-    //   'title': 'Las Vegas for 3 days with your partner',
-    //   'date': 'Apr 1 → Apr 3, 2025',
-    //   'saves': 18,
-    //   'completed': true,
-    // },
-    // {
-    //   'title': 'Istanbul for 3 days',
-    //   'date': 'Apr 1 → Apr 3, 2025',
-    //   'saves': 15,
-    //   'completed': true,
-    // },
-  ];
+class _MyTripsPageState extends State<MyTripsPage> {
+  List<Map<String, dynamic>> trips = [];
 
   bool _isFabOpen = false;
 
   void _toggleFab() {
-    setState(() {
-      _isFabOpen = !_isFabOpen;
-    });
+    setState(() => _isFabOpen = !_isFabOpen);
   }
 
   Widget _buildTripTile(Map<String, dynamic> trip) {
@@ -49,10 +27,14 @@ class _MyTripsPageState extends State<MyTripsPage>
           borderRadius: BorderRadius.circular(8),
           color: Colors.grey.shade800,
         ),
+        child: Icon(Icons.explore, color: Colors.white),
       ),
       title: Text(
         trip['title'],
-        style: const TextStyle(fontWeight: FontWeight.w600),
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontFamily: 'poppins',
+        ),
       ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,7 +44,13 @@ class _MyTripsPageState extends State<MyTripsPage>
             children: [
               Icon(Icons.calendar_today, size: 16, color: Colors.grey[400]),
               const SizedBox(width: 4),
-              Text(trip['date'], style: TextStyle(color: Colors.grey[400])),
+              Text(
+                trip['date'] ?? "No date",
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontFamily: 'poppins',
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 2),
@@ -70,8 +58,13 @@ class _MyTripsPageState extends State<MyTripsPage>
             children: [
               Icon(Icons.favorite_border, size: 16, color: Colors.grey[400]),
               const SizedBox(width: 4),
-              Text('${trip['saves']} saves',
-                  style: TextStyle(color: Colors.grey[400])),
+              Text(
+                '${trip['saves'] ?? 0} saves',
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontFamily: 'poppins',
+                ),
+              ),
             ],
           ),
         ],
@@ -108,6 +101,7 @@ class _MyTripsPageState extends State<MyTripsPage>
                     color: Colors.black,
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
+                    fontFamily: 'poppins',
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -132,83 +126,168 @@ class _MyTripsPageState extends State<MyTripsPage>
 
   @override
   Widget build(BuildContext context) {
-
-    final activeTrips =
-        trips.where((trip) => trip['completed'] == false).toList();
-    final completedTrips =
-        trips.where((trip) => trip['completed'] == true).toList();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final statusBarHeight = MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My trips'),
-        centerTitle: true,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: 100),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: Text(
-              'My trips',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          // 🔹 Custom Header
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, statusBarHeight + 6, 16, 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Divider(
+                    thickness: 1,
+                    color: isDark ? Colors.grey.shade700 : Colors.grey,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  "My Trips",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Poppins',
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Divider(
+                    thickness: 1,
+                    color: isDark ? Colors.grey.shade700 : Colors.grey,
+                  ),
+                ),
+              ],
             ),
           ),
-          ...activeTrips.map(_buildTripTile),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: Text(
-              'Completed trips',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+
+          // 🔹 Main Content
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: 100),
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
+                    'Here you’ll find all your upcoming adventures. '
+                    'Click the + icon below to start planning!',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                      fontFamily: 'poppins',
+                    ),
+                  ),
+                ),
+                if (trips.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 32),
+                    child: Column(
+                      children: const [
+                        Icon(Icons.travel_explore,
+                            size: 48, color: Colors.grey),
+                        SizedBox(height: 12),
+                        Text(
+                          "You haven’t created any trips yet.",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                            fontFamily: 'poppins',
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          "Tap the + button below to get started!",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                            fontFamily: 'poppins',
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ...trips.map(_buildTripTile),
+              ],
             ),
           ),
-          ...completedTrips.map(_buildTripTile),
         ],
       ),
-      floatingActionButton: Stack(
-        alignment: Alignment.bottomRight,
-        children: [
-          if (_isFabOpen) ...[
-            Positioned(
-              right: 16,
-              bottom: 150,
-              child: _buildFabOption(
-                label: "Create a trip",
-                icon: Icons.add,
-                onPressed: () {
-                  print("Manual Trip");
-                  _toggleFab();
-                },
+      floatingActionButton: SizedBox(
+        width: 200,
+        child: Stack(
+          alignment: Alignment.bottomRight,
+          clipBehavior: Clip.none,
+          children: [
+            // Create a trip
+            AnimatedPositioned(
+              duration: Duration(milliseconds: 300),
+              right: 0,
+              bottom: _isFabOpen ? 140 : 80,
+              child: AnimatedOpacity(
+                duration: Duration(milliseconds: 300),
+                opacity: _isFabOpen ? 1.0 : 0.0,
+                child: _buildFabOption(
+                  label: "Create a trip",
+                  icon: Icons.add,
+                  onPressed: () {
+                    print("Manual Trip");
+                    _toggleFab();
+                  },
+                ),
               ),
             ),
+
+            // AI Builder
+            AnimatedPositioned(
+              duration: Duration(milliseconds: 300),
+              right: 0,
+              bottom: _isFabOpen ? 200 : 80,
+              child: AnimatedOpacity(
+                duration: Duration(milliseconds: 300),
+                opacity: _isFabOpen ? 1.0 : 0.0,
+                child: _buildFabOption(
+                  label: "Build a trip with AI",
+                  icon: Icons.auto_awesome,
+                  onPressed: () {
+                    _toggleFab();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const BuildWithAIPage()),
+                    );
+                  },
+                ),
+              ),
+            ),
+
+            // FAB Base Button
             Positioned(
-              right: 16,
-              bottom: 90,
-              child: _buildFabOption(
-                label: "Build a trip with AI",
-                icon: Icons.auto_awesome,
-                onPressed: () {
-                  _toggleFab();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const BuildWithAIPage()),
-                  );
-                },
+              bottom: 80,
+              right: 0,
+              child: FloatingActionButton(
+                backgroundColor: Colors.white,
+                onPressed: _toggleFab,
+                child: AnimatedRotation(
+                  duration: Duration(milliseconds: 300),
+                  turns: _isFabOpen ? 0.75 : 0,
+                  child: Icon(
+                    _isFabOpen ? Icons.close : Icons.add,
+                    color: Colors.black,
+                  ),
+                ),
               ),
             ),
           ],
-          Positioned(
-            right: 16,
-            bottom: 20,
-            child: FloatingActionButton(
-              backgroundColor: Colors.white,
-              onPressed: _toggleFab,
-              child: Icon(
-                _isFabOpen ? Icons.close : Icons.add,
-                color: Colors.black,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
