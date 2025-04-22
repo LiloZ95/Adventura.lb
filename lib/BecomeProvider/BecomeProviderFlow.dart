@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'BasicInfo.dart';
 import 'CredentialsStep.dart';
 
-
 class BecomeProviderFlow extends StatefulWidget {
   const BecomeProviderFlow({super.key});
 
@@ -36,8 +35,11 @@ class _BecomeProviderFlowState extends State<BecomeProviderFlow> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDarkMode
+          ? const Color(0xFF121212)
+          : Colors.white, // 🌙 Full background switch
       body: SafeArea(
         child: Column(
           children: [
@@ -66,10 +68,13 @@ class _BecomeProviderFlowState extends State<BecomeProviderFlow> {
                   });
                 },
                 children: [
-                  BasicInfoScreen(onNext: nextStep,),
+                  BasicInfoScreen(
+                    onNext: nextStep,
+                  ),
                   CredentialsStep(onNext: nextStep, onBack: previousStep),
                   BusinessInfoStep(onNext: nextStep, onBack: previousStep),
-                  Center(child: Text('Step 3 – Business Details')), // Placeholder
+                  Center(
+                      child: Text('Step 3 – Business Details')), // Placeholder
                 ],
               ),
             ),

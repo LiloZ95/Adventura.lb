@@ -3,6 +3,7 @@ const { Op, Sequelize, QueryTypes } = require("sequelize");
 const { sequelize } = require("../db/db");
 const TripPlan = require("../models/TripPlan");
 const Feature = require("../models/Feature");
+const path = require("path");
 const Availability = require("../models/Availability");
 
 // Utility to extract latitude & longitude from Google Maps URL
@@ -101,7 +102,7 @@ const createActivity = async (req, res) => {
 				provider_id,
 				listing_type,
 				duration_minutes,
-				start_date, 
+				start_date,
 				end_date,
 			},
 			{ transaction: t }
@@ -388,17 +389,25 @@ const uploadImages = async (req, res) => {
 	}
 
 	try {
+		const host = req.protocol + "://" + req.get("host");
+
 		const createdImages = await Promise.all(
-			files.map((file) =>
-				ActivityImage.create({
+			files.map((file) => {
+				// Construct relative path from destination folder + filename
+				const relativePath = path
+					.relative(path.join(__dirname, "..", "uploads"), file.path)
+					.replace(/\\/g, "/");
+
+				return ActivityImage.create({
 					activity_id: activityId,
-					image_url: `/uploads/${file.filename}`,
+					image_url: `/uploads/${relativePath}`, // for frontend path
 					createdAt: new Date(),
 					updatedAt: new Date(),
 					is_primary: false,
-				})
-			)
+				});
+			})
 		);
+
 		res.status(200).json(createdImages);
 	} catch (error) {
 		console.error(error);

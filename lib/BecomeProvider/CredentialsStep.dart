@@ -200,84 +200,95 @@ class _CredentialsStepState extends State<CredentialsStep> {
   }
 
   Widget buildUploadSection(
-    String title,
-    XFile? image,
-    Function(XFile) onImagePicked, {
-    bool optional = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text.rich(
-          TextSpan(
-            text: title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'poppins',
-            ),
-            children: optional
-                ? [
-                    const TextSpan(
-                      text: " (optional)",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    )
-                  ]
-                : [],
+  String title,
+  XFile? image,
+  Function(XFile) onImagePicked, {
+  bool optional = false,
+}) {
+  final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text.rich(
+        TextSpan(
+          text: title,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'poppins',
+            color: isDarkMode ? Colors.white : Colors.black,
           ),
-        ),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: () => pickImage(onImagePicked),
-          child: Container(
-            height: 130,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(10),
-              color: Colors.grey.shade100,
-            ),
-            alignment: Alignment.center,
-            child: image == null
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.add_photo_alternate_outlined,
-                          size: 36, color: Colors.grey),
-                      SizedBox(height: 6),
-                      Text("Add Photo",
-                          style: TextStyle(
-                              fontFamily: 'poppins',
-                              color: Colors.grey,
-                              fontSize: 13)),
-                    ],
+          children: optional
+              ? [
+                  const TextSpan(
+                    text: " (optional)",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                      fontStyle: FontStyle.italic,
+                    ),
                   )
-                : FutureBuilder(
-                    future: image.readAsBytes(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.done &&
-                          snapshot.hasData) {
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.memory(
-                            snapshot.data!,
-                            height: 130,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
-                        );
-                      } else {
-                        return const CircularProgressIndicator();
-                      }
-                    },
-                  ),
+                ]
+              : [],
+        ),
+      ),
+      const SizedBox(height: 8),
+      GestureDetector(
+        onTap: () => pickImage(onImagePicked),
+        child: Container(
+          height: 130,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300,
+            ),
+            borderRadius: BorderRadius.circular(10),
+            color: isDarkMode ? const Color(0xFF121212) : Colors.grey.shade100,
           ),
-        )
-      ],
-    );
-  }
+          alignment: Alignment.center,
+          child: image == null
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.add_photo_alternate_outlined,
+                      size: 36,
+                      color: isDarkMode ? Colors.grey[400] : Colors.grey,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      "Add Photo",
+                      style: TextStyle(
+                        fontFamily: 'poppins',
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                )
+              : FutureBuilder(
+                  future: image.readAsBytes(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.done &&
+                        snapshot.hasData) {
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.memory(
+                          snapshot.data!,
+                          height: 130,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      );
+                    } else {
+                      return const CircularProgressIndicator();
+                    }
+                  },
+                ),
+        ),
+      )
+    ],
+  );
+}
 }

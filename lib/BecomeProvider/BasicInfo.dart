@@ -71,87 +71,92 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
   }
 
   @override
+  @override
+   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final subtitleColor = isDarkMode ? Colors.blue[200] : Colors.blue[600];
+    final dividerColor = isDarkMode ? Colors.grey.shade700 : Colors.grey;
+  return Scaffold(
+    backgroundColor: isDarkMode ? const Color(0xFF121212) : Colors.white, // 🌙 Full background switch
+    body: SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Section Header
             Row(
-              children: const [
-                Expanded(child: Divider(thickness: 1, color: Colors.grey)),
-                SizedBox(width: 12),
-                Text("Basic Information",
-                    style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'poppins')),
-                SizedBox(width: 12),
-                Expanded(child: Divider(thickness: 1, color: Colors.grey)),
+              children: [
+                Expanded(child: Divider(thickness: 1, color: dividerColor)),
+                const SizedBox(width: 12),
+                Text(
+                  "Basic Information",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Poppins',
+                    color: textColor,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: Divider(thickness: 1, color: dividerColor)),
               ],
             ),
             const SizedBox(height: 12),
+
             Text(
               "Tell us about yourself to get started.",
               style: TextStyle(
-                  fontSize: 14, fontFamily: 'poppins', color: Colors.blue[600]),
+                fontSize: 14,
+                fontFamily: 'Poppins',
+                color: subtitleColor,
+              ),
             ),
+
             const SizedBox(height: 32),
-            buildLabel("First Name"),
+            buildLabel("First Name", textColor),
             const SizedBox(height: 6),
-            CustomTextField(
-              hint: "First Name",
-              controller: _firstNameController,
-              enabled: false,
-            ),
+            CustomTextField(hint: "First Name", controller: _firstNameController, enabled: false),
+
             const SizedBox(height: 16),
-            buildLabel("Last Name"),
+            buildLabel("Last Name", textColor),
             const SizedBox(height: 6),
-            CustomTextField(
-                hint: "Last Name",
-                controller: _lastNameController,
-                enabled: false),
+            CustomTextField(hint: "Last Name", controller: _lastNameController, enabled: false),
+
             const SizedBox(height: 16),
-            buildLabel("Personal Email"),
+            buildLabel("Personal Email", textColor),
             const SizedBox(height: 6),
-            TextFormField(
-              controller: _emailController,
-              enabled: false,
-              decoration: inputDecoration("Email"),
-            ),
+            CustomTextField(hint: "Email", controller: _emailController, enabled: false),
+
             const SizedBox(height: 16),
-            buildLabel("Birth Date"),
+            buildLabel("Birth Date", textColor),
             const SizedBox(height: 6),
             Row(
               children: [
-                Expanded(
-                    child: buildDropdown("DD", days, _selectedDay,
-                        (val) => setState(() => _selectedDay = val))),
+                Expanded(child: buildDropdown("DD", days, _selectedDay, (val) => setState(() => _selectedDay = val))),
                 const SizedBox(width: 8),
-                Expanded(
-                    child: buildDropdown("MM", months, _selectedMonth,
-                        (val) => setState(() => _selectedMonth = val))),
+                Expanded(child: buildDropdown("MM", months, _selectedMonth, (val) => setState(() => _selectedMonth = val))),
                 const SizedBox(width: 8),
-                Expanded(
-                    child: buildDropdown("YYYY", years, _selectedYear,
-                        (val) => setState(() => _selectedYear = val))),
+                Expanded(child: buildDropdown("YYYY", years, _selectedYear, (val) => setState(() => _selectedYear = val))),
               ],
             ),
+
             const SizedBox(height: 16),
-            buildLabel("City"),
+            buildLabel("City", textColor),
             const SizedBox(height: 6),
-            buildDropdown("Select your city", cities, _selectedCity,
-                (val) => setState(() => _selectedCity = val)),
+            buildDropdown("Select your city", cities, _selectedCity, (val) => setState(() => _selectedCity = val)),
+
             const SizedBox(height: 16),
-            buildLabel("Address Line 1", optional: true),
+            buildLabel("Address Line 1", textColor, optional: true),
             const SizedBox(height: 6),
-            TextFormField(
-              controller: _addressController,
-              decoration: inputDecoration("Enter your address"),
-            ),
+            CustomTextField(hint: "Enter your address", controller: _addressController),
+
             const SizedBox(height: 36),
+
+            // Buttons
             Row(
               children: [
                 Expanded(
@@ -162,16 +167,14 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
                       Navigator.pop(context);
                     },
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.red),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                      side: BorderSide(color: Colors.red.shade400),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: const Text("Cancel",
-                        style: TextStyle(
-                            fontFamily: 'poppins',
-                            fontSize: 16,
-                            color: Colors.red)),
+                    child: const Text(
+                      "Cancel",
+                      style: TextStyle(fontFamily: 'Poppins', fontSize: 16, color: Colors.red),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -184,34 +187,32 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
                           _selectedYear != null &&
                           _selectedCity != null) {
                         final box = await Hive.openBox('providerFlow');
-
                         await box.put("selectedDay", _selectedDay);
                         await box.put("selectedMonth", _selectedMonth);
                         await box.put("selectedYear", _selectedYear);
                         await box.put("selectedCity", _selectedCity);
                         await box.put("address", _addressController.text);
-
                         widget.onNext();
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content:
-                                  Text("Please fill all required fields.")),
+                          const SnackBar(content: Text("Please fill all required fields.")),
                         );
                       }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue[700],
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: const Text("Next",
-                        style: TextStyle(
-                            fontFamily: 'poppins',
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
+                    child: const Text(
+                      "Next",
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -220,23 +221,32 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget buildLabel(String text, {bool optional = false}) {
+  Widget buildLabel(String text, Color textColor,
+      {bool optional = false}) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Text.rich(
       TextSpan(
         text: text,
-        style: const TextStyle(
-            fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'poppins'),
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Poppins',
+          color: isDarkMode ? Colors.white : Colors.black,
+        ),
         children: optional
             ? [
-                const TextSpan(
+                TextSpan(
                   text: " (optional)",
                   style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                      fontStyle: FontStyle.italic),
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey,
+                  ),
                 )
               ]
             : [],
@@ -244,30 +254,97 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
     );
   }
 
-  Widget buildDropdown(String hint, List<String> items, String? value,
-      Function(String?) onChanged) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      onChanged: onChanged,
-      validator: (val) => val == null ? "Required" : null,
-      decoration: inputDecoration(hint),
-      items: items
-          .map((val) => DropdownMenuItem(value: val, child: Text(val)))
-          .toList(),
+  Widget buildDropdown<T>(
+    String hint,
+    List<T> items,
+    T? selectedValue,
+    ValueChanged<T?> onChanged,
+  ) {
+    return Builder(
+      builder: (context) {
+        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+        return DropdownButtonFormField<T>(
+          value: selectedValue,
+          isExpanded: true,
+          icon: Icon(Icons.keyboard_arrow_down,
+              color: isDarkMode ? Colors.white : Colors.black),
+          dropdownColor: isDarkMode ? Colors.grey[900] : Colors.white,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: isDarkMode ? Colors.grey[850] : Colors.grey[200],
+            hintText: hint,
+            hintStyle: TextStyle(
+              color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+              fontFamily: 'Poppins',
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: isDarkMode ? Colors.white24 : Colors.black26,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: isDarkMode ? Colors.white24 : Colors.black26,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: Colors.blueAccent,
+                width: 1.5,
+              ),
+            ),
+          ),
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : Colors.black,
+            fontFamily: 'Poppins',
+          ),
+          onChanged: onChanged,
+          items: items.map((item) {
+            return DropdownMenuItem<T>(
+              value: item,
+              child: Text(item.toString()),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 
-  InputDecoration inputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(fontFamily: 'poppins', color: Colors.grey),
-      border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300)),
-      focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.blue, width: 1.8)),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    );
-  }
+InputDecoration inputDecoration(String hint, bool isDarkMode) {
+  return InputDecoration(
+    hintText: hint,
+    hintStyle: TextStyle(
+      color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+      fontFamily: 'Poppins',
+    ),
+    filled: true,
+    fillColor: isDarkMode ? Colors.grey[850] : Colors.grey[200],
+    contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(
+        color: isDarkMode ? Colors.white24 : Colors.black26,
+      ),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(
+        color: isDarkMode ? Colors.white24 : Colors.black26,
+      ),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(
+        color: Colors.blueAccent,
+        width: 1.5,
+      ),
+    ),
+  );
+}
 }
