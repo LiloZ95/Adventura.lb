@@ -457,6 +457,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
     return Stack(children: [
       Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         key: const Key('main_scaffold'),
         appBar: AppBar(
           title: const Text(

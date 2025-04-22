@@ -106,8 +106,7 @@ class _UserInfoState extends State<UserInfo>
       key: _screenshotKey,
       child: Stack(children: [
         Scaffold(
-          backgroundColor:
-              isDarkMode ? const Color(0xFF1F1F1F) : Colors.white, // 🌙
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor, // 🌙
           appBar: PreferredSize(
             preferredSize: Size.fromHeight(screenHeight * 0.12),
             child: Container(
@@ -142,24 +141,42 @@ class _UserInfoState extends State<UserInfo>
             ),
           ),
           body: isLoading
-              ? Center(child: CircularProgressIndicator())
-              : Stack(
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
                   children: [
-                    SingleChildScrollView(
+                    // 🔒 FIXED PROFILE SECTION WITH MATCHING BACKGROUND
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(
+                        vertical: screenHeight * 0.000001,
+                        horizontal: screenWidth * 0.05,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                        borderRadius: const BorderRadius.vertical(
+                          bottom: Radius.circular(20),
+                        ),
+                      ),
                       child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          SizedBox(height: screenHeight * 0.02),
-
-                          // ✅ Profile Picture Section
                           GestureDetector(
                             onTap: () async {
-                              // Pick and upload new profile picture
                               File? selectedImage =
                                   await ProfileService.pickImage();
                               if (selectedImage != null) {
                                 await ProfileService.uploadProfilePicture(
                                     context, userId, selectedImage);
-                                _loadUserData(); // Reload after updating
+                                _loadUserData();
                               }
                             },
                             child: Stack(
@@ -168,22 +185,22 @@ class _UserInfoState extends State<UserInfo>
                                 Container(
                                   width: screenHeight * 0.13,
                                   height: screenHeight * 0.13,
-                                  decoration:
-                                      BoxDecoration(shape: BoxShape.circle),
+                                  decoration: const BoxDecoration(
+                                      shape: BoxShape.circle),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(50),
                                     child: _buildProfileImage(),
                                   ),
                                 ),
-                                // ✅ Camera Icon with Border
                                 Container(
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                        color: isDarkMode
-                                            ? Colors.white
-                                            : Colors.black,
-                                        width: 2),
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.black,
+                                      width: 2,
+                                    ),
                                   ),
                                   child: CircleAvatar(
                                     backgroundColor: isDarkMode
@@ -201,10 +218,7 @@ class _UserInfoState extends State<UserInfo>
                               ],
                             ),
                           ),
-
-                          SizedBox(height: 8),
-
-                          // ✅ Display User Name
+                          const SizedBox(height: 8),
                           Text(
                             "$firstName $lastName",
                             style: TextStyle(
@@ -214,9 +228,7 @@ class _UserInfoState extends State<UserInfo>
                               fontFamily: "Poppins",
                             ),
                           ),
-
-                          SizedBox(height: screenHeight * 0.02),
-                          // ✅ Personal Account Text
+                          const SizedBox(height: 8),
                           Text(
                             userType == "provider"
                                 ? "Business Account"
@@ -224,29 +236,25 @@ class _UserInfoState extends State<UserInfo>
                             style: TextStyle(
                               fontSize: screenHeight * 0.018,
                               fontWeight: FontWeight.w500,
-                              color:
-                                  isDarkMode ? Colors.white : Colors.grey[700],
+                              color: isDarkMode
+                                  ? Colors.white70
+                                  : Colors.grey[700],
                               fontFamily: "Poppins",
                             ),
                           ),
-
-                          SizedBox(height: screenHeight * 0.01),
-
-                          // ✅ Dotted-Border Button
+                          const SizedBox(height: 10),
                           if (userType != "provider")
                             buildBusinessAccountButton(
-                              isDarkMode: Theme.of(context).brightness ==
-                                  Brightness.dark, // 👈 named
+                              isDarkMode: isDarkMode,
                               screenWidth: screenWidth,
                               onPressed: () {
                                 Navigator.push(
                                   context,
                                   PageRouteBuilder(
-                                    pageBuilder: (context, animation,
-                                            secondaryAnimation) =>
+                                    pageBuilder: (_, __, ___) =>
                                         const ProviderWelcomeScreen(),
-                                    transitionsBuilder: (context, animation,
-                                        secondaryAnimation, child) {
+                                    transitionsBuilder:
+                                        (_, animation, __, child) {
                                       final curved = CurvedAnimation(
                                         parent: animation,
                                         curve: Curves.easeOutExpo,
@@ -271,278 +279,296 @@ class _UserInfoState extends State<UserInfo>
                                         const Duration(milliseconds: 650),
                                   ),
                                 );
-                                print("Open Business Account Tapped");
                               },
                             ),
+                        ],
+                      ),
+                    ),
 
-                          SizedBox(height: screenHeight * 0.005),
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: screenWidth * 0.01,
-                              top: screenHeight * 0.025,
-                            ),
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (userType == "provider") ...[
-                                    Padding(
-                                      padding: EdgeInsets.only(
-                                        left: screenWidth * 0.05,
-                                        top: screenHeight * 0.02,
-                                      ),
-                                      child: Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: Text(
-                                          "Organizer Options",
-                                          style: TextStyle(
-                                            fontSize: screenHeight * 0.025,
-                                            fontWeight: FontWeight.bold,
-                                            color: isDarkMode
-                                                ? Colors.white
-                                                : Colors.black,
-                                            fontFamily: "Poppins",
+                    // 🧾 Scrollable Section Starts Here
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.only(
+                          left: screenWidth * 0.05,
+                          right: screenWidth * 0.05,
+                          top: screenHeight * 0.02,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.only(
+                                left: screenWidth * 0.01,
+                                top: screenHeight * 0.025,
+                              ),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (userType == "provider") ...[
+                                      Padding(
+                                        padding: EdgeInsets.only(
+                                          left: screenWidth * 0.05,
+                                          top: screenHeight * 0.02,
+                                        ),
+                                        child: Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            "Organizer Options",
+                                            style: TextStyle(
+                                              fontSize: screenHeight * 0.025,
+                                              fontWeight: FontWeight.bold,
+                                              color: isDarkMode
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                              fontFamily: "Poppins",
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    SizedBox(height: screenHeight * 0.01),
-                                    ProfileOptionTile(
+                                      SizedBox(height: screenHeight * 0.01),
+                                      ProfileOptionTile(
+                                          isDarkMode: isDarkMode,
+                                          icon: Icons.pages_rounded,
+                                          title: "Landing page",
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    OrganizerProfilePage(
+                                                  organizerId: userId,
+                                                  organizerName:
+                                                      "$firstName $lastName",
+                                                  organizerImage:
+                                                      profilePicture,
+                                                  bio:
+                                                      "Welcome", // You can replace this later with a real one
+                                                  activities: [], // Replace with actual activity list when available
+                                                ),
+                                              ),
+                                            );
+                                          }),
+                                      ProfileOptionTile(
                                         isDarkMode: isDarkMode,
-                                        icon: Icons.pages_rounded,
-                                        title: "Landing page",
+                                        icon: Icons.create,
+                                        title: "Create Reels",
                                         onTap: () {
                                           Navigator.push(
                                             context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  OrganizerProfilePage(
-                                                organizerId: userId,
-                                                organizerName:
-                                                    "$firstName $lastName",
-                                                organizerImage: profilePicture,
-                                                bio:
-                                                    "Welcome", // You can replace this later with a real one
-                                                activities: [], // Replace with actual activity list when available
-                                              ),
-                                            ),
+                                            SecurityPageRoute(
+                                                child: UploadReelPage()),
                                           );
-                                        }),
-                                    ProfileOptionTile(
-                                      isDarkMode: isDarkMode,
-                                      icon: Icons.create,
-                                      title: "Create Reels",
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          SecurityPageRoute(
-                                              child: UploadReelPage()),
-                                        );
-                                      },
-                                    ),
-                                    ProfileOptionTile(
-                                      isDarkMode: isDarkMode,
-                                      icon: Icons.list_sharp,
-                                      title: "My listings",
-                                      onTap: () async {
-                                        final box =
-                                            await Hive.openBox('authBox');
-                                        final userType = box.get('userType');
-                                        final providerId =
-                                            box.get('providerId');
+                                        },
+                                      ),
+                                      ProfileOptionTile(
+                                        isDarkMode: isDarkMode,
+                                        icon: Icons.list_sharp,
+                                        title: "My listings",
+                                        onTap: () async {
+                                          final box =
+                                              await Hive.openBox('authBox');
+                                          final userType = box.get('userType');
+                                          final providerId =
+                                              box.get('providerId');
 
-                                        if (userType != 'provider' ||
-                                            providerId == null) {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(
-                                                content: Text(
-                                                    "Only providers can access My Listings.")),
+                                          if (userType != 'provider' ||
+                                              providerId == null) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                  content: Text(
+                                                      "Only providers can access My Listings.")),
+                                            );
+                                            return;
+                                          }
+
+                                          Navigator.push(
+                                            context,
+                                            SecurityPageRoute(
+                                                child: const MyListingsPage()),
                                           );
-                                          return;
-                                        }
-
-                                        Navigator.push(
-                                          context,
-                                          SecurityPageRoute(
-                                              child: const MyListingsPage()),
-                                        );
-                                      },
-                                    ),
+                                        },
+                                      ),
+                                    ],
                                   ],
-                                ],
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: screenHeight * 0.01),
-
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: screenWidth * 0.05,
-                              top: screenHeight * 0.02,
-                            ),
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                "Settings",
-                                style: TextStyle(
-                                  fontSize: screenHeight * 0.025,
-                                  fontWeight: FontWeight.bold,
-                                  color:
-                                      isDarkMode ? Colors.white : Colors.black,
-                                  fontFamily: "Poppins",
                                 ),
                               ),
                             ),
-                          ),
-                          SizedBox(height: screenHeight * 0.02),
-                          //pivacy and security option
-                          ProfileOptionTile(
-                            isDarkMode: isDarkMode,
-                            icon: Icons.security,
-                            title: "Security & Privacy",
-                            subtitle:
-                                "Change your security and privacy settings",
-                            onTap: () {
-                              // Navigator.push(
-                              //   context,
-                              //   MaterialPageRoute(
-                              //       builder: (context) => SecurityPrivacyPage()),
-                              // );
+                            SizedBox(height: screenHeight * 0.01),
 
-                              Navigator.push(
-                                context,
-                                SecurityPageRoute(
-                                    child: const SecurityPrivacyPage()),
-                              );
-                            },
-                          ),
-                          //payment methods option
-                          ProfileOptionTile(
-                            isDarkMode: isDarkMode,
-                            icon: Icons.payment,
-                            title: "Payment Methods",
-                            subtitle:
-                                "Manage saved cards and bank accounts that are linked to this account",
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                SecurityPageRoute(
-                                    child: const AddPaymentMethodPage()),
-                              );
-                            },
-                          ),
-
-                          //personal details option
-                          ProfileOptionTile(
-                            isDarkMode: isDarkMode,
-                            icon: Icons.person,
-                            title: "Personal Details",
-                            subtitle: "Update your personal informatin",
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                SecurityPageRoute(
-                                    child: const PersonalDetailsPage()),
-                              );
-                            },
-                          ),
-
-                          SizedBox(height: screenHeight * 0.02),
-
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: screenWidth * 0.05,
-                              top: screenHeight * 0.02,
-                            ),
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                "Actions And Agreements",
-                                style: TextStyle(
-                                  fontSize: screenHeight * 0.025,
-                                  fontWeight: FontWeight.bold,
-                                  color:
-                                      isDarkMode ? Colors.white : Colors.black,
-                                  fontFamily: "Poppins",
+                            Padding(
+                              padding: EdgeInsets.only(
+                                left: screenWidth * 0.05,
+                                top: screenHeight * 0.02,
+                              ),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  "Settings",
+                                  style: TextStyle(
+                                    fontSize: screenHeight * 0.025,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDarkMode
+                                        ? Colors.white
+                                        : Colors.black,
+                                    fontFamily: "Poppins",
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          //agreements sections
-                          SizedBox(height: screenHeight * 0.02),
-                          ProfileOptionTile(
-                            isDarkMode: isDarkMode,
-                            icon: Icons.warning,
-                            title: "Our Agreements",
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                SecurityPageRoute(
-                                    child: const ProviderAgreementPage()),
-                              );
-                            },
-                          ),
-                          //rate us options
-                          ProfileOptionTile(
-                            isDarkMode: isDarkMode,
-                            icon: Icons.star,
-                            title: "Rate Us",
-                            subtitle: "Write a review in App store",
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                SecurityPageRoute(child: const RateUsPage()),
-                              );
-                            },
-                          ),
-                          //report bugs
-                          ProfileOptionTile(
-                            isDarkMode: isDarkMode,
-                            icon: Icons.bug_report,
-                            title: "Report a bug",
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                SecurityPageRoute(child: const ReportBugPage()),
-                              );
-                            },
-                          ),
-                          //delete account option
-                          ProfileOptionTile(
-                            isDarkMode: isDarkMode,
-                            icon: Icons.delete,
-                            title: "Close Account",
-                            subtitle: "Close your personal account",
-                            onTap: () async {
-                              print("🚨 Delete button pressed!");
-                              _showDeleteConfirmationDialog(
-                                  context); // ✅ Call dialog directly
-                            },
-                          ),
-                          //logout
-                          ProfileOptionTile(
-                            isDarkMode: isDarkMode,
-                            icon: Icons.logout,
-                            title: "Logout",
-                            onTap: () async {
-                              print("🚀 Logout button pressed!");
-                              await StorageService.logout(context);
-                            },
-                          ),
-                          //membership section
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: screenWidth * 0.05,
-                              top: screenHeight * 0.02,
+                            SizedBox(height: screenHeight * 0.02),
+                            //pivacy and security option
+                            ProfileOptionTile(
+                              isDarkMode: isDarkMode,
+                              icon: Icons.security,
+                              title: "Security & Privacy",
+                              subtitle:
+                                  "Change your security and privacy settings",
+                              onTap: () {
+                                // Navigator.push(
+                                //   context,
+                                //   MaterialPageRoute(
+                                //       builder: (context) => SecurityPrivacyPage()),
+                                // );
+
+                                Navigator.push(
+                                  context,
+                                  SecurityPageRoute(
+                                      child: const SecurityPrivacyPage()),
+                                );
+                              },
                             ),
-                          ),
-                        ],
+                            //payment methods option
+                            ProfileOptionTile(
+                              isDarkMode: isDarkMode,
+                              icon: Icons.payment,
+                              title: "Payment Methods",
+                              subtitle:
+                                  "Manage saved cards and bank accounts that are linked to this account",
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  SecurityPageRoute(
+                                      child: const AddPaymentMethodPage()),
+                                );
+                              },
+                            ),
+
+                            //personal details option
+                            ProfileOptionTile(
+                              isDarkMode: isDarkMode,
+                              icon: Icons.person,
+                              title: "Personal Details",
+                              subtitle: "Update your personal informatin",
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  SecurityPageRoute(
+                                      child: const PersonalDetailsPage()),
+                                );
+                              },
+                            ),
+
+                            SizedBox(height: screenHeight * 0.02),
+
+                            Padding(
+                              padding: EdgeInsets.only(
+                                left: screenWidth * 0.05,
+                                top: screenHeight * 0.02,
+                              ),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  "Actions And Agreements",
+                                  style: TextStyle(
+                                    fontSize: screenHeight * 0.025,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDarkMode
+                                        ? Colors.white
+                                        : Colors.black,
+                                    fontFamily: "Poppins",
+                                  ),
+                                ),
+                              ),
+                            ),
+                            //agreements sections
+                            SizedBox(height: screenHeight * 0.02),
+                            ProfileOptionTile(
+                              isDarkMode: isDarkMode,
+                              icon: Icons.warning,
+                              title: "Our Agreements",
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  SecurityPageRoute(
+                                      child: const ProviderAgreementPage()),
+                                );
+                              },
+                            ),
+                            //rate us options
+                            ProfileOptionTile(
+                              isDarkMode: isDarkMode,
+                              icon: Icons.star,
+                              title: "Rate Us",
+                              subtitle: "Write a review in App store",
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  SecurityPageRoute(child: const RateUsPage()),
+                                );
+                              },
+                            ),
+                            //report bugs
+                            ProfileOptionTile(
+                              isDarkMode: isDarkMode,
+                              icon: Icons.bug_report,
+                              title: "Report a bug",
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  SecurityPageRoute(
+                                      child: const ReportBugPage()),
+                                );
+                              },
+                            ),
+                            //delete account option
+                            ProfileOptionTile(
+                              isDarkMode: isDarkMode,
+                              icon: Icons.delete,
+                              title: "Close Account",
+                              subtitle: "Close your personal account",
+                              onTap: () async {
+                                print("🚨 Delete button pressed!");
+                                _showDeleteConfirmationDialog(
+                                    context); // ✅ Call dialog directly
+                              },
+                            ),
+                            //logout
+                            ProfileOptionTile(
+                              isDarkMode: isDarkMode,
+                              icon: Icons.logout,
+                              title: "Logout",
+                              onTap: () async {
+                                print("🚀 Logout button pressed!");
+                                await StorageService.logout(context);
+                              },
+                            ),
+                            //membership section
+                            Padding(
+                              padding: EdgeInsets.only(
+                                left: screenWidth * 0.05,
+                                top: screenHeight * 0.02,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
+
           floatingActionButton: Builder(
             builder: (context) => FloatingActionButton(
               backgroundColor: isDarkMode ? Colors.black87 : Colors.blue,
@@ -725,7 +751,13 @@ class _UserInfoState extends State<UserInfo>
   }
 
   Widget _defaultProfileImage() {
-    return Image.asset("assets/images/default_user.png", fit: BoxFit.cover);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    return Image.asset(
+      isDarkMode
+          ? "assets/images/default_user_white.png"
+          : "assets/images/default_user.png",
+      fit: BoxFit.cover,
+    );
   }
 
   // ✅ Delete Account Confirmation Dialog

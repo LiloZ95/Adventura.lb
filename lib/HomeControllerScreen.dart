@@ -115,7 +115,7 @@ class _HomeControllerScreenState extends State<HomeControllerScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // Replace AnimatedSwitcher with IndexedStack to preserve state of screens

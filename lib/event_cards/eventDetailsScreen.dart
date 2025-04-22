@@ -97,23 +97,22 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     List<dynamic> rawImages = widget.activity["activity_images"] ?? [];
     List<String> images = [];
 
-for (var img in widget.activity["activity_images"] ?? []) {
-  if (img is Map && img.containsKey("image_url")) {
-    images.add(img["image_url"].toString().startsWith("http")
-        ? img["image_url"]
-        : "$baseUrl${img["image_url"]}");
-  } else if (img is String) {
-    images.add(img.startsWith("http") ? img : "$baseUrl$img");
-  }
-}
-
+    for (var img in widget.activity["activity_images"] ?? []) {
+      if (img is Map && img.containsKey("image_url")) {
+        images.add(img["image_url"].toString().startsWith("http")
+            ? img["image_url"]
+            : "$baseUrl${img["image_url"]}");
+      } else if (img is String) {
+        images.add(img.startsWith("http") ? img : "$baseUrl$img");
+      }
+    }
 
     if (images.isEmpty) {
       images.add("assets/Pictures/island.jpg");
     }
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF121212) : Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(screenWidth),
       body: SingleChildScrollView(
         child: Padding(

@@ -26,16 +26,25 @@ Future<void> showExpiredListingsModal(BuildContext context) async {
     isScrollControlled: true,
     backgroundColor: Colors.transparent, // key for blur to work
     barrierColor: Colors.black.withOpacity(0.25),
+    isDismissible: true, // ✅ allow tap outside to close
+    enableDrag: true,
     builder: (context) {
-      return BackdropFilter(
+  return GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: () => Navigator.of(context).pop(), // Dismiss on outside tap
+    child: GestureDetector(
+      onTap: () {}, // Absorb taps inside modal
+      child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
-        child: Center(
-          // Use Center to apply widthFactor correctly
+        child: Align(
+          alignment: Alignment.bottomCenter,
           child: FractionallySizedBox(
-            heightFactor: 0.65,
+            heightFactor: 0.45,
             widthFactor: 0.95,
             child: Material(
-              color: Colors.white.withOpacity(0.95),
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF1E1E1E).withOpacity(0.95)
+                  : Colors.white.withOpacity(0.95),
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(24)),
               child: Padding(
@@ -50,6 +59,9 @@ Future<void> showExpiredListingsModal(BuildContext context) async {
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Poppins',
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white70
+                              : Colors.grey.shade600,
                         ),
                       ),
                     ),
@@ -61,7 +73,10 @@ Future<void> showExpiredListingsModal(BuildContext context) async {
                             "No expired listings found.",
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.grey.shade600,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.white70
+                                  : Colors.grey.shade600,
                             ),
                           ),
                         ),
@@ -70,7 +85,7 @@ Future<void> showExpiredListingsModal(BuildContext context) async {
                       Expanded(
                         child: ListView.separated(
                           itemCount: expiredListings.length,
-                          separatorBuilder: (_, __) => SizedBox(height: 12),
+                          separatorBuilder: (_, __) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final activity = expiredListings[index];
                             final imageUrl = activity["activity_images"]
@@ -143,7 +158,9 @@ Future<void> showExpiredListingsModal(BuildContext context) async {
             ),
           ),
         ),
-      );
-    },
+      ),
+    ),
+  );
+},
   );
 }
