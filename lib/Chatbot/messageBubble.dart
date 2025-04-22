@@ -75,7 +75,7 @@ class MessageBubble extends StatelessWidget {
                           ? Colors.blue[400]
                           : isDarkMode
                               ? const Color(0xFF2A2A2A)
-                              : Colors.white),
+                              : const Color.fromARGB(183, 233, 233, 233)),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(

@@ -85,14 +85,14 @@ class _SetPasswordState extends State<SetPassword> {
 
     try {
       final response = await http.post(
-        Uri.parse(
-            '$baseUrl/users/reset-password'),
+        Uri.parse('$baseUrl/users/reset-password'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': widget.email,
           'newPassword': _passwordController.text,
         }),
       );
+      print("🔗 Sending POST to: $baseUrl/users/reset-password");
 
       print("🔍 API Response Code: ${response.statusCode}");
       print("🔍 API Response Body: ${response.body}");
