@@ -69,15 +69,33 @@ router.get("/recommendations/:id", async (req, res) => {
 
 router.post(
 	"/activity-images/upload/:activityId",
-  authenticateToken,
+	authenticateToken,
 	(req, res, next) => {
-		const type =
-			req.query.listing_type === "recurrent" ? "recurrent" : "onetime";
-		req._uploadType = type; // optionally attach it to req
-		createUploader(`activities/${type}`).array("images")(req, res, next);
+	  try {
+		const listingType =
+		  req.query.listing_type === "recurrent" ? "recurrent" : "onetime";
+		const providerId = req.user?.provider_id;
+  
+		if (!providerId) {
+		  return res
+			.status(403)
+			.json({ message: "Missing provider ID from token." });
+		}
+  
+		const uploadPath = `activities/${providerId}/${listingType}`;
+		req._uploadPath = uploadPath;
+  
+		// ✅ Create uploader and call it as middleware
+		const uploader = createUploader(uploadPath).array("images");
+		uploader(req, res, next); // This is safe now
+	  } catch (err) {
+		console.error("❌ Uploader init failed:", err);
+		res.status(500).json({ message: "Uploader initialization error." });
+	  }
 	},
 	uploadImages
-);
+  );
+  
 
 router.get("/by-provider/:provider_id", getActivitiesByProvider);
 

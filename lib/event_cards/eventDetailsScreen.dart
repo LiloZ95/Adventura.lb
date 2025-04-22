@@ -97,16 +97,16 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     List<dynamic> rawImages = widget.activity["activity_images"] ?? [];
     List<String> images = [];
 
-    for (var img in rawImages) {
-      if (img is Map && img.containsKey("image_url")) {
-        final url = img["image_url"];
-        if (url != null && url.toString().isNotEmpty) {
-          images.add(url.toString().startsWith("http") ? url : "$baseUrl$url");
-        }
-      } else if (img is String && img.isNotEmpty) {
-        images.add(img.startsWith("http") ? img : "$baseUrl$img");
-      }
-    }
+for (var img in widget.activity["activity_images"] ?? []) {
+  if (img is Map && img.containsKey("image_url")) {
+    images.add(img["image_url"].toString().startsWith("http")
+        ? img["image_url"]
+        : "$baseUrl${img["image_url"]}");
+  } else if (img is String) {
+    images.add(img.startsWith("http") ? img : "$baseUrl$img");
+  }
+}
+
 
     if (images.isEmpty) {
       images.add("assets/Pictures/island.jpg");

@@ -1,11 +1,12 @@
-import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:hive/hive.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class Comment {
   final String userName;
@@ -21,92 +22,53 @@ class Comment {
   });
 }
 
-class ReelsPlayer extends StatefulWidget {
-  final Function(bool) onScrollChanged;
-  final VoidCallback onBackToMainTab;
+class ReelsPlayer extends StatelessWidget {
+  final void Function(bool visible)? onScrollChanged;
+  final VoidCallback? onBackToMainTab;
 
-  const ReelsPlayer({
+  ReelsPlayer({
     Key? key,
-    required this.onScrollChanged,
-    required this.onBackToMainTab,
+    this.onScrollChanged,
+    this.onBackToMainTab,
   }) : super(key: key);
 
-  @override
-  _ReelsPlayerState createState() => _ReelsPlayerState();
-}
-
-class _ReelsPlayerState extends State<ReelsPlayer> {
-  final List<String> videoUrls = [
-    'https://firebasestorage.googleapis.com/v0/b/adevnutralb.firebasestorage.app/o/natrue%20videos%2FSnapchat-125401604.mp4?alt=media&token=a5df6988-6a24-45bf-89fc-eaac4d496661',
-    'https://firebasestorage.googleapis.com/v0/b/adevnutralb.firebasestorage.app/o/natrue%20videos%2FSnapchat-142994796.mp4?alt=media&token=2fac414f-a673-42fb-bbcf-11a100f29d79',
-    'https://firebasestorage.googleapis.com/v0/b/adevnutralb.firebasestorage.app/o/natrue%20videos%2FSnapchat-75340133.mp4?alt=media&token=1a458e2e-e4a8-48c8-a51f-ded337e26fed',
-    'https://firebasestorage.googleapis.com/v0/b/adevnutralb.firebasestorage.app/o/natrue%20videos%2FSnapchat-91757244.mp4?alt=media&token=f0dd1932-9c6b-468e-888c-76361641ae40',
-  ];
-
-  final ScrollController _scrollController = ScrollController();
-  Timer? _scrollStopTimer;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _scrollController.addListener(() {
-      final direction = _scrollController.position.userScrollDirection;
-
-      // Cancel any running timer
-      _scrollStopTimer?.cancel();
-
-      if (direction == ScrollDirection.reverse) {
-        widget.onScrollChanged(false); // hide nav bar
-      } else if (direction == ScrollDirection.forward) {
-        widget.onScrollChanged(true); // show nav bar
-      }
-
-      _scrollStopTimer = Timer(Duration(milliseconds: 300), () {
-        widget.onScrollChanged(true);
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    _scrollStopTimer?.cancel();
-    super.dispose();
-  }
+  final Stream<QuerySnapshot> _reelsStream = FirebaseFirestore.instance
+      .collection('reels')
+      .orderBy('timestamp', descending: true)
+      .snapshots();
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        widget.onBackToMainTab(); // back gesture (Android)
-        return false;
-      },
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: Stack(
-          children: [
-            // PageView with reels
-            PageView.builder(
-              scrollDirection: Axis.vertical,
-              itemCount: videoUrls.length,
-              itemBuilder: (context, index) {
-                return ReelVideoItem(videoUrl: videoUrls[index]);
-              },
-            ),
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _reelsStream,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(
+                child: Text("No reels found",
+                    style: TextStyle(color: Colors.white)));
+          }
 
-            // Top-left back arrow
-            Positioned(
-              top: 40,
-              left: 16,
-              child: IconButton(
-                icon: Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white, size: 24),
-                onPressed: widget.onBackToMainTab,
-              ),
-            ),
-          ],
-        ),
+          final reels = snapshot.data!.docs;
+
+          return PageView.builder(
+            scrollDirection: Axis.vertical,
+            itemCount: reels.length,
+            itemBuilder: (context, index) {
+              final reel = reels[index];
+              return ReelVideoItem(
+                videoUrl: reel['videoUrl'],
+                organizer: reel['organizer'] ?? 'Unknown',
+                description: reel['description'] ?? '',
+                onBack: onBackToMainTab,
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -114,8 +76,16 @@ class _ReelsPlayerState extends State<ReelsPlayer> {
 
 class ReelVideoItem extends StatefulWidget {
   final String videoUrl;
+  final String organizer;
+  final String description;
+  final VoidCallback? onBack;
 
-  ReelVideoItem({required this.videoUrl});
+  ReelVideoItem({
+    required this.videoUrl,
+    required this.organizer,
+    required this.description,
+    this.onBack,
+  });
 
   @override
   _ReelVideoItemState createState() => _ReelVideoItemState();
@@ -126,17 +96,143 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
   TextEditingController commentController = TextEditingController();
   bool isVisible = false;
   bool isLiked = false;
+  bool isMuted = false;
+  bool showMuteIcon = false;
+  bool showHeart = false;
+  Offset heartPosition = Offset.zero;
+  double heartScale = 1.0;
+
+  int likeCount = 125;
+  int commentCount = 37;
   List<Comment> comments = [];
+
+  @override
+  Future<void> _checkIfLiked() async {
+    final userBox = Hive.box('authBox');
+    final userId = userBox.get('userId');
+    if (userId == null) {
+      print("🚨 No userId found in Hive!");
+      return;
+    }
+
+    final safeDocId = '${widget.videoUrl}__$userId'.replaceAll('/', '_');
+
+    final doc = await FirebaseFirestore.instance
+        .collection('likes')
+        .doc(safeDocId)
+        .get();
+    if (mounted) {
+      setState(() {
+        isLiked = doc.exists;
+      });
+    }
+  }
+
+  Future<void> _toggleLike() async {
+    final userBox = Hive.box('authBox');
+    final userId = userBox.get('userId');
+
+    if (userId == null) {
+      print("🚨 Cannot like: userId is null!");
+      return;
+    }
+
+    // ✅ Create a safe Firestore document ID
+    final safeDocId = '${widget.videoUrl}__$userId'.replaceAll('/', '_');
+
+    final likeRef =
+        FirebaseFirestore.instance.collection('likes').doc(safeDocId);
+
+    if (isLiked) {
+      await likeRef.delete();
+      setState(() {
+        isLiked = false;
+        likeCount -= 1;
+      });
+    } else {
+      await likeRef.set({
+        'videoUrl': widget.videoUrl,
+        'userId': userId,
+        'timestamp': DateTime.now(),
+      });
+      setState(() {
+        isLiked = true;
+        likeCount += 1;
+      });
+    }
+  }
+
+  Future<void> _getLikeCount() async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('likes')
+        .where('videoUrl', isEqualTo: widget.videoUrl)
+        .get();
+    if (mounted) {
+      setState(() {
+        likeCount = snapshot.docs.length;
+      });
+    }
+  }
+
+  Future<void> _loadComments() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('comments')
+          .where('videoUrl', isEqualTo: widget.videoUrl)
+          .orderBy('timestamp')
+          .get();
+      if (mounted) {
+        setState(() {
+          comments = snapshot.docs.map((doc) {
+            return Comment(
+              userName: doc['userName'],
+              text: doc['text'],
+              timestamp: (doc['timestamp'] as Timestamp).toDate(),
+              profileImageBytes: null, // use doc['profileImageUrl'] if needed
+            );
+          }).toList();
+          commentCount = comments.length;
+        });
+      }
+    } catch (e) {
+      print("🔥 Failed to load comments: $e");
+    }
+  }
+
+  Future<void> _postComment(
+      String text, String userName, String profileImage) async {
+    await FirebaseFirestore.instance.collection('comments').add({
+      'videoUrl': widget.videoUrl,
+      'userName': userName,
+      'text': text,
+      'timestamp': DateTime.now(),
+      'profileImageUrl': profileImage,
+    });
+  }
 
   @override
   void initState() {
     super.initState();
+
+    _getLikeCount();
+    _checkIfLiked();
+    _loadComments();
+
+    if (!kIsWeb) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    }
+
     _controller = VideoPlayerController.network(widget.videoUrl)
       ..initialize().then((_) {
-        if (mounted) setState(() {}); // ✅ Good check
+        if (mounted) {
+          _controller.setLooping(true);
+          setState(() {});
+        }
+      }).catchError((e) {
+        print('❌ Video failed to load: $e');
       });
 
-    _controller.setLooping(true);
+    // _controller.setLooping(true);
   }
 
   @override
@@ -149,24 +245,25 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
   void _handleVisibilityChanged(VisibilityInfo info) {
     if (!mounted) return;
 
-    final visible = info.visibleFraction > 0.8;
+    final shouldBeVisible = info.visibleFraction > 0.8;
 
-    if (isVisible != visible) {
+    if (mounted) {
       setState(() {
-        isVisible = visible;
+        isVisible = shouldBeVisible;
       });
     }
 
-    if (!mounted) return;
-
-    if (isVisible && _controller.value.isInitialized) {
-      _controller.play();
-    } else {
-      _controller.pause();
+    if (_controller.value.isInitialized) {
+      if (shouldBeVisible) {
+        _controller.play();
+      } else {
+        _controller.pause();
+      }
     }
   }
 
   void _openCommentSheet() {
+    _loadComments();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -192,7 +289,7 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
                           CircleAvatar(
                             backgroundImage: comment.profileImageBytes != null
                                 ? MemoryImage(comment.profileImageBytes!)
-                                : AssetImage('assets/default_avatar.png')
+                                : AssetImage('assets/images/default_user.png')
                                     as ImageProvider,
                             radius: 18,
                           ),
@@ -242,22 +339,33 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(Icons.send, color: Colors.white),
-                    onPressed: () {
+                    onPressed: () async {
                       final box = Hive.box('authBox');
                       final String firstName = box.get('firstName') ?? 'User';
-                      final String lastName = box.get('lastName') ?? '';
+                      final String lastName = box.get('last_name') ?? '';
                       final Uint8List? profileBytes =
                           box.get('profileImageBytes_userId');
-
                       if (commentController.text.trim().isNotEmpty) {
+                        final userBox = Hive.box('authBox');
+                        final firstName = userBox.get('firstName') ?? 'Unknown';
+                        final lastName = userBox.get('lastName') ?? '';
+                        final profileImage =
+                            userBox.get('profileImageUrl') ?? '';
+
+                        final commentText = commentController.text.trim();
+
                         setState(() {
                           comments.add(Comment(
                             userName: "$firstName $lastName",
-                            text: commentController.text.trim(),
+                            text: commentText,
                             timestamp: DateTime.now(),
-                            profileImageBytes: profileBytes,
+                            profileImageBytes: null, // or your logic
                           ));
+                          commentCount++;
                         });
+
+                        await _postComment(
+                            commentText, "$firstName $lastName", profileImage);
                         commentController.clear();
                       }
                     },
@@ -279,16 +387,123 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
       child: Stack(
         fit: StackFit.expand,
         children: [
+          AnimatedOpacity(
+            opacity: showMuteIcon ? 1.0 : 0.0,
+            duration: Duration(milliseconds: 300),
+            child: Center(
+              child: Icon(
+                isMuted ? Icons.volume_off : Icons.volume_up,
+                color: Colors.white.withOpacity(0.9),
+                size: 80,
+              ),
+            ),
+          ),
+
           _controller.value.isInitialized
-              ? FittedBox(
-                  fit: BoxFit.cover,
-                  child: SizedBox(
-                    width: _controller.value.size.width,
-                    height: _controller.value.size.height,
-                    child: VideoPlayer(_controller),
+              ? GestureDetector(
+                  behavior:
+                      HitTestBehavior.opaque, // ✅ makes sure it receives taps
+                  onTap: () {
+                    debugPrint("🖐 onTap triggered!");
+
+                    if (!_controller.value.isInitialized) return;
+
+                    final newMuteState = !isMuted;
+
+                    if (!kIsWeb) {
+                      _controller.setVolume(newMuteState ? 0.0 : 1.0);
+                      debugPrint(
+                          "🔊 Volume set to ${newMuteState ? 0.0 : 1.0}");
+                    } else {
+                      debugPrint("⚠️ setVolume not supported on web.");
+                    }
+
+                    setState(() {
+                      isMuted = newMuteState;
+                      showMuteIcon = true;
+                    });
+
+                    Future.delayed(Duration(milliseconds: 1500), () {
+                      if (mounted) {
+                        setState(() {
+                          showMuteIcon = false;
+                        });
+                      }
+                    });
+                  },
+                  onDoubleTapDown: (details) {
+                    setState(() {
+                      heartPosition = details.globalPosition;
+                    });
+                  },
+                  onDoubleTap: () {
+                    _toggleLike();
+
+                    setState(() {
+                      showHeart = true;
+                      heartScale = 1.5;
+                    });
+
+                    Future.delayed(Duration(milliseconds: 100), () {
+                      if (mounted) {
+                        setState(() {
+                          heartScale = 1.0;
+                        });
+                      }
+                    });
+
+                    Future.delayed(Duration(milliseconds: 800), () {
+                      if (mounted) {
+                        setState(() {
+                          showHeart = false;
+                        });
+                      }
+                    });
+                  },
+                  onLongPressStart: (_) {
+                    if (_controller.value.isPlaying) {
+                      _controller.pause();
+                    }
+                  },
+                  onLongPressEnd: (_) {
+                    if (!_controller.value.isPlaying && isVisible) {
+                      _controller.play();
+                    }
+                  },
+                  child: Container(
+                    width: MediaQuery.of(context).size.width,
+                    height: MediaQuery.of(context).size.height,
+                    color: Colors.transparent, // ✅ ensure it catches taps
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: _controller.value.size.width,
+                        height: _controller.value.size.height,
+                        child: VideoPlayer(_controller),
+                      ),
+                    ),
                   ),
                 )
               : Center(child: CircularProgressIndicator()),
+
+          if (showHeart)
+            Positioned(
+              left: heartPosition.dx - 40,
+              top: heartPosition.dy - 120,
+              child: AnimatedOpacity(
+                opacity: showHeart ? 1.0 : 0.0,
+                duration: Duration(milliseconds: 300),
+                child: AnimatedScale(
+                  scale: heartScale,
+                  duration: Duration(milliseconds: 150),
+                  child: Icon(
+                    Icons.favorite,
+                    color: Colors.redAccent,
+                    size: 90,
+                  ),
+                ),
+              ),
+            ),
 
           // Right-side actions
           Positioned(
@@ -298,22 +513,20 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  onPressed: () {
-                    setState(() {
-                      isLiked = !isLiked;
-                    });
-                  },
+                  onPressed: _toggleLike,
                   icon: Icon(
                     isLiked ? Icons.favorite : Icons.favorite_border,
                     color: isLiked ? Colors.red : Colors.white,
                     size: 30,
                   ),
                 ),
+                Text('$likeCount', style: TextStyle(color: Colors.white)),
                 SizedBox(height: 28),
                 IconButton(
                   onPressed: _openCommentSheet,
                   icon: Icon(Icons.comment, color: Colors.white, size: 32),
                 ),
+                Text('$commentCount', style: TextStyle(color: Colors.white)),
                 SizedBox(height: 28),
                 IconButton(
                   onPressed: () {
@@ -326,9 +539,9 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
             ),
           ),
 
-          // Left-side organizer name
+          // Organizer and description
           Positioned(
-            bottom: 20,
+            bottom: 60,
             left: 16,
             right: 20,
             child: Column(
@@ -343,63 +556,78 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
                   ),
                 ),
                 SizedBox(height: 10),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[850], // dark grey background
-                    borderRadius: BorderRadius.circular(10),
+                Text(
+                  widget.description,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
                   ),
-                  child: TextField(
-                    style: TextStyle(color: Colors.white),
-                    cursorColor: Colors.white,
-                    decoration: InputDecoration(
-                      hintText: 'Write a comment...',
-                      hintStyle: TextStyle(color: Colors.white70),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide.none,
+                ),
+                SizedBox(
+                  height: 20,
+                ),
+                // 👇 Add this part here
+                Container(
+                  margin: EdgeInsets.only(top: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[900],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: commentController,
+                          style: TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            hintText: 'Write a comment...',
+                            hintStyle: TextStyle(color: Colors.white70),
+                            border: InputBorder.none,
+                          ),
+                        ),
                       ),
-                    ),
+                      IconButton(
+                        icon: Icon(Icons.send, color: Colors.white),
+                        onPressed: () async {
+                          final userBox = Hive.box('authBox');
+                          final userId = userBox.get('userId');
+                          final firstName =
+                              userBox.get('firstName') ?? 'Unknown';
+                          final lastName = userBox.get('lastName') ?? '';
+                          final profileImage =
+                              userBox.get('profileImageUrl') ?? '';
+
+                          final text = commentController.text.trim();
+                          if (text.isNotEmpty) {
+                            await _postComment(
+                                text, "$firstName $lastName", profileImage);
+                            commentController.clear();
+                            _loadComments(); // Refresh after posting
+                          }
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-// Top Gradient Fade
           Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 100,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.8),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-// Bottom Gradient Fade
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 120,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.8),
-                    Colors.transparent,
-                  ],
+            top: 10,
+            left: 16,
+            child: SafeArea(
+              child: GestureDetector(
+                onTap: () {
+                  widget.onBack?.call();
+                },
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black45,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.arrow_back, color: Colors.white),
                 ),
               ),
             ),
