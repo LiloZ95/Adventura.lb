@@ -169,9 +169,7 @@ class _LoginPageState extends State<LoginPage> {
                   padding:
                       EdgeInsets.all(screenWidth * 0.05), // Dynamic padding
                   decoration: BoxDecoration(
-                    color: isDarkMode
-                        ? const Color(0xFF121212)
-                        : const Color(0xFFF6F6F6),
+                     color: isDarkMode ? const Color(0xFF121212) : Colors.white, // 🌙 Full background switc
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(

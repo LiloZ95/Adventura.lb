@@ -125,199 +125,209 @@ class _SetPasswordState extends State<SetPassword> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height;
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          Container(
+ @override
+Widget build(BuildContext context) {
+  final screenWidth = MediaQuery.of(context).size.width;
+  final screenHeight = MediaQuery.of(context).size.height;
+  final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+  return Scaffold(
+    body: Stack(
+      children: [
+        // ✅ Background Blur
+        Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage("assets/Pictures/island.jpg"),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 2.0, sigmaY: 2.0),
+            child: Container(color: Colors.black.withOpacity(0.5)),
+          ),
+        ),
+
+        // ✅ Password Card
+        Center(
+          child: Container(
+            padding: EdgeInsets.all(screenWidth * 0.05),
+            margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.08),
             decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage("assets/Pictures/island.jpg"),
-                fit: BoxFit.cover,
-              ),
+              color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: isDarkMode
+                  ? []
+                  : [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 10,
+                        spreadRadius: 2,
+                      ),
+                    ],
             ),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 2.0, sigmaY: 2.0),
-              child: Container(color: Colors.black.withOpacity(0.5)),
-            ),
-          ),
-          Center(
-            child: Container(
-              padding: EdgeInsets.all(screenWidth * 0.05),
-              margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.08),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 10,
-                    spreadRadius: 2,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Title
+                Text(
+                  "Set up a new password",
+                  style: TextStyle(
+                    fontSize: screenWidth * 0.05,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: "Poppins",
+                    color: isDarkMode ? Colors.white : Colors.black,
                   ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "Set up a new password",
-                    style: TextStyle(
-                      fontSize: screenWidth * 0.05,
-                      fontWeight: FontWeight.bold,
+                ),
+                SizedBox(height: screenHeight * 0.02),
+
+                // Info Text
+                Text(
+                  "Password must be at least 8 characters long,\ninclude one uppercase letter and one number.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                    fontFamily: "Poppins",
+                  ),
+                ),
+                SizedBox(height: screenHeight * 0.02),
+
+                // New Password Field
+                TextField(
+                  controller: _passwordController,
+                  obscureText: _obscureText,
+                  style: TextStyle(
+                    fontFamily: "Poppins",
+                    fontSize: screenWidth * 0.04,
+                    color: isDarkMode ? Colors.white : Colors.black,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: "New Password",
+                    labelStyle: TextStyle(
                       fontFamily: "Poppins",
+                      color: isDarkMode ? Colors.grey[300] : Colors.black,
+                    ),
+                    floatingLabelStyle: TextStyle(
+                      fontFamily: "Poppins",
+                      color: AppColors.blue,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(
+                        color: isDarkMode ? Colors.grey[600]! : Colors.grey[600]!,
+                        width: 1.0,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                        color: Colors.blueAccent,
+                        width: 1.0,
+                      ),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureText ? Icons.visibility_off : Icons.visibility,
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                      onPressed: _togglePasswordVisibility,
                     ),
                   ),
-                  SizedBox(height: screenHeight * 0.02),
-                  // Password Format Information
+                ),
+                SizedBox(height: screenHeight * 0.02),
+
+                // Confirm Password Field
+                TextField(
+                  controller: _confirmPasswordController,
+                  obscureText: _obscureConfirmText,
+                  style: TextStyle(
+                    fontFamily: "Poppins",
+                    fontSize: screenWidth * 0.04,
+                    color: isDarkMode ? Colors.white : Colors.black,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: "Confirm New Password",
+                    labelStyle: TextStyle(
+                      fontFamily: "Poppins",
+                      color: isDarkMode ? Colors.grey[300] : Colors.black,
+                    ),
+                    floatingLabelStyle: TextStyle(
+                      fontFamily: "Poppins",
+                      color: AppColors.blue,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(
+                        color: isDarkMode ? Colors.grey[600]! : Colors.grey[600]!,
+                        width: 1.0,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                        color: Colors.blueAccent,
+                        width: 1.0,
+                      ),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmText
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                      onPressed: _toggleConfirmPasswordVisibility,
+                    ),
+                  ),
+                ),
+                SizedBox(height: screenHeight * 0.02),
+
+                // Error Message
+                if (_errorMessage.isNotEmpty)
                   Text(
-                    "Password must be at least 8 characters long,\ninclude one uppercase letter and one number.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
+                    _errorMessage,
+                    style: const TextStyle(
+                      color: Colors.red,
                       fontSize: 14,
-                      color: Colors.grey[600],
                       fontFamily: "Poppins",
                     ),
                   ),
-                  SizedBox(height: screenHeight * 0.02),
+                SizedBox(height: screenHeight * 0.02),
 
-                  // New Password Field
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: _obscureText,
-                    style: TextStyle(
-                      fontFamily: "Poppins",
-                      fontSize: screenWidth * 0.04,
-                      color: Colors.black,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: "New Password",
-                      labelStyle: TextStyle(
-                        fontFamily: "Poppins",
-                        color: Colors.black,
-                      ),
-                      floatingLabelStyle: TextStyle(
-                        fontFamily: "Poppins",
-                        color: AppColors.blue,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: Colors.grey[600]!,
-                          width: 1.0,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: const Color.fromARGB(255, 0, 0, 0),
-                          width: 1.0,
-                        ),
-                      ),
-                      // Toggle Confirm Password Visibility
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureText
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          color: Colors.grey[400],
-                        ),
-                        onPressed: _togglePasswordVisibility,
+                // Submit Button
+                SizedBox(
+                  width: double.infinity,
+                  height: screenHeight * 0.07,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                  ),
-                  SizedBox(height: screenHeight * 0.02),
-
-                  // Confirm Password Field
-                  TextField(
-                    controller: _confirmPasswordController,
-                    obscureText: _obscureConfirmText,
-                    style: TextStyle(
-                      fontFamily: "Poppins",
-                      fontSize: screenWidth * 0.04,
-                      color: Colors.black,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: "Confirm New Password",
-                      labelStyle: TextStyle(
-                        fontFamily: "Poppins",
-                        color: Colors.black,
-                      ),
-                      floatingLabelStyle: TextStyle(
-                        fontFamily: "Poppins",
-                        color: AppColors.blue,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: Colors.grey[600]!,
-                          width: 1.0,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: const Color.fromARGB(255, 0, 0, 0),
-                          width: 1.0,
-                        ),
-                      ),
-                      // Toggle Confirm Password Visibility
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureConfirmText
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          color: Colors.grey[400],
-                        ),
-                        onPressed: _toggleConfirmPasswordVisibility,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: screenHeight * 0.02),
-
-                  if (_errorMessage.isNotEmpty)
-                    Text(
-                      _errorMessage,
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 14,
-                        fontFamily: "Poppins",
-                      ),
-                    ),
-
-                  SizedBox(height: screenHeight * 0.02),
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: screenHeight * 0.07,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.blue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onPressed: _isLoading ? null : resetPassword,
-                      child: _isLoading
-                          ? CircularProgressIndicator(color: Colors.white)
-                          : Text(
-                              "Set Password",
-                              style: TextStyle(
-                                fontSize: screenWidth * 0.045,
-                                color: Colors.white,
-                                fontFamily: "Poppins",
-                              ),
+                    onPressed: _isLoading ? null : resetPassword,
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Text(
+                            "Set Password",
+                            style: TextStyle(
+                              fontSize: screenWidth * 0.045,
+                              color: Colors.white,
+                              fontFamily: "Poppins",
                             ),
-                    ),
+                          ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 }
+
+  }
+
