@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 
 class UploadReelPage extends StatefulWidget {
   @override
@@ -51,12 +50,10 @@ class _UploadReelPageState extends State<UploadReelPage> {
     }
 
     try {
-      final file = File(_selectedVideo!.path);
       final fileName = DateTime.now().millisecondsSinceEpoch.toString();
       final storageRef =
           FirebaseStorage.instance.ref().child('reels/$fileName.mp4');
 
-      final uploadTask = await storageRef.putFile(file);
       final downloadUrl = await storageRef.getDownloadURL();
 
       await FirebaseFirestore.instance.collection('reels').add({

@@ -9,7 +9,6 @@ import 'package:adventura/userinformation/widgets/Agreements.dart';
 import 'package:adventura/userinformation/widgets/RateUs.dart';
 import 'package:adventura/userinformation/widgets/Security&Privacy.dart';
 import 'package:adventura/userinformation/widgets/report_bug_page.dart';
-import 'package:adventura/userinformation/widgets/theme_button.dart';
 import 'package:adventura/userinformation/widgets/custom_page_route.dart';
 import 'package:adventura/userinformation/widgets/theme_controller.dart';
 import 'package:flutter/material.dart';

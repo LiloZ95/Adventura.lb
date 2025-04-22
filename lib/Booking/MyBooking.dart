@@ -112,7 +112,6 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    double statusBarHeight = MediaQuery.of(context).padding.top;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: isDarkMode ? Color(0xFF1F1F1F) : Colors.white,

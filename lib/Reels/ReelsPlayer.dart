@@ -106,7 +106,6 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
   int commentCount = 37;
   List<Comment> comments = [];
 
-  @override
   Future<void> _checkIfLiked() async {
     final userBox = Hive.box('authBox');
     final userId = userBox.get('userId');
@@ -340,11 +339,6 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
                   suffixIcon: IconButton(
                     icon: Icon(Icons.send, color: Colors.white),
                     onPressed: () async {
-                      final box = Hive.box('authBox');
-                      final String firstName = box.get('firstName') ?? 'User';
-                      final String lastName = box.get('last_name') ?? '';
-                      final Uint8List? profileBytes =
-                          box.get('profileImageBytes_userId');
                       if (commentController.text.trim().isNotEmpty) {
                         final userBox = Hive.box('authBox');
                         final firstName = userBox.get('firstName') ?? 'Unknown';
@@ -591,7 +585,6 @@ class _ReelVideoItemState extends State<ReelVideoItem> {
                         icon: Icon(Icons.send, color: Colors.white),
                         onPressed: () async {
                           final userBox = Hive.box('authBox');
-                          final userId = userBox.get('userId');
                           final firstName =
                               userBox.get('firstName') ?? 'Unknown';
                           final lastName = userBox.get('lastName') ?? '';

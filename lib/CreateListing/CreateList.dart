@@ -419,7 +419,6 @@ class _CreateListingPageState extends State<CreateListingPage> {
   }
 
   Future<void> _clearSavedListingImages() async {
-    final appDir = await getApplicationDocumentsDirectory();
     final box = await Hive.openBox('listingFlow');
     final count = box.get('listingImageCount', defaultValue: 0);
 

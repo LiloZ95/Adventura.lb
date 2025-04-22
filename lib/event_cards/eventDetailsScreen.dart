@@ -94,7 +94,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final double lng = widget.activity["longitude"] ?? 35.8308;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    List<dynamic> rawImages = widget.activity["activity_images"] ?? [];
     List<String> images = [];
 
     for (var img in widget.activity["activity_images"] ?? []) {
