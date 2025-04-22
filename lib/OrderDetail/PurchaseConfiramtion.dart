@@ -3,7 +3,22 @@ import 'package:adventura/OrderDetail/ViewTicket.dart';
 import 'package:flutter/material.dart';
 
 class PurchaseConfirmationPage extends StatefulWidget {
-  const PurchaseConfirmationPage({Key? key}) : super(key: key);
+  final String eventTitle;
+  final String clientName;
+  final String eventTime;
+  final int numberOfAttendees;
+  final String ticketId;
+  final String status;
+
+  const PurchaseConfirmationPage({
+    Key? key,
+    required this.eventTitle,
+    required this.clientName,
+    required this.eventTime,
+    required this.numberOfAttendees,
+    required this.ticketId,
+    required this.status,
+  }) : super(key: key);
 
   @override
   State<PurchaseConfirmationPage> createState() =>
@@ -119,12 +134,12 @@ class _PurchaseConfirmationPageState extends State<PurchaseConfirmationPage>
                         context,
                         MaterialPageRoute(
                           builder: (context) => ViewTicketPage(
-                            eventTitle: "Hardine Village Hike",
-                            clientName: "Khalil Kurdi",
-                            eventTime: "08:30 AM",
-                            numberOfAttendees: 3,
-                            ticketId: "20025PP296",
-                            status: "Pending",
+                            eventTitle: widget.eventTitle,
+                            clientName: widget.clientName,
+                            eventTime: widget.eventTime,
+                            numberOfAttendees: widget.numberOfAttendees,
+                            ticketId: widget.ticketId,
+                            status: widget.status,
                           ),
                         ),
                       );

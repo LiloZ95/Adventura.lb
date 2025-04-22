@@ -46,6 +46,8 @@ router.post("/logout", userController.logoutUser);
 router.post("/validate-token", userController.validateToken);
 router.get("/validate-token", authenticateToken, userController.validateToken);
 router.get("/dashboard", authenticateToken, userController.getDashboard);
+router.post("/reset-password", userController.resetPassword);
+
 
 // ✅ OTP & Signup
 router.post("/send-otp", userController.sendOtp);

@@ -34,7 +34,7 @@ class BottomNavBar extends StatelessWidget {
           _navIcon("assets/Icons/home.png", 0, onTap),
           _navIcon("assets/Icons/search.png", 1, onTap),
           _navIcon("assets/Icons/ticket.png", 2, onTap),
-          _navIcon("assets/Icons/bookmark.png", 3, onTap),
+          _navIcon("assets/Icons/tripGenerator.png", 3, onTap),
           _navIcon("assets/Icons/paper-plane.png", 4, onTap),
         ],
       ),

@@ -1,4 +1,5 @@
 import 'package:adventura/Booking/MyBooking.dart';
+import 'package:adventura/OrderDetail/PurchaseConfiramtion.dart';
 import 'package:adventura/Services/booking_service.dart';
 import 'package:adventura/Services/interaction_service.dart';
 import 'package:flutter/material.dart';
@@ -258,7 +259,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
 
                     SizedBox(height: screenHeight * 0.015),
                     // Order Summary container.
-              
+
                     Container(
                       decoration: BoxDecoration(
                         color: isDarkMode
@@ -421,9 +422,28 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                                 activityId: widget.activityId,
                                 type: "purchase",
                               );
-
+                              Box box = await Hive.openBox('authBox');
+                              String firstName = box.get('firstName') ?? '';
+                              String lastName = box.get('lastName') ?? '';
                               // TODO: Navigate to success screen
-                              // Navigator.push(...);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      PurchaseConfirmationPage(
+                                    eventTitle: widget.eventTitle,
+                                    clientName:
+                                        "$firstName $lastName", // or get from Hive
+                                    eventTime: widget.selectedSlot,
+                                    numberOfAttendees:
+                                        tickets, // or however you store it
+                                    ticketId: "696969",
+                                    // or real bookingId
+                                    status:
+                                        "Pending", // or the real status from backend
+                                  ),
+                                ),
+                              );
                             } else {
                               print("❌ Booking failed");
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -434,11 +454,13 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                                 ),
                               );
                             }
-                             Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => MyBookingsPage(onScrollChanged: (bool ) {  },)),
-                            );
+                            // Navigator.push(
+                            //   context,
+                            //   MaterialPageRoute(
+                            //       builder: (context) => MyBookingsPage(
+                            //             onScrollChanged: (bool) {},
+                            //           )),
+                            // );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.blue,
