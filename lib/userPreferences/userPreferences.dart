@@ -20,8 +20,8 @@ class Favorite extends StatelessWidget {
           Theme.of(context).textTheme,
         ),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF3D5A8E),
-          primary: const Color(0xFF3D5A8E),
+          seedColor: AppColors.mainBlue,
+          primary: AppColors.mainBlue,
           secondary: const Color(0xFF2DCE98),
         ),
       ),
@@ -45,7 +45,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
   bool isLoading = true;
   late AnimationController _animationController;
 
-  // Category icon mapping for visual enhancement
+  
   final Map<String, IconData> categoryIcons = {
     "Adventure": Icons.terrain_rounded,
     "Sports": Icons.sports_basketball_rounded,
@@ -67,9 +67,9 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
     "Relaxation": Icons.spa_rounded,
   };
 
-  // Colors for category cards
+  
   final List<Color> categoryColors = [
-    const Color(0xFF3D5A8E), // Main Blue
+   AppColors.mainBlue, 
   ];
 
   @override
@@ -191,44 +191,44 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
     }
   }
 
-  // Get an appropriate icon for the category
+  
   IconData _getCategoryIcon(String categoryName) {
-    // Try exact match
+    
     if (categoryIcons.containsKey(categoryName)) {
       return categoryIcons[categoryName]!;
     }
 
-    // Try partial match (case insensitive)
+    
     for (var entry in categoryIcons.entries) {
       if (categoryName.toLowerCase().contains(entry.key.toLowerCase())) {
         return entry.value;
       }
     }
 
-    // Default fallback
+    
     return Icons.interests_rounded;
   }
 
-  // Get a color for a category (cycles through the colors based on index)
+  
   Color _getCategoryColor(int index) {
     return categoryColors[index % categoryColors.length];
   }
 
-  // Web layout with masonry-style grid - modified for more compact categories
+  
   Widget _buildWebCategoriesGrid() {
-    int crossAxisCount = 5; // Adjusted to make cards narrower
+    int crossAxisCount = 5; 
     double screenWidth = MediaQuery.of(context).size.width;
 
-    // Responsive grid adjustments for different screen sizes
+    
     if (screenWidth < 1400) crossAxisCount = 8;
     if (screenWidth < 1100) crossAxisCount = 7;
     if (screenWidth < 800) crossAxisCount = 6;
     if (screenWidth < 500) crossAxisCount = 4;
 
-    // Calculate how many items will fit in 2 rows
+    
     int itemsInTwoRows = crossAxisCount * 2;
     
-    // Ensure we don't exceed the number of available categories
+    
     int displayCount = categories.length > itemsInTwoRows ? itemsInTwoRows : categories.length;
 
     return Container(
@@ -240,11 +240,11 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: crossAxisCount,
-          childAspectRatio: 1.2, // REDUCED from 1.4 to 1.2 to make cards narrower
-          crossAxisSpacing: 12, // REDUCED from 15 to 12
-          mainAxisSpacing: 12, // REDUCED from 15 to 12
+          childAspectRatio: 1.2, 
+          crossAxisSpacing: 12, 
+          mainAxisSpacing: 12, 
         ),
-        itemCount: displayCount, // LIMITED to show only 2 rows
+        itemCount: displayCount, 
         itemBuilder: (context, index) {
           final category = categories[index];
           final String categoryName = category["name"] ?? "Unknown";
@@ -271,7 +271,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
                             "category_id": category['id'],
                             "preference_level": 3,
                           });
-                          // Play selection animation
+                          
                           _animationController.reset();
                           _animationController.forward();
                         }
@@ -283,7 +283,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
                   color: isSelected
                       ? categoryColor.withOpacity(0.15)
                       : Colors.white,
-                  borderRadius: BorderRadius.circular(14), // REDUCED from 16 to 14
+                  borderRadius: BorderRadius.circular(14), 
                   border: Border.all(
                     color: isSelected
                         ? categoryColor.withOpacity(0.8)
@@ -302,7 +302,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
                 ),
                 child: Stack(
                   children: [
-                    // Selection indicator
+                    
                     if (isSelected)
                       Positioned(
                         top: 8,
@@ -321,51 +321,53 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
                         ),
                       ),
 
-                    // Main content
-                    Padding(
-                      padding: const EdgeInsets.all(10), // REDUCED from 12 to 10
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Category icon
-                          Container(
-                            padding: const EdgeInsets.all(8), // REDUCED from 10 to 8
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? categoryColor.withOpacity(0.2)
-                                  : categoryColor.withOpacity(0.1),
-                              shape: BoxShape.circle,
+                    
+                    Positioned.fill(
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            
+                            Container(
+                              padding: const EdgeInsets.all(8), 
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? categoryColor.withOpacity(0.2)
+                                    : categoryColor.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                iconData,
+                                size: 24, 
+                                color: isSelected
+                                    ? categoryColor
+                                    : categoryColor.withOpacity(0.7),
+                              ),
                             ),
-                            child: Icon(
-                              iconData,
-                              size: 24, // REDUCED from 26 to 24
-                              color: isSelected
-                                  ? categoryColor
-                                  : categoryColor.withOpacity(0.7),
-                            ),
-                          ),
-                          const SizedBox(height: 6), // REDUCED from 8 to 6
+                            const SizedBox(height: 6), 
 
-                          // Category name
-                          Text(
-                            categoryName,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.poppins(
-                              fontSize: 15, // REDUCED from 16 to 15
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.w500,
-                              color:
-                                  isSelected ? categoryColor : Colors.black87,
+                            
+                            Text(
+                              categoryName,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.poppins(
+                                fontSize: 15, 
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.w500,
+                                color:
+                                    isSelected ? categoryColor : Colors.black87,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
 
-                    // Disabled overlay
+                    
                     if (isDisabled)
                       Positioned.fill(
                         child: Container(
@@ -395,7 +397,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
     );
   }
 
-  // Progress indicator - MODIFIED to take full width
+  
   Widget _buildProgressIndicator() {
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -414,7 +416,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
       ),
       child: Column(
         children: [
-          // Selection count
+          
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -430,7 +432,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: selectedPreferences.length >= minSelections
-                      ? const Color(0xFF3D5A8E)
+                      ?AppColors.mainBlue
                           .withOpacity(0.15)
                       : Colors.grey[200],
                   borderRadius: BorderRadius.circular(20),
@@ -440,7 +442,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.bold,
                     color: selectedPreferences.length >= minSelections
-                        ? const Color(0xFF3D5A8E)
+                        ?AppColors.mainBlue
                         : Colors.grey[700],
                   ),
                 ),
@@ -449,7 +451,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
           ),
           const SizedBox(height: 12),
 
-          // Progress bar - MODIFIED to use full width
+          
           Container(
             height: 8,
             width: double.infinity,
@@ -457,33 +459,45 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
               color: Colors.grey[200],
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Row(
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 500),
-                  curve: Curves.easeOutQuart,
-                  width: MediaQuery.of(context).size.width * 
-                      (selectedPreferences.isEmpty
-                          ? 0.05
-                          : selectedPreferences.length / maxSelections), 
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFF3D5A8E),
-                        Color(0xFF3D5A8E),
-                      ],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                
+                double progressWidth = constraints.maxWidth * 
+                    (selectedPreferences.isEmpty
+                        ? 0.05
+                        : selectedPreferences.length / maxSelections);
+                        
+                
+                if (progressWidth > constraints.maxWidth) {
+                  progressWidth = constraints.maxWidth;
+                }
+                
+                return Row(
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 500),
+                      curve: Curves.easeOutQuart,
+                      width: progressWidth,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                           AppColors.mainBlue,
+                           AppColors.mainBlue,
+                          ],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ],
+                  ],
+                );
+              }
             ),
           ),
           const SizedBox(height: 10),
 
-          // Status message
+          
           Text(
             selectedPreferences.isEmpty
                 ? "Select categories to personalize your experience"
@@ -504,7 +518,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
     );
   }
 
-  // Main build method
+  
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -513,7 +527,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
     return Scaffold(
       body: Stack(
         children: [
-          // Background with subtle pattern
+          
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
@@ -539,32 +553,23 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
             ),
           ),
 
-          // Main content
+          
           SafeArea(
             child: Center(
               child: Container(
                 width: isWideScreen ? screenWidth * 0.95 : double.infinity,
                 child: Column(
                   children: [
-                    // App bar - REDUCED vertical spacing
+                    
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 10,
                       ),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Text(
-                            "iVENTU",
-                            style: GoogleFonts.poppins(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF3D5A8E),
-                            ),
-                          ),
-
-                          // Skip button
+                          
                           TextButton(
                             onPressed: () {
                               Navigator.pushReplacement(
@@ -583,7 +588,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
                                 Text(
                                   "Skip for now",
                                   style: GoogleFonts.poppins(
-                                    color: Colors.grey[700],
+                                    color: AppColors.mainBlue,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -591,7 +596,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
                                 Icon(
                                   Icons.arrow_forward_rounded,
                                   size: 16,
-                                  color: Colors.grey[700],
+                                  color: AppColors.mainBlue,
                                 ),
                               ],
                             ),
@@ -600,14 +605,14 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
                       ),
                     ),
 
-                    // Content area - REDUCED padding
+                    
                     Expanded(
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            // Header - REDUCED top margin
+                            
                             Container(
                               margin: const EdgeInsets.only(bottom: 12, top: 8),
                               child: Column(
@@ -623,8 +628,8 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
                                           const Offset(0, 0),
                                           const Offset(300, 0),
                                           [
-                                            const Color(0xFF3D5A8E),
-                                            const Color(0xFF2B4170),
+                                           AppColors.mainBlue,
+                                            AppColors.mainBlue,
                                           ],
                                         ),
                                     ),
@@ -649,10 +654,10 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
 
                             const SizedBox(height: 16),
 
-                            // Progress indicator
+                            
                             _buildProgressIndicator(),
 
-                            // Loading state
+                            
                             if (isLoading)
                               Container(
                                 height: 240,
@@ -661,7 +666,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       const BouncingDotsLoader(
-                                        color: Color(0xFF3D5A8E),
+                                        color: AppColors.mainBlue,
                                         size: 16.0,
                                       ),
                                       const SizedBox(height: 20),
@@ -677,7 +682,7 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
                                 ),
                               )
 
-                            // Empty state
+                            
                             else if (categories.isEmpty)
                               Container(
                                 height: 240,
@@ -720,13 +725,13 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
                                 ),
                               )
 
-                            // Categories display
+                            
                             else
                               _buildWebCategoriesGrid(),
 
                             const SizedBox(height: 16),
 
-                            // Error message
+                            
                             if (errorMessage != null)
                               Container(
                                 padding: const EdgeInsets.symmetric(
@@ -762,10 +767,10 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
 
                             const SizedBox(height: 30),
 
-                            // Continue button - WIDENED
+                            
                             AnimatedContainer(
                               duration: const Duration(milliseconds: 300),
-                              width: isWideScreen ? 350 : 400, // INCREASED from 250/300 to 350/400
+                              width: isWideScreen ? 350 : 400, 
                               height: 56,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(28),
@@ -773,8 +778,8 @@ class _EventSelectionScreenState extends State<EventSelectionScreen>
                                   colors: selectedPreferences.length >=
                                           minSelections
                                       ? [
-                                          const Color(0xFF3D5A8E),
-                                          const Color(0xFF3D5A8E),
+                                          AppColors.mainBlue,
+                                          AppColors.mainBlue,
                                         ]
                                       : [Colors.grey[400]!, Colors.grey[500]!],
                                   begin: Alignment.centerLeft,

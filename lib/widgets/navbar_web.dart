@@ -83,9 +83,9 @@ class NavbarWidget extends StatelessWidget {
         // Logo - if transparent, use a version with transparent background if available
         Image.asset(
           'assets/images/MainLogo.png',
-          width: 200,
-          height: 70,
-          fit: BoxFit.cover,
+          width: 170,
+          height: 45,
+          fit: BoxFit.contain,
           color: isTransparent ? Colors.white : null,
         ),
         SizedBox(width: 32),
@@ -110,7 +110,7 @@ class NavbarWidget extends StatelessWidget {
           SizedBox(width: 24),
           _buildNavItem("My Bookings", 2, selectedTextColor, textColor),
           SizedBox(width: 24),
-          _buildNavItem("Saved", 3, selectedTextColor, textColor),
+      
         ],
         
         Spacer(),
@@ -187,9 +187,9 @@ class NavbarWidget extends StatelessWidget {
       // Wrap with GestureDetector to handle tap events
       return GestureDetector(
         onTap: () {
-      final themeController = Provider.of<ThemeController>(context, listen: false);
+//       final themeController = Provider.of<ThemeController>(context, listen: false);
 
-// Navigate with the provider
+// // Navigate with the provider
 Navigator.push(
   context,
   MaterialPageRoute(

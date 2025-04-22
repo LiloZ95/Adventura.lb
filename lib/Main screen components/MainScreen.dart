@@ -347,62 +347,62 @@ class _MainScreenState extends State<MainScreen>
                                           ),
                                         ),
                                         SizedBox(width: 4),
-                                        GestureDetector(
-                                          onTap: () => Navigator.push(
-                                            context,
-                                            PageRouteBuilder(
-                                              transitionDuration:
-                                                  Duration(milliseconds: 250),
-                                              pageBuilder: (context, animation,
-                                                      secondaryAnimation) =>
-                                                  UserInfo(),
-                                              transitionsBuilder: (context,
-                                                  animation,
-                                                  secondaryAnimation,
-                                                  child) {
-                                                return FadeTransition(
-                                                  opacity: animation,
-                                                  child: child,
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                          child: FutureBuilder(
-                                            future: Hive.openBox('authBox'),
-                                            builder: (context, snapshot) {
-                                              if (snapshot.connectionState ==
-                                                  ConnectionState.done) {
-                                                Box box = Hive.box('authBox');
-                                                Uint8List? userBytes = box.get(
-                                                    'profileImageBytes_$userId');
-                                                ImageProvider<Object>
-                                                    imageProvider;
+                                        // GestureDetector(
+                                        //   onTap: () => Navigator.push(
+                                        //     context,
+                                        //     PageRouteBuilder(
+                                        //       transitionDuration:
+                                        //           Duration(milliseconds: 250),
+                                        //       pageBuilder: (context, animation,
+                                        //               secondaryAnimation) =>
+                                        //           UserInfo(),
+                                        //       transitionsBuilder: (context,
+                                        //           animation,
+                                        //           secondaryAnimation,
+                                        //           child) {
+                                        //         return FadeTransition(
+                                        //           opacity: animation,
+                                        //           child: child,
+                                        //         );
+                                        //       },
+                                        //     ),
+                                        //   ),
+                                        //   child: FutureBuilder(
+                                        //     future: Hive.openBox('authBox'),
+                                        //     builder: (context, snapshot) {
+                                        //       if (snapshot.connectionState ==
+                                        //           ConnectionState.done) {
+                                        //         Box box = Hive.box('authBox');
+                                        //         Uint8List? userBytes = box.get(
+                                        //             'profileImageBytes_$userId');
+                                        //         ImageProvider<Object>
+                                        //             imageProvider;
 
-                                                if (userBytes != null) {
-                                                  imageProvider =
-                                                      MemoryImage(userBytes);
-                                                } else {
-                                                  imageProvider = AssetImage(
-                                                      "assets/images/default_user.png");
-                                                }
+                                        //         if (userBytes != null) {
+                                        //           imageProvider =
+                                        //               MemoryImage(userBytes);
+                                        //         } else {
+                                        //           imageProvider = AssetImage(
+                                        //               "assets/images/default_user.png");
+                                        //         }
 
-                                                return CircleAvatar(
-                                                  backgroundColor:
-                                                      Colors.grey.shade300,
-                                                  backgroundImage:
-                                                      imageProvider,
-                                                );
-                                              }
-                                              return CircleAvatar(
-                                                backgroundColor:
-                                                    Colors.grey.shade300,
-                                                child: Icon(Icons.person,
-                                                    color: Colors.black,
-                                                    size: 30),
-                                              );
-                                            },
-                                          ),
-                                        ),
+                                        //         return CircleAvatar(
+                                        //           backgroundColor:
+                                        //               Colors.grey.shade300,
+                                        //           backgroundImage:
+                                        //               imageProvider,
+                                        //         );
+                                        //       }
+                                        //       return CircleAvatar(
+                                        //         backgroundColor:
+                                        //             Colors.grey.shade300,
+                                        //         child: Icon(Icons.person,
+                                        //             color: Colors.black,
+                                        //             size: 30),
+                                        //       );
+                                        //     },
+                                        //   ),
+                                        // ),
                                       ],
                                     ),
                                   ),

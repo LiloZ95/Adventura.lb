@@ -6,9 +6,7 @@ import 'package:adventura/userinformation/widgets/Agreements.dart';
 import 'package:adventura/userinformation/widgets/RateUs.dart';
 import 'package:adventura/userinformation/widgets/Security&Privacy.dart';
 import 'package:adventura/userinformation/widgets/report_bug_page.dart';
-import 'package:adventura/userinformation/widgets/theme_button.dart';
 import 'package:adventura/userinformation/widgets/custom_page_route.dart';
-import 'package:adventura/userinformation/widgets/theme_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/login/login.dart';
 import 'package:adventura/Services/profile_service.dart';
@@ -20,14 +18,12 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:hive/hive.dart';
 import 'package:adventura/userinformation/widgets/PaymentMethod.dart';
 import 'package:adventura/userinformation/widgets/PersonalInformition.dart';
-import 'package:provider/provider.dart';
 
 class ProfileOptionTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? subtitle;
   final VoidCallback onTap;
-  final bool isDarkMode;
 
   const ProfileOptionTile({
     Key? key,
@@ -35,7 +31,6 @@ class ProfileOptionTile extends StatelessWidget {
     required this.title,
     this.subtitle,
     required this.onTap,
-    required this.isDarkMode,
   }) : super(key: key);
 
   @override
@@ -43,13 +38,11 @@ class ProfileOptionTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: isDarkMode 
-                ? Colors.black.withOpacity(0.2) 
-                : Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withOpacity(0.1),
             spreadRadius: 0,
             blurRadius: 5,
             offset: const Offset(0, 2),
@@ -69,16 +62,14 @@ class ProfileOptionTile extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF3D3D3D) : const Color(0xFFF5F5F5),
+                    color: const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     icon,
                     color: title == "Logout" || title == "Close Account"
                         ? Colors.red
-                        : isDarkMode 
-                            ? Colors.white 
-                            : Colors.black87,
+                        : Colors.black87,
                     size: 22,
                   ),
                 ),
@@ -95,9 +86,7 @@ class ProfileOptionTile extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                           color: title == "Logout" || title == "Close Account"
                               ? Colors.red
-                              : isDarkMode 
-                                  ? Colors.white 
-                                  : Colors.black87,
+                              : Colors.black87,
                         ),
                       ),
                       if (subtitle != null)
@@ -108,9 +97,7 @@ class ProfileOptionTile extends StatelessWidget {
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: 12,
-                              color: isDarkMode 
-                                  ? Colors.grey[400] 
-                                  : Colors.grey[600],
+                              color: Colors.grey[600],
                             ),
                           ),
                         ),
@@ -120,7 +107,7 @@ class ProfileOptionTile extends StatelessWidget {
                 Icon(
                   Icons.arrow_forward_ios,
                   size: 16,
-                  color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                  color: Colors.grey[700],
                 ),
               ],
             ),
@@ -133,12 +120,10 @@ class ProfileOptionTile extends StatelessWidget {
 
 class SectionHeader extends StatelessWidget {
   final String title;
-  final bool isDarkMode;
 
   const SectionHeader({
     Key? key,
     required this.title,
-    required this.isDarkMode,
   }) : super(key: key);
 
   @override
@@ -151,7 +136,7 @@ class SectionHeader extends StatelessWidget {
           fontFamily: 'Poppins',
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: isDarkMode ? Colors.white : Colors.black,
+          color: Colors.black,
         ),
       ),
     );
@@ -197,10 +182,9 @@ class _UserInfoState extends State<UserInfo> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDarkMode ? const Color(0xFF1F1F1F) : Colors.white;
-    final cardColor = isDarkMode ? const Color(0xFF2A2A2A) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final backgroundColor = Colors.white;
+    final cardColor = Colors.white;
+    final textColor = Colors.black;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -270,7 +254,7 @@ class _UserInfoState extends State<UserInfo> {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: isDarkMode ? Colors.white : Colors.black,
+                                    color: Colors.black,
                                     width: 2,
                                   ),
                                   boxShadow: [
@@ -283,11 +267,11 @@ class _UserInfoState extends State<UserInfo> {
                                   ],
                                 ),
                                 child: CircleAvatar(
-                                  backgroundColor: isDarkMode ? Colors.black : Colors.white,
+                                  backgroundColor: Colors.white,
                                   radius: 16,
                                   child: Icon(
                                     Icons.camera_alt,
-                                    color: isDarkMode ? Colors.white : Colors.black,
+                                    color: Colors.black,
                                     size: 16,
                                   ),
                                 ),
@@ -316,7 +300,7 @@ class _UserInfoState extends State<UserInfo> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                              color: Colors.grey[700],
                               fontFamily: "Poppins",
                             ),
                           ),
@@ -329,10 +313,8 @@ class _UserInfoState extends State<UserInfo> {
                   if (userType == "provider") ...[
                     SectionHeader(
                       title: "Organizer Options",
-                      isDarkMode: isDarkMode,
                     ),
                     ProfileOptionTile(
-                      isDarkMode: isDarkMode,
                       icon: Icons.pages_rounded,
                       title: "Landing page",
                       onTap: () {
@@ -351,13 +333,11 @@ class _UserInfoState extends State<UserInfo> {
                       },
                     ),
                     ProfileOptionTile(
-                      isDarkMode: isDarkMode,
                       icon: Icons.create,
                       title: "Create Reels",
                       onTap: () {},
                     ),
                     ProfileOptionTile(
-                      isDarkMode: isDarkMode,
                       icon: Icons.list_sharp,
                       title: "My listings",
                       onTap: () async {
@@ -385,10 +365,8 @@ class _UserInfoState extends State<UserInfo> {
                   // Settings Section
                   SectionHeader(
                     title: "Settings",
-                    isDarkMode: isDarkMode,
                   ),
                   ProfileOptionTile(
-                    isDarkMode: isDarkMode,
                     icon: Icons.security,
                     title: "Security & Privacy",
                     subtitle: "Change your security and privacy settings",
@@ -400,7 +378,6 @@ class _UserInfoState extends State<UserInfo> {
                     },
                   ),
                   ProfileOptionTile(
-                    isDarkMode: isDarkMode,
                     icon: Icons.payment,
                     title: "Payment Methods",
                     subtitle: "Manage saved cards and bank accounts that are linked to this account",
@@ -412,7 +389,6 @@ class _UserInfoState extends State<UserInfo> {
                     },
                   ),
                   ProfileOptionTile(
-                    isDarkMode: isDarkMode,
                     icon: Icons.person,
                     title: "Personal Details",
                     subtitle: "Update your personal information",
@@ -427,10 +403,8 @@ class _UserInfoState extends State<UserInfo> {
                   // Actions and Agreements
                   SectionHeader(
                     title: "Actions And Agreements",
-                    isDarkMode: isDarkMode,
                   ),
                   ProfileOptionTile(
-                    isDarkMode: isDarkMode,
                     icon: Icons.warning,
                     title: "Our Agreements",
                     onTap: () {
@@ -441,7 +415,6 @@ class _UserInfoState extends State<UserInfo> {
                     },
                   ),
                   ProfileOptionTile(
-                    isDarkMode: isDarkMode,
                     icon: Icons.star,
                     title: "Rate Us",
                     subtitle: "Write a review in App store",
@@ -453,7 +426,6 @@ class _UserInfoState extends State<UserInfo> {
                     },
                   ),
                   ProfileOptionTile(
-                    isDarkMode: isDarkMode,
                     icon: Icons.bug_report,
                     title: "Report a bug",
                     onTap: () {
@@ -464,7 +436,6 @@ class _UserInfoState extends State<UserInfo> {
                     },
                   ),
                   ProfileOptionTile(
-                    isDarkMode: isDarkMode,
                     icon: Icons.delete,
                     title: "Close Account",
                     subtitle: "Close your personal account",
@@ -473,7 +444,6 @@ class _UserInfoState extends State<UserInfo> {
                     },
                   ),
                   ProfileOptionTile(
-                    isDarkMode: isDarkMode,
                     icon: Icons.logout,
                     title: "Logout",
                     onTap: () async {
@@ -484,7 +454,6 @@ class _UserInfoState extends State<UserInfo> {
                   // Membership Section
                   SectionHeader(
                     title: "Membership",
-                    isDarkMode: isDarkMode,
                   ),
                   Padding(
                     padding: const EdgeInsets.only(left: 24, bottom: 32),
@@ -493,19 +462,13 @@ class _UserInfoState extends State<UserInfo> {
                       style: TextStyle(
                         fontSize: 15,
                         fontFamily: "Poppins",
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                        color: Colors.grey[700],
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-      floatingActionButton: AppearanceFAB(
-        isDarkMode: Provider.of<ThemeController>(context).isDarkMode,
-        onToggle: () {
-          Provider.of<ThemeController>(context, listen: false).toggleTheme();
-        },
-      ),
     );
   }
 
@@ -543,8 +506,7 @@ class _UserInfoState extends State<UserInfo> {
   }
 
   void _showDeleteConfirmationDialog(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final dialogBackgroundColor = isDarkMode ? const Color(0xFF2A2A2A) : Colors.white;
+    final dialogBackgroundColor = Colors.white;
     
     showDialog(
       context: context,
@@ -575,13 +537,13 @@ class _UserInfoState extends State<UserInfo> {
             style: TextStyle(
               fontSize: 15,
               fontFamily: 'Poppins',
-              color: isDarkMode ? Colors.white : Colors.black87,
+              color: Colors.black87,
             ),
           ),
           actions: [
             TextButton(
               style: TextButton.styleFrom(
-                backgroundColor: isDarkMode ? Color(0xFF3D3D3D) : Colors.grey[200],
+                backgroundColor: Colors.grey[200],
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -594,7 +556,7 @@ class _UserInfoState extends State<UserInfo> {
                 "Cancel",
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  color: isDarkMode ? Colors.white : Colors.black87,
+                  color: Colors.black87,
                 ),
               ),
             ),
@@ -640,31 +602,6 @@ class _UserInfoState extends State<UserInfo> {
           ],
         );
       },
-    );
-  }
-}
-
-// You would need to define this AppearanceFAB widget if it doesn't exist already
-// This is just a placeholder implementation
-class AppearanceFAB extends StatelessWidget {
-  final bool isDarkMode;
-  final VoidCallback onToggle;
-
-  const AppearanceFAB({
-    Key? key,
-    required this.isDarkMode,
-    required this.onToggle,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return FloatingActionButton(
-      onPressed: onToggle,
-      backgroundColor: isDarkMode ? Colors.white : Colors.black,
-      child: Icon(
-        isDarkMode ? Icons.light_mode : Icons.dark_mode,
-        color: isDarkMode ? Colors.black : Colors.white,
-      ),
     );
   }
 }

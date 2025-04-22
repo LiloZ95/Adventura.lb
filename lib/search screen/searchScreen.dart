@@ -922,7 +922,6 @@ void showFilterDialog() {
                         ),
                         const SizedBox(width: 16),
 
-                        // Search Bar
                        Expanded(
   child: Container(
 

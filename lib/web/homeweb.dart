@@ -176,6 +176,7 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
             children: [
               
               NavbarWidget(
+                
                 firstName: firstName,
                 userId: userId,
                 onMenuTap: toggleSidebar,
@@ -304,7 +305,7 @@ class _AdventuraWebHomeState extends State<AdventuraWebHomee> {
                     MyBookingsPage(onScrollChanged: (bool) { }),
 
                     
-                    const Center(child: Text("Saved Page")),
+                   
                   ],
                 ),
               ),

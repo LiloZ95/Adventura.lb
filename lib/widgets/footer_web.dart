@@ -77,12 +77,13 @@ class FooterWidget extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-                Image.asset(
-            'assets/images/MainLogo.png',
-            width: 200,
-            height: 120,
-            fit: BoxFit.cover,
-          ),
+            Image.asset(
+          'assets/images/MainLogo.png',
+          width: 170,
+          height: 45,
+          fit: BoxFit.contain,
+
+        ),
               const SizedBox(height: 20),
               Text(
                 'Discover extraordinary experiences and activities around you. Adventure awaits!',
