@@ -59,33 +59,33 @@ const ProviderRequests = () => {
         <p><strong>Address:</strong> {selectedRequest.address}</p>
 
         <div className="flex gap-4 my-4">
-          <div>
-            <img
-              src={`http://localhost:3000/uploads/provider_docs/${selectedRequest.user_id}/${selectedRequest.selfie_url}`}
-              alt="Selfie"
-              className="w-40 h-auto rounded border cursor-pointer"
-              onClick={() =>
-                setPreviewImage(
-                  `http://localhost:3000/uploads/provider_docs/${selectedRequest.user_id}/${selectedRequest.selfie_url}`
-                )
-              }
-            />
-            <p className="text-sm text-center text-gray-600 mt-2">Selfie</p>
-          </div>
-          <div>
-            <img
-              src={`http://localhost:3000/uploads/provider_docs/${selectedRequest.user_id}/${selectedRequest.gov_id_url}`}
-              alt="Gov ID"
-              className="w-40 h-auto rounded border cursor-pointer"
-              onClick={() =>
-                setPreviewImage(
-                  `http://localhost:3000/uploads/provider_docs/${selectedRequest.user_id}/${selectedRequest.gov_id_url}`
-                )
-              }
-            />
-            <p className="text-sm text-center text-gray-600 mt-2">Gov ID</p>
-          </div>
-        </div>
+  <div>
+    <img
+      src={`http://localhost:3000/uploads/provider_docs/${selectedRequest.user_id}/${selectedRequest.selfie_url.split('\\').pop()}`}
+      alt="Selfie"
+      className="w-40 h-auto rounded border cursor-pointer"
+      onClick={() =>
+        setPreviewImage(
+          `http://localhost:3000/uploads/provider_docs/${selectedRequest.user_id}/${selectedRequest.selfie_url.split('\\').pop()}`
+        )
+      }
+    />
+    <p className="text-sm text-center text-gray-600 mt-2">Selfie</p>
+  </div>
+  <div>
+    <img
+      src={`http://localhost:3000/uploads/provider_docs/${selectedRequest.user_id}/${selectedRequest.gov_id_url.split('\\').pop()}`}
+      alt="Gov ID"
+      className="w-40 h-auto rounded border cursor-pointer"
+      onClick={() =>
+        setPreviewImage(
+          `http://localhost:3000/uploads/provider_docs/${selectedRequest.user_id}/${selectedRequest.gov_id_url.split('\\').pop()}`
+        )
+      }
+    />
+    <p className="text-sm text-center text-gray-600 mt-2">Gov ID</p>
+  </div>
+</div>
 
         <p><strong>Certificate:</strong> {selectedRequest.certificate_url}</p>
 
