@@ -1,10 +1,12 @@
-const { Activity, ActivityImage } = require("../models");
+const { Activity, ActivityImage, User, Provider } = require("../models/index");
 const { Op, Sequelize, QueryTypes } = require("sequelize");
 const { sequelize } = require("../db/db");
 const TripPlan = require("../models/TripPlan");
 const Feature = require("../models/Feature");
 const path = require("path");
 const Availability = require("../models/Availability");
+// const Provider = require("../models/Provider");
+// const User = require("../models/User");
 
 // Utility to extract latitude & longitude from Google Maps URL
 function extractLatLonFromUrl(googleMapsUrl) {
@@ -284,6 +286,14 @@ const getAllActivities = async (req, res) => {
 			],
 			include: [
 				{
+					model: Provider,
+					as: 'provider',
+					include: [{
+					  model: User,
+					  as: 'USER'
+					}]
+				  },
+				{
 					model: ActivityImage,
 					as: "activity_images",
 					attributes: ["image_url"],
@@ -312,6 +322,14 @@ const getActivityById = async (req, res) => {
 
 		const activity = await Activity.findByPk(id, {
 			include: [
+				{
+					model: Provider,
+					as: 'provider',
+					include: [{
+					  model: User,
+					  as: 'USER'
+					}]
+				  },
 				{ model: ActivityImage, as: "activity_images" },
 				{
 					model: TripPlan,
@@ -350,6 +368,16 @@ const getActivitiesDetails = async (req, res) => {
 		const activities = await Activity.findAll({
 			where: { activity_id: activity_ids },
 			include: [
+				{
+					model: Provider,
+					as: "provider",
+					include: [
+						{
+							model: User,
+							as: "USER",
+						},
+					],
+				},
 				{
 					model: ActivityImage,
 					as: "activity_images",
@@ -486,6 +514,14 @@ const getActivitiesByProvider = async (req, res) => {
 			},
 			include: [
 				{
+					model: Provider,
+					as: 'provider',
+					include: [{
+					  model: User,
+					  as: 'USER'
+					}]
+				  },
+				{
 					model: ActivityImage,
 					as: "activity_images",
 					attributes: ["image_url", "is_primary"],
@@ -565,6 +601,14 @@ const getExpiredActivitiesByProvider = async (req, res) => {
 			},
 			include: [
 				{
+					model: Provider,
+					as: 'provider',
+					include: [{
+					  model: User,
+					  as: 'USER'
+					}]
+				  },
+				{
 					model: ActivityImage,
 					as: "activity_images",
 					attributes: ["image_url", "is_primary"],
@@ -586,7 +630,7 @@ const getAllEvents = async (req, res) => {
 	try {
 		const { search, category, location, min_price, max_price } = req.query;
 		const where = {
-			listing_type: "one_time", // 🎯 fetch events only
+			listing_type: "oneTime", // 🎯 fetch events only
 		};
 
 		if (category) where.category_id = parseInt(category);
@@ -603,6 +647,14 @@ const getAllEvents = async (req, res) => {
 		const events = await Activity.findAll({
 			where,
 			include: [
+				{
+					model: Provider,
+					as: 'provider',
+					include: [{
+					  model: User,
+					  as: 'USER'
+					}]
+				  },
 				{
 					model: ActivityImage,
 					as: "activity_images",

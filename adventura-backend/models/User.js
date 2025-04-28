@@ -1,5 +1,6 @@
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../db/db.js");
+const UserPfp = require("./UserPfp");
 
 const User = sequelize.define(
 	"USER",
@@ -42,16 +43,15 @@ const User = sequelize.define(
 		auth_provider_type: {
 			type: DataTypes.STRING,
 			allowNull: true,
-		  },
-		  auth_provider_id: {
+		},
+		auth_provider_id: {
 			type: DataTypes.STRING,
 			allowNull: true,
-		  },
-		  external_profile_picture: {
+		},
+		external_profile_picture: {
 			type: DataTypes.TEXT,
 			allowNull: true,
-		  },
-		  
+		},
 	},
 
 	{
@@ -61,5 +61,4 @@ const User = sequelize.define(
 	}
 );
 
-
-module.exports = User ;
+module.exports = User;

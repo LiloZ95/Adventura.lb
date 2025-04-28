@@ -26,4 +26,24 @@ class NotificationService {
       throw Exception("Failed to fetch notifications");
     }
   }
+
+  Future<bool> setNotificationPreference(
+      String userId, String providerId, bool allow) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/notification-preferences/set'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'user_id': userId,
+        'provider_id': providerId,
+        'allow_notifications': allow,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      print('Failed to update notification preference: ${response.body}');
+      return false;
+    }
+  }
 }
