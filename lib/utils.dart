@@ -34,7 +34,7 @@ String getEventImageUrl(Map<String, dynamic> event) {
     final imageUrl = image["image_url"];
 
     if (imageUrl != null && imageUrl.isNotEmpty) {
-      return imageUrl.startsWith("http") ? imageUrl : "$baseUrl/$imageUrl";
+      return imageUrl.startsWith("http") ? imageUrl : "$baseUrl$imageUrl";
     }
   }
 

@@ -5,6 +5,7 @@ import 'package:adventura/BecomeProvider/WelcomePage.dart';
 import 'package:adventura/MyListings/Mylisting.dart';
 import 'package:adventura/OrganizerProfile/OrganizerProfile.dart';
 import 'package:adventura/Reels/uploadReel.dart';
+import 'package:adventura/Services/activity_service.dart';
 import 'package:adventura/userinformation/widgets/Agreements.dart';
 import 'package:adventura/userinformation/widgets/RateUs.dart';
 import 'package:adventura/userinformation/widgets/Security&Privacy.dart';
@@ -331,7 +332,17 @@ class _UserInfoState extends State<UserInfo>
                                           isDarkMode: isDarkMode,
                                           icon: Icons.pages_rounded,
                                           title: "Landing page",
-                                          onTap: () {
+                                          onTap: () async {
+                                            final box =
+                                                await Hive.openBox('authBox');
+                                            int? providerId = int.tryParse(box
+                                                    .get("providerId")
+                                                    ?.toString() ??
+                                                "");
+                                            final activities =
+                                                await ActivityService
+                                                    .fetchProviderListings(
+                                                        providerId!);
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
@@ -344,7 +355,8 @@ class _UserInfoState extends State<UserInfo>
                                                       profilePicture,
                                                   bio:
                                                       "Welcome", // You can replace this later with a real one
-                                                  activities: [], // Replace with actual activity list when available
+                                                  activities:
+                                                      activities, // Replace with actual activity list when available
                                                 ),
                                               ),
                                             );

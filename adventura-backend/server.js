@@ -61,7 +61,6 @@ app.use(express.json());
 // ✅ Static File Serving
 // ===========================================================
 app.use("/images", express.static(path.join(__dirname, "public/images")));
-// app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ===========================================================
 // ✅ Route Imports
@@ -78,6 +77,8 @@ const adminRoutes = require('./routes/adminRoutes');
 const providerRequestRoutes = require("./routes/providerRequestRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const adminNotificationRoutes = require('./routes/adminNotificationRoutes');
+const followerRoutes = require("./routes/followerRoutes");
+const notificationPreferenceRoutes = require('./routes/notificationPreferenceRoutes');
 
 // const socialAuthRoutes = require('./routes/socialAuthRoutes'); // optional
 
@@ -98,13 +99,17 @@ app.use("/availability", availabilityRoutes);
 app.use("/booking", bookingRoutes);
 app.use('/admin', adminRoutes); // ← important to keep this prefix!
 app.use("/api", providerRequestRoutes); // Provider request routes
+app.use("/followers", followerRoutes); // Follower routes
 app.use("/", notificationRoutes);
 app.use('/admin', adminNotificationRoutes);
+app.use('/notification-preferences', notificationPreferenceRoutes);
 app.use('/uploads', (req, res, next) => {
-  res.header("Access-Control-Allow-Origin", `http://${process.env.HOST}:3001`);
+  res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept");
   next();
 }, express.static(path.join(__dirname, 'uploads')));
+
 
 
 // ===========================================================
