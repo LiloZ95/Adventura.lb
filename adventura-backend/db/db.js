@@ -15,6 +15,7 @@ const sequelize = new Sequelize(
     host: process.env.DB_HOST,
     port: process.env.DB_PORT, // ✅ Now using DB_PORT
     dialect: "postgres",
+    timezone: 'Asia/Beirut',
     logging: false, // Set to 'true' for debugging queries
     pool: {
       max: 10, // Allow multiple connections

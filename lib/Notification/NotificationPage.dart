@@ -54,7 +54,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   String formatDate(String timestamp) {
     try {
-      final date = DateTime.parse(timestamp);
+      final date = DateTime.parse(timestamp).toLocal();
       return DateFormat('MMM d, yyyy – hh:mm a').format(date);
     } catch (e) {
       return '';

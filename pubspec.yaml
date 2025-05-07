@@ -67,6 +67,8 @@ dependencies:
   firebase_auth: ^4.17.8
   cloud_firestore: ^4.15.8
   firebase_storage: ^11.6.9
+  web_socket_channel: ^2.4.3
+  flutter_local_notifications: ^18.0.1
 
   
 

@@ -6,8 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:adventura/intro/intro.dart';
 import 'package:adventura/config.dart'; // ✅ Import the global config file
-import 'package:flutter/foundation.dart'
-    show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:adventura/Services/PushService.dart';
 
 import 'HomeControllerScreen.dart'; // ✅ Detect if running on Web
 
@@ -113,6 +113,7 @@ class MainApi extends ChangeNotifier {
     String? accessToken = storageBox.get("accessToken");
     String? refreshToken = storageBox.get("refreshToken");
     bool isLoggedIn = storageBox.get("isLoggedIn", defaultValue: false);
+    String? userId = storageBox.get("userId");
 
     print("🔍 Checking Login Status...");
     print("🔍 Stored Access Token: $accessToken");
@@ -126,6 +127,9 @@ class MainApi extends ChangeNotifier {
 
       if (isValid) {
         print("✅ User is already logged in. Redirecting to MainScreen...");
+        
+        PushService.init(userId!);
+
         _initialScreen = HomeControllerScreen();
       } else {
         print("❌ Token expired. Trying refresh...");
@@ -133,6 +137,9 @@ class MainApi extends ChangeNotifier {
 
         if (refreshed) {
           print("✅ Tokens refreshed. Redirecting to MainScreen...");
+
+          PushService.init(userId!);
+
           _initialScreen = HomeControllerScreen();
         } else {
           print("❌ Token refresh failed. Logging out.");

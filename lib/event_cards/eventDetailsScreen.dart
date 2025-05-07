@@ -93,6 +93,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final double lat = widget.activity["latitude"] ?? 34.4381;
     final double lng = widget.activity["longitude"] ?? 35.8308;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final provider = widget.activity["provider"];
+    final user = provider != null ? provider["USER"] : null;
+    final providerId = provider != null ? provider["provider_id"] : null;
 
     List<String> images = [];
 
@@ -207,10 +210,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 contentPadding: EdgeInsets.zero,
                 leading: GestureDetector(
                   onTap: () async {
-                    final provider = widget.activity["provider"];
-                    final user = provider != null ? provider["user"] : null;
-                    final providerId = widget.activity["provider_id"];
-
                     if (providerId == null || user == null) {
                       print("❌ Organizer data missing");
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -267,9 +266,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   ),
                 ),
                 title: Text(
-                  "We tour Lebanon",
+                  user != null
+                      ? "${user["first_name"] ?? ""} ${user["last_name"] ?? ""}"
+                          .trim()
+                      : "Organizer",
                   style: TextStyle(
-                      color: isDarkMode ? Colors.white : Colors.black),
+                    color: isDarkMode ? Colors.white : Colors.black,
+                  ),
                 ),
                 subtitle: Text(
                   "Joined since 2024 · 94+ Listings · 4.5 Rating",

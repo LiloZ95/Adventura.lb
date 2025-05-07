@@ -22,8 +22,8 @@ const Notification = sequelize.define(
 			allowNull: false,
 		},
 		created_at: {
-			type: DataTypes.DATE,
-			defaultValue: DataTypes.NOW,
+			type: DataTypes.DATE, // ✅ correct type
+			defaultValue: DataTypes.NOW, // ✅ correct default
 		},
 		icon: {
 			type: DataTypes.STRING,
