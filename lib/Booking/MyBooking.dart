@@ -5,6 +5,7 @@ import 'package:adventura/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/widgets/booking_card.dart';
 import 'package:adventura/Services/booking_service.dart';
+import 'package:flutter/rendering.dart';
 import 'package:hive/hive.dart';
 
 class MyApp extends StatelessWidget {
@@ -31,13 +32,41 @@ int selectedRating = 0;
 bool isUpcomingSelected = true;
 
 class _MyBookingsPageState extends State<MyBookingsPage> {
+  late final ScrollController _scrollController;
+  Timer? _scrollStopTimer;
+
   bool isLoading = false;
   List<Map<String, dynamic>> bookings = [];
 
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
+
+    _scrollController.addListener(() {
+      final direction = _scrollController.position.userScrollDirection;
+
+      _scrollStopTimer?.cancel();
+
+      if (direction == ScrollDirection.reverse) {
+        widget.onScrollChanged(false); // 👈 hide nav bar
+      } else if (direction == ScrollDirection.forward) {
+        widget.onScrollChanged(true); // 👈 show nav bar
+      }
+
+      _scrollStopTimer = Timer(Duration(milliseconds: 300), () {
+        widget.onScrollChanged(true); // 👈 auto-show after scroll stops
+      });
+    });
+
     _fetchBookings();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _scrollStopTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchBookings() async {
@@ -83,7 +112,6 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    double statusBarHeight = MediaQuery.of(context).padding.top;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: isDarkMode ? Color(0xFF1F1F1F) : Colors.white,
@@ -180,6 +208,8 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                                 ),
                               )
                             : ListView.builder(
+                                controller: _scrollController, 
+                                padding: EdgeInsets.only(bottom: 120),
                                 itemCount: bookings
                                     .where((b) => isUpcomingSelected
                                         ? b["status"] == "Upcoming"

@@ -734,6 +734,28 @@ const deleteProfilePicture = async (req, res) => {
 	if (!deleted) return res.status(404).json({ error: "Not found" });
 	res.status(200).json({ message: "Profile picture deleted" });
 };
+const resetPassword = async (req, res) => {
+	const { email, newPassword } = req.body;
+
+	if (!email || !newPassword) {
+		return res.status(400).json({ error: "Email and new password are required." });
+	}
+
+	try {
+		const user = await User.findOne({ where: { email } });
+		if (!user) {
+			return res.status(404).json({ error: "User not found." });
+		}
+
+		const hashedPassword = await bcrypt.hash(newPassword, 10);
+		await user.update({ password_hash: hashedPassword });
+
+		res.status(200).json({ success: true, message: "Password reset successful." });
+	} catch (error) {
+		console.error("❌ Error resetting password:", error);
+		res.status(500).json({ error: "Server error." });
+	}
+};
 
 // ✅ Activity Image Upload
 // const uploadActivityImages = async (req, res) => {
@@ -775,5 +797,7 @@ module.exports = {
 	uploadProfilePicture,
 	getProfilePicture,
 	deleteProfilePicture,
+	resetPassword,
+
 	// uploadActivityImages,
 };

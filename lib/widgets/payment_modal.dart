@@ -2,7 +2,6 @@
 
 import 'package:adventura/Services/booking_service.dart';
 import 'package:flutter/material.dart';
-import 'package:adventura/OrderDetail/PurchaseConfiramtion.dart';
 import 'package:adventura/OrderDetail/countries.dart';
 
 class PaymentModal extends StatefulWidget {
@@ -176,13 +175,13 @@ class _PaymentModalState extends State<PaymentModal> {
 
                             if (success) {
                               Navigator.of(context).pop();
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      PurchaseConfirmationPage(),
-                                ),
-                              );
+                              // Navigator.push(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //     builder: (context) =>
+                              //         PurchaseConfirmationPage(),
+                              //   ),
+                              // );
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(

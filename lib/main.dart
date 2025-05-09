@@ -54,8 +54,28 @@ class MyApp extends StatelessWidget {
       builder: (context, mainApi, themeController, child) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          theme: ThemeData.light(),
-          darkTheme: ThemeData.dark(),
+          theme: ThemeData(
+            brightness: Brightness.light,
+            scaffoldBackgroundColor:
+                Color(0xFFF6F6F6), // match your app's light background
+            appBarTheme: AppBarTheme(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+              elevation: 0,
+            ),
+          ),
+
+          darkTheme: ThemeData(
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor:
+                Color(0xFF121212), // match your dark background
+            appBarTheme: AppBarTheme(
+              backgroundColor: Color(0xFF1F1F1F),
+              foregroundColor: Colors.white,
+              elevation: 0,
+            ),
+          ),
+
           themeMode: themeController.currentTheme, // ✅ Control theme globally
           home: mainApi.initialScreen,
         );

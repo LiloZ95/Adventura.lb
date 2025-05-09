@@ -1,12 +1,17 @@
 // ✅ Updated OrganizerProfilePage with full dark mode support.
 
 import 'dart:convert';
+import 'package:adventura/Services/NotificationService.dart';
 import 'package:adventura/config.dart';
+import 'package:adventura/utils/snackbars.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:adventura/event_cards/Cards.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:adventura/Services/follower_service.dart';
+import 'package:hive/hive.dart';
+import 'package:adventura/OrganizerProfile/show_followers_list_modal.dart';
 
 class OrganizerProfilePage extends StatefulWidget {
   final String organizerId;
@@ -31,18 +36,79 @@ class OrganizerProfilePage extends StatefulWidget {
 class _OrganizerProfilePageState extends State<OrganizerProfilePage> {
   bool isFollowing = false;
   int followersCount = 0;
+  bool isFollowButtonLoading = false;
+
+  // This variable is used to check if notifications are enabled or not.
+  bool isNotificationsEnabled = true;
 
   @override
   void initState() {
     super.initState();
-    followersCount = 0;
+    _initializeFollowData();
   }
 
-  void toggleFollow() {
+  Future<void> _initializeFollowData() async {
+    final box = await Hive.openBox('authBox');
+    final userId = box.get('userId');
+
+    if (userId == null || userId.isEmpty) {
+      print("❌ No userId found in storage.");
+      return;
+    }
+
+    final isUserFollowing =
+        await FollowerService.isFollowing(userId, widget.organizerId);
+    final count = await FollowerService.getFollowersCount(widget.organizerId);
+
     setState(() {
-      isFollowing = !isFollowing;
-      followersCount += isFollowing ? 1 : -1;
+      isFollowing = isUserFollowing;
+      followersCount = count;
     });
+  }
+
+  void toggleFollow() async {
+    if (isFollowButtonLoading) return;
+    setState(() => isFollowButtonLoading = true);
+
+    final box = await Hive.openBox('authBox');
+    final userId = box.get('userId');
+
+    if (userId == null || userId.isEmpty) {
+      print("❌ No userId found.");
+      setState(() => isFollowButtonLoading = false);
+      return;
+    }
+
+    if (userId == widget.organizerId) {
+      print("❌ Organizer cannot follow himself.");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("You cannot follow yourself.")),
+      );
+      setState(() => isFollowButtonLoading = false);
+      return;
+    }
+
+    if (isFollowing) {
+      final success =
+          await FollowerService.unfollowOrganizer(userId, widget.organizerId);
+      if (success) {
+        setState(() {
+          isFollowing = false;
+          followersCount -= 1;
+        });
+      }
+    } else {
+      final success =
+          await FollowerService.followOrganizer(userId, widget.organizerId);
+      if (success) {
+        setState(() {
+          isFollowing = true;
+          followersCount += 1;
+        });
+      }
+    }
+
+    setState(() => isFollowButtonLoading = false);
   }
 
   void shareOrganizer() {
@@ -51,22 +117,45 @@ class _OrganizerProfilePageState extends State<OrganizerProfilePage> {
     Share.share(shareText);
   }
 
-  void onMoreOptionSelected(int value) {
+  void onMoreOptionSelected(int value) async {
+    final box = await Hive.openBox('authBox');
+    final userId = box.get('userId');
+
+    if (userId == null || userId.isEmpty) {
+      showAppSnackBar(context, "Login required to manage notifications.");
+      return;
+    }
+
     switch (value) {
       case 0:
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Notifications enabled")),
-        );
+        setState(() {
+          isNotificationsEnabled = !isNotificationsEnabled;
+        });
+
+        final success = await NotificationService().setNotificationPreference(
+            userId, widget.organizerId, isNotificationsEnabled);
+
+        if (success) {
+          showAppSnackBar(
+            context,
+            isNotificationsEnabled
+                ? "Notifications enabled"
+                : "Notifications disabled",
+          );
+        } else {
+          showAppSnackBar(
+            context,
+            "Failed to update notification preference. Try again.",
+          );
+        }
         break;
+
       case 1:
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Report sent")),
-        );
+        showAppSnackBar(context, "Report sent");
         break;
+
       case 2:
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Organizer blocked")),
-        );
+        showAppSnackBar(context, "Organizer blocked");
         break;
     }
   }
@@ -94,7 +183,8 @@ class _OrganizerProfilePageState extends State<OrganizerProfilePage> {
         backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
         elevation: 0.4,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: isDarkMode ? Colors.white : Colors.black),
+          icon: Icon(Icons.arrow_back_ios_new,
+              color: isDarkMode ? Colors.white : Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -108,17 +198,25 @@ class _OrganizerProfilePageState extends State<OrganizerProfilePage> {
         centerTitle: true,
         actions: [
           PopupMenuButton<int>(
-            icon: Icon(LucideIcons.moreVertical, color: isDarkMode ? Colors.white : Colors.black),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            icon: Icon(LucideIcons.moreVertical,
+                color: isDarkMode ? Colors.white : Colors.black),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             onSelected: onMoreOptionSelected,
             itemBuilder: (context) => [
               PopupMenuItem(
                 value: 0,
                 child: Row(
-                  children: const [
-                    Icon(Icons.notifications_active, color: Colors.blue, size: 20),
-                    SizedBox(width: 10),
-                    Text("Allow Notifications", style: TextStyle(fontFamily: "poppins")),
+                  children: [
+                    Icon(Icons.notifications_active,
+                        color: Colors.blue, size: 20),
+                    const SizedBox(width: 10),
+                    Text(
+                      isNotificationsEnabled
+                          ? "Disable Notifications"
+                          : "Allow Notifications",
+                      style: const TextStyle(fontFamily: "poppins"),
+                    ),
                   ],
                 ),
               ),
@@ -138,7 +236,8 @@ class _OrganizerProfilePageState extends State<OrganizerProfilePage> {
                   children: const [
                     Icon(Icons.block, color: Colors.blue, size: 20),
                     SizedBox(width: 10),
-                    Text("Block Organizer", style: TextStyle(fontFamily: "poppins")),
+                    Text("Block Organizer",
+                        style: TextStyle(fontFamily: "poppins")),
                   ],
                 ),
               ),
@@ -153,7 +252,8 @@ class _OrganizerProfilePageState extends State<OrganizerProfilePage> {
             children: [
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
                 decoration: BoxDecoration(
                   color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
                   borderRadius: BorderRadius.circular(20),
@@ -170,10 +270,16 @@ class _OrganizerProfilePageState extends State<OrganizerProfilePage> {
                   children: [
                     CircleAvatar(
                       radius: 45,
-                      backgroundColor: Colors.grey[200],
+                      backgroundColor: Colors.transparent,
                       backgroundImage: widget.organizerImage.isNotEmpty
                           ? NetworkImage(widget.organizerImage)
-                          : const AssetImage("assets/images/default_user.png") as ImageProvider,
+                          : isDarkMode
+                              ? const AssetImage(
+                                      "assets/images/default_user_white.png")
+                                  as ImageProvider
+                              : const AssetImage(
+                                      "assets/images/default_user.png")
+                                  as ImageProvider,
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -200,14 +306,19 @@ class _OrganizerProfilePageState extends State<OrganizerProfilePage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildStat("Events", widget.activities.length.toString(), isDarkMode),
+                        _buildStat("Events",
+                            widget.activities.length.toString(), isDarkMode),
                         Container(
                           width: 1,
                           height: 24,
                           color: Colors.grey[300],
                           margin: const EdgeInsets.symmetric(horizontal: 24),
                         ),
-                        _buildStat("Followers", followersCount.toString(), isDarkMode),
+                        _buildStat(
+                            "Followers", followersCount.toString(), isDarkMode,
+                            onTap: () {
+                          showFollowersListModal(context, widget.organizerId);
+                        }),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -218,21 +329,34 @@ class _OrganizerProfilePageState extends State<OrganizerProfilePage> {
                             onPressed: toggleFollow,
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 14),
-                              backgroundColor: isFollowing ? Colors.grey[300] : themeColor,
-                              foregroundColor: isFollowing ? Colors.black : Colors.white,
+                              backgroundColor:
+                                  isFollowing ? Colors.grey[300] : themeColor,
+                              foregroundColor:
+                                  isFollowing ? Colors.black : Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               elevation: 1,
                             ),
-                            child: Text(
-                              isFollowing ? "Following" : "Follow",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15,
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
+                            child: isFollowButtonLoading
+                                ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: isFollowing
+                                          ? Colors.black
+                                          : Colors.white,
+                                    ),
+                                  )
+                                : Text(
+                                    isFollowing ? "Following" : "Follow",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 15,
+                                      fontFamily: 'Poppins',
+                                    ),
+                                  ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -296,28 +420,32 @@ class _OrganizerProfilePageState extends State<OrganizerProfilePage> {
     );
   }
 
-  Widget _buildStat(String label, String value, bool isDarkMode) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            fontFamily: 'Poppins',
-            color: isDarkMode ? Colors.white : Colors.black,
+  Widget _buildStat(String label, String value, bool isDarkMode,
+      {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              fontFamily: 'Poppins',
+              color: isDarkMode ? Colors.white : Colors.black,
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            color: isDarkMode ? Colors.grey[400] : Colors.grey,
-            fontFamily: 'Poppins',
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: isDarkMode ? Colors.grey[400] : Colors.grey,
+              fontFamily: 'Poppins',
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

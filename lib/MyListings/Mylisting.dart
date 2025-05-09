@@ -106,7 +106,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
         return true;
       },
       child: Scaffold(
-        backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF6F6F6),
+backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           backgroundColor: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
           elevation: 0.5,

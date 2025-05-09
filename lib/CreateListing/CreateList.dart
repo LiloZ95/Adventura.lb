@@ -419,7 +419,6 @@ class _CreateListingPageState extends State<CreateListingPage> {
   }
 
   Future<void> _clearSavedListingImages() async {
-    final appDir = await getApplicationDocumentsDirectory();
     final box = await Hive.openBox('listingFlow');
     final count = box.get('listingImageCount', defaultValue: 0);
 
@@ -457,6 +456,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
     return Stack(children: [
       Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         key: const Key('main_scaffold'),
         appBar: AppBar(
           title: const Text(

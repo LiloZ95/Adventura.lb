@@ -285,7 +285,6 @@ return  Scaffold(
   }
 
   Widget _buildDetailRow(String title, String value, bool isDarkMode) {
-        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(

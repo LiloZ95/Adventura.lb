@@ -39,11 +39,13 @@ const fileFilter = (req, file, cb) => {
 };
 
 // ✅ Factory function to generate customized uploader
-const createUploader = (folder = "") =>
-	multer({
-		storage: dynamicStorage(folder),
+const createUploader = (folder = "") =>{
+	const safeFolder = folder.replace(/[^a-zA-Z0-9/_-]/g, "");
+
+	return multer({
+		storage: dynamicStorage(safeFolder),
 		fileFilter,
 		limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-	});
+	});}
 
 module.exports = createUploader;

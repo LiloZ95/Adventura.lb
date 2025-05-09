@@ -94,16 +94,14 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final double lng = widget.activity["longitude"] ?? 35.8308;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    List<dynamic> rawImages = widget.activity["activity_images"] ?? [];
     List<String> images = [];
 
-    for (var img in rawImages) {
+    for (var img in widget.activity["activity_images"] ?? []) {
       if (img is Map && img.containsKey("image_url")) {
-        final url = img["image_url"];
-        if (url != null && url.toString().isNotEmpty) {
-          images.add(url.toString().startsWith("http") ? url : "$baseUrl$url");
-        }
-      } else if (img is String && img.isNotEmpty) {
+        images.add(img["image_url"].toString().startsWith("http")
+            ? img["image_url"]
+            : "$baseUrl${img["image_url"]}");
+      } else if (img is String) {
         images.add(img.startsWith("http") ? img : "$baseUrl$img");
       }
     }
@@ -113,7 +111,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     }
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF121212) : Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(screenWidth),
       body: SingleChildScrollView(
         child: Padding(
@@ -209,25 +207,28 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 contentPadding: EdgeInsets.zero,
                 leading: GestureDetector(
                   onTap: () async {
-                    final box = await Hive.openBox('authBox');
-                    int? providerId =
-                        int.tryParse(box.get("providerId")?.toString() ?? "");
-                    print("🔍 providerId: $providerId");
+                    final provider = widget.activity["provider"];
+                    final user = provider != null ? provider["user"] : null;
+                    final providerId = widget.activity["provider_id"];
 
-                    if (providerId == null) {
-                      print("❌ No provider ID found");
+                    if (providerId == null || user == null) {
+                      print("❌ Organizer data missing");
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content:
+                                Text("Organizer information not available.")),
+                      );
                       return;
                     }
 
-                    String organizerName =
-                        "${box.get("firstName")} ${box.get("lastName")}";
-                    String organizerImage =
-                        "${box.get("profilePictureUrl_$providerId") ?? ""}";
-                    String bio = "Adventure provider";
+                    final organizerFirstName = user["first_name"] ?? "";
+                    final organizerLastName = user["last_name"] ?? "";
+                    final organizerName =
+                        "$organizerFirstName $organizerLastName";
+                    final organizerImage = user["profilePicture"] ?? "";
 
                     final activities =
                         await ActivityService.fetchProviderListings(providerId);
-                    print("✅ Fetched ${activities.length} activities");
 
                     if (!context.mounted) return;
 
@@ -238,7 +239,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                           organizerId: providerId.toString(),
                           organizerName: organizerName,
                           organizerImage: organizerImage,
-                          bio: bio,
+                          bio: "Adventure provider", // later dynamic
                           activities: activities,
                         ),
                       ),
@@ -246,39 +247,23 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   },
                   child: CircleAvatar(
                     radius: 24,
-                    backgroundColor:
-                        isDarkMode ? const Color(0xFF1F1F1F) : Colors.grey,
-                    child: ClipOval(
-                      child: Builder(
-                        builder: (context) {
-                          final box = Hive.box('authBox');
-                          final profileImage =
-                              "${box.get("profilePictureUrl_${box.get("providerId")}") ?? ""}";
-
-                          if (profileImage.isNotEmpty) {
-                            return Image.network(
-                              profileImage,
-                              width: 48,
-                              height: 48,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Icon(
-                                Icons.person,
-                                size: 28,
-                                color: isDarkMode ? Colors.white : Colors.grey,
-                              ),
-                            );
-                          } else {
-                            return Image.asset(
-                              "assets/images/default_user.png",
-                              width: 48,
-                              height: 48,
-                              fit: BoxFit.cover,
-                            );
-                          }
-                        },
-                      ),
-                    ),
+                    backgroundColor: Colors.transparent,
+                    backgroundImage: (widget.activity["provider"] != null &&
+                            widget.activity["provider"]["user"] != null &&
+                            widget.activity["provider"]["user"]
+                                    ["profilePicture"] !=
+                                null &&
+                            widget.activity["provider"]["user"]
+                                    ["profilePicture"]
+                                .toString()
+                                .isNotEmpty)
+                        ? NetworkImage(widget.activity["provider"]["user"]
+                            ["profilePicture"])
+                        : AssetImage(
+                            isDarkMode
+                                ? "assets/images/default_user_white.png"
+                                : "assets/images/default_user.png",
+                          ) as ImageProvider,
                   ),
                 ),
                 title: Text(

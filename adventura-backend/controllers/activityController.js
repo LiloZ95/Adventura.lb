@@ -1,9 +1,12 @@
-const { Activity, ActivityImage } = require("../models");
+const { Activity, ActivityImage, User, Provider } = require("../models/index");
 const { Op, Sequelize, QueryTypes } = require("sequelize");
 const { sequelize } = require("../db/db");
 const TripPlan = require("../models/TripPlan");
 const Feature = require("../models/Feature");
+const path = require("path");
 const Availability = require("../models/Availability");
+// const Provider = require("../models/Provider");
+// const User = require("../models/User");
 
 // Utility to extract latitude & longitude from Google Maps URL
 function extractLatLonFromUrl(googleMapsUrl) {
@@ -101,7 +104,7 @@ const createActivity = async (req, res) => {
 				provider_id,
 				listing_type,
 				duration_minutes,
-				start_date, 
+				start_date,
 				end_date,
 			},
 			{ transaction: t }
@@ -283,6 +286,14 @@ const getAllActivities = async (req, res) => {
 			],
 			include: [
 				{
+					model: Provider,
+					as: 'provider',
+					include: [{
+					  model: User,
+					  as: 'USER'
+					}]
+				  },
+				{
 					model: ActivityImage,
 					as: "activity_images",
 					attributes: ["image_url"],
@@ -311,6 +322,14 @@ const getActivityById = async (req, res) => {
 
 		const activity = await Activity.findByPk(id, {
 			include: [
+				{
+					model: Provider,
+					as: 'provider',
+					include: [{
+					  model: User,
+					  as: 'USER'
+					}]
+				  },
 				{ model: ActivityImage, as: "activity_images" },
 				{
 					model: TripPlan,
@@ -350,6 +369,16 @@ const getActivitiesDetails = async (req, res) => {
 			where: { activity_id: activity_ids },
 			include: [
 				{
+					model: Provider,
+					as: "provider",
+					include: [
+						{
+							model: User,
+							as: "USER",
+						},
+					],
+				},
+				{
 					model: ActivityImage,
 					as: "activity_images",
 					attributes: ["image_url", "is_primary"],
@@ -388,17 +417,25 @@ const uploadImages = async (req, res) => {
 	}
 
 	try {
+		const host = req.protocol + "://" + req.get("host");
+
 		const createdImages = await Promise.all(
-			files.map((file) =>
-				ActivityImage.create({
+			files.map((file) => {
+				// Construct relative path from destination folder + filename
+				const relativePath = path
+					.relative(path.join(__dirname, "..", "uploads"), file.path)
+					.replace(/\\/g, "/");
+
+				return ActivityImage.create({
 					activity_id: activityId,
-					image_url: `/uploads/${file.filename}`,
+					image_url: `/uploads/${relativePath}`, // for frontend path
 					createdAt: new Date(),
 					updatedAt: new Date(),
 					is_primary: false,
-				})
-			)
+				});
+			})
 		);
+
 		res.status(200).json(createdImages);
 	} catch (error) {
 		console.error(error);
@@ -476,6 +513,14 @@ const getActivitiesByProvider = async (req, res) => {
 				availability_status: true, // ✅ hide soft-deleted listings
 			},
 			include: [
+				{
+					model: Provider,
+					as: 'provider',
+					include: [{
+					  model: User,
+					  as: 'USER'
+					}]
+				  },
 				{
 					model: ActivityImage,
 					as: "activity_images",
@@ -556,6 +601,14 @@ const getExpiredActivitiesByProvider = async (req, res) => {
 			},
 			include: [
 				{
+					model: Provider,
+					as: 'provider',
+					include: [{
+					  model: User,
+					  as: 'USER'
+					}]
+				  },
+				{
 					model: ActivityImage,
 					as: "activity_images",
 					attributes: ["image_url", "is_primary"],
@@ -577,7 +630,7 @@ const getAllEvents = async (req, res) => {
 	try {
 		const { search, category, location, min_price, max_price } = req.query;
 		const where = {
-			listing_type: "one_time", // 🎯 fetch events only
+			listing_type: "oneTime", // 🎯 fetch events only
 		};
 
 		if (category) where.category_id = parseInt(category);
@@ -594,6 +647,14 @@ const getAllEvents = async (req, res) => {
 		const events = await Activity.findAll({
 			where,
 			include: [
+				{
+					model: Provider,
+					as: 'provider',
+					include: [{
+					  model: User,
+					  as: 'USER'
+					}]
+				  },
 				{
 					model: ActivityImage,
 					as: "activity_images",
