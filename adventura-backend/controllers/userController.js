@@ -445,7 +445,7 @@ const loginUser = async (req, res) => {
 				userId: user.user_id,
 				email: user.email,
 				userType: user.user_type,
-				provider_id: provider_id, // ✅ now defined
+				provider_id: provider_id, 
 			},
 			process.env.JWT_SECRET,
 			{ expiresIn: "7d" }

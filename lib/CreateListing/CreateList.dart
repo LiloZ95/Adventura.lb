@@ -48,6 +48,7 @@ class CreateListingPage extends StatefulWidget {
 
 class _CreateListingPageState extends State<CreateListingPage> {
   bool _isUploading = false;
+  bool _imageError = false;
   final ImagePicker _picker = ImagePicker();
   final List<XFile> _images = [];
   static const int _maxImages = 10;
@@ -97,6 +98,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
   // Trip Plan
   List<bool> _isEditable = [true]; // only last one is editable
+  final Map<int, String?> _tripPlanAmPm = {};
   List<Map<String, TextEditingController>> _tripPlanControllers = [
     {
       'time': TextEditingController(),
@@ -137,55 +139,189 @@ class _CreateListingPageState extends State<CreateListingPage> {
     return DateFormat('hh:mm a').format(dt); // e.g., "02:00 PM"
   }
 
+  void _updateAmPm(int index, String? value) {
+    setState(() {
+      _tripPlanAmPm[index] = value;
+    });
+  }
+
+  // void _submitActivity() async {
+  //   // setState(() => _isUploading = true);
+  //   bool isRecurrent = _selectedListingType == ListingType.recurrent;
+
+  //   print("Title: ${_titleController.text}");
+  //   print("Desc: ${_descriptionController.text}");
+  //   print("Location: ${_locationDisplayController.text}");
+  //   print("Price: ${_priceController.text}");
+  //   print("From: ${_fromController.text}");
+  //   print("To: ${_toController.text}");
+  //   print("Seats: ${_seatsController.text}");
+  //   print("Category: $_selectedCategory");
+  //   print("Type: $_selectedListingType");
+  //   print("LatLng: $_mapLatLng");
+  //   print("Duration: $_selectedDuration");
+  //   print("Weekdays: $_selectedWeekdays");
+  //   print("Start Date: $_startDate");
+
+  //   if (_titleController.text.trim().isEmpty ||
+  //       _descriptionController.text.trim().isEmpty ||
+  //       _locationDisplayController.text.trim().isEmpty ||
+  //       _priceController.text.trim().isEmpty ||
+  //       _seatsController.text.trim().isEmpty ||
+  //       _selectedCategory == null ||
+  //       _selectedListingType == null ||
+  //       _mapLatLng == null ||
+  //       (_images.isEmpty) ||
+  //       (isRecurrent &&
+  //           (_selectedDuration == null ||
+  //               _selectedWeekdays.isEmpty ||
+  //               _startDate == null ||
+  //               _endDate == null))) {
+  //     showAppSnackBar(context, "⚠️ Please fill in all required fields.");
+  //     return;
+  //   }
+
+  //   final tripPlans = _tripPlanControllers.asMap().entries.where((entry) {
+  //     final time = entry.value["time"]!.text.trim();
+  //     final desc = entry.value["desc"]!.text.trim();
+  //     return time.isNotEmpty &&
+  //         desc.isNotEmpty &&
+  //         _tripPlanAmPm[entry.key] != null;
+  //   }).map((entry) {
+  //     final index = entry.key;
+  //     final time = _tripPlanControllers[index]["time"]!.text.trim();
+  //     final desc = _tripPlanControllers[index]["desc"]!.text.trim();
+  //     final ampm = _tripPlanAmPm[index]; // 'AM' or 'PM'
+  //     return {
+  //       "time": "$time $ampm", // 👈 Append AM/PM
+  //       "description": desc,
+  //     };
+  //   }).toList();
+
+  //   setState(() => _isUploading = true);
+
+  //   // final features = _featureControllers
+  //   //     .map((f) => f.text.trim())
+  //   //     .where((text) => text.isNotEmpty)
+  //   //     .toList();
+
+  //   final activityData = {
+  //     "name": _titleController.text.trim(),
+  //     "description": _descriptionController.text.trim(),
+  //     "location": _locationDisplayController.text.trim(),
+  //     "price": double.tryParse(_priceController.text) ?? 0.0,
+  //     "price_type": _selectedTicketPriceType,
+  //     "nb_seats": int.tryParse(_seatsController.text.trim()) ?? 0,
+  //     "category_id": _selectedCategory?["id"],
+  //     "latitude": _mapLatLng!.latitude,
+  //     "longitude": _mapLatLng!.longitude,
+  //     "features": _selectedFeatures,
+  //     "trip_plan": tripPlans,
+  //     "from_time": _fromTime != null ? _formatTime(_fromTime!) : null,
+  //     "to_time": _toTime != null ? _formatTime(_toTime!) : null,
+  //     "listing_type": _selectedListingType.toString().split('.').last,
+  //     // "repeat_weeks": _repeatWeeks,
+  //     "start_date": _startDate?.toIso8601String().split("T")[0],
+  //     "end_date": _endDate?.toIso8601String().split("T")[0] ??
+  //         _startDate?.toIso8601String().split("T")[0],
+  //     "repeat_days": _selectedWeekdays.toList(),
+  //     "duration_minutes": isRecurrent
+  //         ? _selectedDuration?.inMinutes
+  //         : _calculateFallbackDurationInMinutes(_fromTime, _toTime),
+  //   };
+  //   if (_fromTime == null || _toTime == null) {
+  //     showAppSnackBar(context, "⚠️ Please select start and end times.");
+  //     return;
+  //   }
+
+  //   // 🔄 Load images from Hive (saved earlier)
+  //   final box = await Hive.openBox('listingFlow');
+  //   final imageCount = box.get('listingImageCount', defaultValue: 0);
+  //   List<XFile> selectedImages = [];
+
+  //   for (int i = 0; i < imageCount; i++) {
+  //     final path = box.get('listingImage_$i');
+  //     if (path != null) {
+  //       selectedImages.add(XFile(path));
+  //     }
+  //   }
+
+  //   final success = await ActivityService.createActivity(
+  //     activityData,
+  //     images: selectedImages, // ✅ Include images here
+  //   );
+
+  //   setState(() => _isUploading = false);
+
+  //   if (success) {
+  //     showAppSnackBar(context, "✅ Activity created successfully!");
+
+  //     // Optional cleanup
+  //     await box.clear();
+  //     _clearSavedListingImages();
+
+  //     await Future.delayed(const Duration(milliseconds: 500));
+  //     Navigator.pushAndRemoveUntil(
+  //       context,
+  //       MaterialPageRoute(
+  //         builder: (_) => MyListingsPage(cameFromCreation: true),
+  //       ),
+  //       (route) => false,
+  //     );
+  //   } else {
+  //     showAppSnackBar(context, "❌ Failed to create activity.");
+  //   }
+  // }
+
   void _submitActivity() async {
-    setState(() => _isUploading = true);
     bool isRecurrent = _selectedListingType == ListingType.recurrent;
 
-    print("Title: ${_titleController.text}");
-    print("Desc: ${_descriptionController.text}");
-    print("Location: ${_locationDisplayController.text}");
-    print("Price: ${_priceController.text}");
-    print("From: ${_fromController.text}");
-    print("To: ${_toController.text}");
-    print("Seats: ${_seatsController.text}");
-    print("Category: $_selectedCategory");
-    print("Type: $_selectedListingType");
-    print("LatLng: $_mapLatLng");
-    print("Duration: $_selectedDuration");
-    print("Weekdays: $_selectedWeekdays");
-    print("Start Date: $_startDate");
+    // 🔒 Check if required fields are filled
+    final hasRequiredFields = _titleController.text.trim().isNotEmpty &&
+        _descriptionController.text.trim().isNotEmpty &&
+        _locationDisplayController.text.trim().isNotEmpty &&
+        _priceController.text.trim().isNotEmpty &&
+        _seatsController.text.trim().isNotEmpty &&
+        _selectedCategory != null &&
+        _selectedListingType != null &&
+        _mapLatLng != null &&
+        (_fromTime != null && _toTime != null) &&
+        (!isRecurrent ||
+            (_selectedDuration != null &&
+                _selectedWeekdays.isNotEmpty &&
+                _startDate != null &&
+                _endDate != null));
 
-    if (_titleController.text.trim().isEmpty ||
-        _descriptionController.text.trim().isEmpty ||
-        _locationDisplayController.text.trim().isEmpty ||
-        _priceController.text.trim().isEmpty ||
-        _seatsController.text.trim().isEmpty ||
-        _selectedCategory == null ||
-        _selectedListingType == null ||
-        _mapLatLng == null ||
-        (isRecurrent &&
-            (_selectedDuration == null ||
-                _selectedWeekdays.isEmpty ||
-                _startDate == null ||
-                _endDate == null))) {
-      showAppSnackBar(context, "⚠️ Please fill in all required fields.");
+    // 🔒 Check image count
+    if (_images.isEmpty) {
+      setState(() => _imageError = true); // ⛔ Trigger red border
+    }
+
+    if (!hasRequiredFields || _images.isEmpty) {
+      showAppSnackBar(context,
+          "⚠️ Please fill in all required fields and add at least one image.");
       return;
     }
 
-    final tripPlans = _tripPlanControllers
-        .where((plan) =>
-            plan["time"]!.text.trim().isNotEmpty &&
-            plan["desc"]!.text.trim().isNotEmpty)
-        .map((plan) => {
-              "time": plan["time"]!.text.trim(),
-              "description": plan["desc"]!.text.trim(),
-            })
-        .toList();
+    // ✅ Passed all validation — begin uploading
+    setState(() => _isUploading = true);
 
-    // final features = _featureControllers
-    //     .map((f) => f.text.trim())
-    //     .where((text) => text.isNotEmpty)
-    //     .toList();
+    final tripPlans = _tripPlanControllers.asMap().entries.where((entry) {
+      final time = entry.value["time"]!.text.trim();
+      final desc = entry.value["desc"]!.text.trim();
+      return time.isNotEmpty &&
+          desc.isNotEmpty &&
+          _tripPlanAmPm[entry.key] != null;
+    }).map((entry) {
+      final index = entry.key;
+      final time = _tripPlanControllers[index]["time"]!.text.trim();
+      final desc = _tripPlanControllers[index]["desc"]!.text.trim();
+      final ampm = _tripPlanAmPm[index];
+      return {
+        "time": "$time $ampm",
+        "description": desc,
+      };
+    }).toList();
 
     final activityData = {
       "name": _titleController.text.trim(),
@@ -199,10 +335,9 @@ class _CreateListingPageState extends State<CreateListingPage> {
       "longitude": _mapLatLng!.longitude,
       "features": _selectedFeatures,
       "trip_plan": tripPlans,
-      "from_time": _fromTime != null ? _formatTime(_fromTime!) : null,
-      "to_time": _toTime != null ? _formatTime(_toTime!) : null,
+      "from_time": _formatTime(_fromTime!),
+      "to_time": _formatTime(_toTime!),
       "listing_type": _selectedListingType.toString().split('.').last,
-      // "repeat_weeks": _repeatWeeks,
       "start_date": _startDate?.toIso8601String().split("T")[0],
       "end_date": _endDate?.toIso8601String().split("T")[0] ??
           _startDate?.toIso8601String().split("T")[0],
@@ -211,12 +346,8 @@ class _CreateListingPageState extends State<CreateListingPage> {
           ? _selectedDuration?.inMinutes
           : _calculateFallbackDurationInMinutes(_fromTime, _toTime),
     };
-    if (_fromTime == null || _toTime == null) {
-      showAppSnackBar(context, "⚠️ Please select start and end times.");
-      return;
-    }
 
-    // 🔄 Load images from Hive (saved earlier)
+    // 🔄 Load images from Hive
     final box = await Hive.openBox('listingFlow');
     final imageCount = box.get('listingImageCount', defaultValue: 0);
     List<XFile> selectedImages = [];
@@ -230,15 +361,13 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
     final success = await ActivityService.createActivity(
       activityData,
-      images: selectedImages, // ✅ Include images here
+      images: selectedImages,
     );
 
     setState(() => _isUploading = false);
 
     if (success) {
       showAppSnackBar(context, "✅ Activity created successfully!");
-
-      // Optional cleanup
       await box.clear();
       _clearSavedListingImages();
 
@@ -270,53 +399,52 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
   // A reusable widget method for text fields
   Widget _buildTextFieldBox({
-  required TextEditingController controller,
-  required String hint,
-  IconData? icon,
-}) {
-  final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    required TextEditingController controller,
+    required String hint,
+    IconData? icon,
+  }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-  return Container(
-    height: 50,
-    decoration: BoxDecoration(
-      color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-      border: Border.all(
-        color: isDarkMode ? Colors.grey[700]! : const Color(0xFFCFCFCF),
-        width: 1,
-      ),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        suffixIcon: icon != null
-            ? Icon(
-                icon,
-                color: isDarkMode ? Colors.white : Colors.blue,
-              )
-            : null,
-        border: InputBorder.none,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 14,
+    return Container(
+      height: 50,
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+        border: Border.all(
+          color: isDarkMode ? Colors.grey[700]! : const Color(0xFFCFCFCF),
+          width: 1,
         ),
-        hintText: hint,
-        hintStyle: TextStyle(
-          color: isDarkMode ? Colors.grey[400] : Colors.blue,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          suffixIcon: icon != null
+              ? Icon(
+                  icon,
+                  color: isDarkMode ? Colors.white : Colors.blue,
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 14,
+          ),
+          hintText: hint,
+          hintStyle: TextStyle(
+            color: isDarkMode ? Colors.grey[400] : Colors.blue,
+            fontSize: 14,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        style: TextStyle(
+          color: isDarkMode ? Colors.white : Colors.blue,
           fontSize: 14,
           fontFamily: 'Poppins',
         ),
+        cursorColor: isDarkMode ? Colors.white70 : Colors.blue,
       ),
-      style: TextStyle(
-        color: isDarkMode ? Colors.white : Colors.blue,
-        fontSize: 14,
-        fontFamily: 'Poppins',
-      ),
-      cursorColor: isDarkMode ? Colors.white70 : Colors.blue,
-    ),
-  );
-}
-
+    );
+  }
 
   @override
   void initState() {
@@ -362,6 +490,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
                     setState(() {
                       _images.add(photo);
                       _currentPage = _images.length - 1;
+                      _imageError = false;
                     });
                     await _saveImagesToHive();
                   }
@@ -381,6 +510,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
                     setState(() {
                       _images.addAll(imagesToAdd);
                       _currentPage = _images.length - 1;
+                      _imageError = false;
                     });
 
                     await _saveImagesToHive();
@@ -478,8 +608,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
         ),
 
         // ----------------------------------------------------------------
-        // 1) Use bottomNavigationBar to keep the bar pinned at the bottom
-        // 2) The content is in a SingleChildScrollView, so it can scroll
+        //  The content is in a SingleChildScrollView, so it can scroll
         //    independently above the pinned nav bar
         // ----------------------------------------------------------------
         body: SafeArea(
@@ -497,6 +626,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
                   pageController: _pageController,
                   onPickImages: _pickImages,
                   onClearImages: _clearImages,
+                  showError: _imageError, // 👈 pass the flag here
                 ),
 
                 const SizedBox(height: 15),
@@ -646,6 +776,9 @@ class _CreateListingPageState extends State<CreateListingPage> {
                       _isEditable.insert(newIndex, editableFlag);
                     });
                   },
+                  onAmPmChanged: _updateAmPm,
+                  fromTime: _fromTime,
+                  toTime: _toTime,
                 ),
 
                 const SizedBox(height: 20),

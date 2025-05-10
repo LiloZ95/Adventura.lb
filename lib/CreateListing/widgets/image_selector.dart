@@ -9,6 +9,7 @@ class ImageSelector extends StatelessWidget {
   final PageController pageController;
   final int currentPage;
   final int maxImages;
+  final bool showError;
 
   const ImageSelector({
     required this.images,
@@ -17,6 +18,7 @@ class ImageSelector extends StatelessWidget {
     required this.pageController,
     required this.currentPage,
     this.maxImages = 10,
+    this.showError = false,
     Key? key,
   }) : super(key: key);
 
@@ -34,7 +36,9 @@ class ImageSelector extends StatelessWidget {
             color: isDarkMode ? const Color(0xFF2C2C2C) : Colors.white,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: isDarkMode ? Colors.grey.shade700 : Colors.grey,
+              color: showError
+                  ? Colors.red
+                  : (isDarkMode ? Colors.grey.shade700 : Colors.grey),
               width: 2,
             ),
           ),
@@ -46,7 +50,8 @@ class ImageSelector extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.add_photo_alternate_outlined),
+                            icon:
+                                const Icon(Icons.add_photo_alternate_outlined),
                             iconSize: 48,
                             color: isDarkMode
                                 ? Colors.grey.shade400
@@ -59,8 +64,9 @@ class ImageSelector extends StatelessWidget {
                             style: TextStyle(
                               fontFamily: 'poppins',
                               fontSize: 16,
-                              color:
-                                  isDarkMode ? Colors.white : const Color(0xFF1F1F1F),
+                              color: isDarkMode
+                                  ? Colors.white
+                                  : const Color(0xFF1F1F1F),
                             ),
                           ),
                         ],
@@ -105,7 +111,23 @@ class ImageSelector extends StatelessWidget {
                     child: Text(
                       "Clear All",
                       style: TextStyle(
-                        color: isDarkMode ? Colors.white : const Color(0xFF1F1F1F),
+                        color:
+                            isDarkMode ? Colors.white : const Color(0xFF1F1F1F),
+                      ),
+                    ),
+                  ),
+                ),
+              if (showError)
+                const Padding(
+                  padding: EdgeInsets.only(top: 4, left: 12),
+                  child: Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Text(
+                      'Please add at least one image.',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 12,
+                        fontFamily: 'poppins',
                       ),
                     ),
                   ),
