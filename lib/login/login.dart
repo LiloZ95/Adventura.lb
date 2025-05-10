@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:adventura/HomeControllerScreen.dart';
 import 'package:adventura/Services/auth_service.dart';
 import 'package:adventura/login/FadeSlidePageRoute.dart';
@@ -170,7 +172,9 @@ class _LoginPageState extends State<LoginPage> {
                   padding:
                       EdgeInsets.all(screenWidth * 0.05), // Dynamic padding
                   decoration: BoxDecoration(
-                     color: isDarkMode ? const Color(0xFF121212) : Colors.white, // 🌙 Full background switc
+                    color: isDarkMode
+                        ? const Color(0xFF121212)
+                        : Colors.white, // 🌙 Full background switc
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -424,10 +428,55 @@ class _LoginPageState extends State<LoginPage> {
                       Center(
                         child: TextButton(
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => ForgotPasswordScreen()),
+                            Navigator.of(context).push(
+                              PageRouteBuilder(
+                                transitionDuration:
+                                    const Duration(milliseconds: 550),
+                                reverseTransitionDuration:
+                                    const Duration(milliseconds: 400),
+                                opaque: false,
+                                barrierDismissible: false,
+                                pageBuilder:
+                                    (context, animation, secondaryAnimation) =>
+                                        ForgotPasswordScreen(),
+                                transitionsBuilder: (context, animation,
+                                    secondaryAnimation, child) {
+                                  final curvedAnimation = CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeInOut,
+                                  );
+
+                                  return Stack(
+                                    children: [
+                                      // Background blur fade (optional)
+                                      FadeTransition(
+                                        opacity: curvedAnimation,
+                                        child: BackdropFilter(
+                                          filter: ui.ImageFilter.blur(
+                                            sigmaX: 10 * animation.value,
+                                            sigmaY: 10 * animation.value,
+                                          ),
+                                          child: Container(
+                                              color: Colors.black.withOpacity(
+                                                  0.4 * animation.value)),
+                                        ),
+                                      ),
+                                      // Page transition
+                                      SlideTransition(
+                                        position: Tween<Offset>(
+                                          begin: const Offset(
+                                              0, 0.1), // slightly from bottom
+                                          end: Offset.zero,
+                                        ).animate(curvedAnimation),
+                                        child: FadeTransition(
+                                          opacity: curvedAnimation,
+                                          child: child,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
                             );
                           },
                           child: Text(

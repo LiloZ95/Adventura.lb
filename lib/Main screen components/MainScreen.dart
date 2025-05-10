@@ -186,7 +186,12 @@ class _MainScreenState extends State<MainScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+
+    // ✅ Unfocus anything when MainScreen is built
+    FocusScope.of(context).unfocus();
+
     print("✅ MainScreen build() called");
+
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -766,11 +771,39 @@ class _MainScreenState extends State<MainScreen>
                                     return;
                                   }
 
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            CreateListingPage()),
+                                  Navigator.of(context).push(
+                                    PageRouteBuilder(
+                                      transitionDuration:
+                                          const Duration(milliseconds: 450),
+                                      reverseTransitionDuration:
+                                          const Duration(milliseconds: 300),
+                                      pageBuilder: (_, __, ___) =>
+                                          const CreateListingPage(),
+                                      transitionsBuilder:
+                                          (_, animation, __, child) {
+                                        final curved = CurvedAnimation(
+                                            parent: animation,
+                                            curve: Curves.easeInOutCubic);
+
+                                        return SlideTransition(
+                                          position: Tween<Offset>(
+                                            begin: const Offset(0.25,
+                                                0), // Slide in from right subtly
+                                            end: Offset.zero,
+                                          ).animate(curved),
+                                          child: FadeTransition(
+                                            opacity: curved,
+                                            child: ScaleTransition(
+                                              scale: Tween<double>(
+                                                      begin: 0.97, end: 1.0)
+                                                  .animate(
+                                                      curved), // slight zoom-in
+                                              child: child,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
                                   );
                                 },
                                 child: Container(
