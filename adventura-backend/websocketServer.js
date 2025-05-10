@@ -56,6 +56,6 @@ function pushToUser(userId, title, body) {
   }
 }
 
-server.listen(4000, () => console.log("🧠 WebSocket server running on port 3001"));
+server.listen(4000, () => console.log("🧠 WebSocket server running on port 4000"));
 
 module.exports = { pushToUser };

@@ -4,6 +4,9 @@ const String baseUrl =
 const String recommendationsUrl =
     'http://localhost:5001/recommend'; // For physical device it should be your local IP address instead of localhost
 
+const String wsUrl =
+    'ws://localhost:4000'; // For physical device it should be your local IP address instead of localhost
+
 const String MAPBOX_ACCESS_TOKEN =
     'pk.eyJ1IjoiYWR2ZW50dXJhLWxiIiwiYSI6ImNtOGx4aHY0ZjE3c3UyanNkbnNrZW53bWwifQ.KlXTdlwtJmOJHnW29SLaAA'; // Your Mapbox access token
 
