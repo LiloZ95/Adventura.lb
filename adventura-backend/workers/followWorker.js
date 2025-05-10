@@ -3,6 +3,7 @@ const { Worker } = require('bullmq');
 const { connection } = require('../utils/redis');
 const Notification = require('../models/Notification'); 
 const User = require('../models/User');
+const { pushToUser } = require('../websocketServer');
 
 // Worker to process follow jobs
 const worker = new Worker('followQueue', async job => {
@@ -25,6 +26,7 @@ const worker = new Worker('followQueue', async job => {
       description,
       icon: 'follow', // optional icon field
     });
+    pushToUser(provider_id, title, description);
 
     console.log(`✅ Notification sent to provider ${provider_id}`);
   } catch (error) {

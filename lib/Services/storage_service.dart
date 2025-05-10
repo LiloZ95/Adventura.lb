@@ -7,7 +7,6 @@ import 'package:hive/hive.dart';
 import 'package:adventura/config.dart';
 
 class StorageService {
-  // static const String baseUrl = 'http://localhost:3000';
 
   /// ✅ **Save Authentication Tokens**
   static Future<void> saveAuthTokens(

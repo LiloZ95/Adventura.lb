@@ -19,11 +19,13 @@ class PushService {
     const initSettings = InitializationSettings(android: androidSettings);
     await _notifications.initialize(initSettings);
 
+    print("📡 Connecting to ws://$wsUrl");
     // 2. Connect to WebSocket
     _channel = WebSocketChannel.connect(
       Uri.parse('ws://$wsUrl'),
     );
 
+    print("🔐 Sending auth with userId: $userId");
     // 3. Send auth
     _channel.sink.add(jsonEncode({
       "type": "auth",
@@ -33,6 +35,7 @@ class PushService {
     // 4. Listen for push messages
     _channel.stream.listen(
       (message) {
+        print("📩 PUSH RECEIVED: $message");
         final data = jsonDecode(message);
         if (data["type"] == "push") {
           _showNotification(data["title"], data["body"]);

@@ -30,16 +30,24 @@ Future<void> showFollowersListModal(
                   .get(Uri.parse('$baseUrl/followers/list/$organizerId'));
 
               if (response.statusCode == 200) {
-                final data = jsonDecode(response.body);
-                setState(() {
-                  followers = data['followers'];
-                  filteredFollowers = data['followers'];
-                  isLoading = false;
-                });
+                final decoded = jsonDecode(response.body);
+                if (decoded is Map<String, dynamic> &&
+                    decoded['followers'] is List) {
+                  setState(() {
+                    followers = decoded['followers'];
+                    filteredFollowers = decoded['followers'];
+                    isLoading = false;
+                  });
+                } else {
+                  print("❌ Unexpected JSON structure: $decoded");
+                  setState(() => isLoading = false);
+                }
               } else {
+                print("❌ HTTP ${response.statusCode}: ${response.body}");
                 setState(() => isLoading = false);
               }
             } catch (e) {
+              print("❌ Exception during fetchFollowers: $e");
               setState(() => isLoading = false);
             }
           }
@@ -139,21 +147,24 @@ Future<void> showFollowersListModal(
                                           itemBuilder: (context, index) {
                                             final follower =
                                                 filteredFollowers[index];
+                                            final profilePicture =
+                                                follower['profilePicture'];
+                                            final profileUrl =
+                                                profilePicture is String
+                                                    ? profilePicture
+                                                    : (profilePicture?['url'] ??
+                                                        '');
                                             return ListTile(
                                               leading: CircleAvatar(
-                                                backgroundColor: Colors.transparent,
-                                                backgroundImage: (follower[
-                                                                'profilePicture'] !=
-                                                            null &&
-                                                        follower[
-                                                                'profilePicture']
-                                                            .isNotEmpty)
-                                                    ? NetworkImage(follower[
-                                                        'profilePicture'])
+                                                backgroundColor:
+                                                    Colors.transparent,
+                                                backgroundImage: (profileUrl
+                                                        .isNotEmpty)
+                                                    ? NetworkImage(profileUrl)
                                                     : AssetImage(isDarkMode
-                                                            ? "assets/images/default_user_white.png" // 🔥 dark mode → white icon
-                                                            : "assets/images/default_user.png" // 🔥 light mode → black icon
-                                                        ) as ImageProvider,
+                                                            ? "assets/images/default_user_white.png"
+                                                            : "assets/images/default_user.png")
+                                                        as ImageProvider,
                                               ),
                                               title: Text(
                                                 "${follower['firstName']} ${follower['lastName']}",
