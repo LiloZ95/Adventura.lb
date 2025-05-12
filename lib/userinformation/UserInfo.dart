@@ -5,6 +5,7 @@ import 'package:adventura/BecomeProvider/WelcomePage.dart';
 import 'package:adventura/MyListings/Mylisting.dart';
 import 'package:adventura/OrganizerProfile/OrganizerProfile.dart';
 import 'package:adventura/Reels/uploadReel.dart';
+import 'package:adventura/Reels/upload_reel_pg.dart';
 import 'package:adventura/Services/activity_service.dart';
 import 'package:adventura/userinformation/widgets/Agreements.dart';
 import 'package:adventura/userinformation/widgets/RateUs.dart';
@@ -369,7 +370,7 @@ class _UserInfoState extends State<UserInfo>
                                           Navigator.push(
                                             context,
                                             SecurityPageRoute(
-                                                child: UploadReelPage()),
+                                                child: UploadReelPgPage()),
                                           );
                                         },
                                       ),
