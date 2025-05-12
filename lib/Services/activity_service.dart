@@ -508,7 +508,7 @@ class ActivityService {
     final from = activity['from_time'];
     final to = activity['to_time'];
 
-    print("🧪 getDurationDisplay → from_time: $from, to_time: $to");
+    // print("🧪 getDurationDisplay → from_time: $from, to_time: $to");
 
     if (from == null || to == null) {
       print("⚠️ One of the times is null. Skipping duration display.");

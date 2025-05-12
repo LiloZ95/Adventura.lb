@@ -582,7 +582,7 @@ class _UserInfoState extends State<UserInfo>
 
           floatingActionButton: Builder(
             builder: (context) => FloatingActionButton(
-              backgroundColor: isDarkMode ? Colors.black87 : Colors.blue,
+              backgroundColor: isDarkMode ? Colors.blue : Colors.black87,
               onPressed: () async {
                 // Capture the screen as image before switching theme
                 RenderRepaintBoundary boundary = _screenshotKey.currentContext!
