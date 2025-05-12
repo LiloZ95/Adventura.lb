@@ -1,129 +1,218 @@
-import 'package:adventura/signUp%20page/Signup.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:animated_text_kit/animated_text_kit.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:adventura/signUp%20page/Signup.dart';
 
-class DynamicOnboarding extends StatelessWidget {
+class DynamicOnboarding extends StatefulWidget {
+  @override
+  _DynamicOnboardingState createState() => _DynamicOnboardingState();
+}
+
+class _DynamicOnboardingState extends State<DynamicOnboarding> {
+  final PageController _controller = PageController();
+  Timer? _autoScrollTimer;
+  int _currentPage = 0;
+
+  final List<Map<String, String>> screens = [
+    {
+      "image": "assets/Pictures/nakhil.jpg",
+      "description": "Explore untouched coastal beauty and rocky trails."
+    },
+    {
+      "image": "assets/Pictures/sea2.webp",
+      "description": "Sail into crystal clear waters and soak in the serenity."
+    },
+    {
+      "image": "assets/Pictures/shakie.jpg",
+      "description": "Experience adrenaline with cliff jumps and wild moments."
+    },
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoScrollTimer = Timer.periodic(const Duration(seconds: 6), (timer) {
+        if (_controller.hasClients) {
+          _currentPage++;
+          if (_currentPage >= screens.length) {
+            _autoScrollTimer?.cancel();
+            return;
+          }
+          _controller.animateToPage(
+            _currentPage,
+            duration: const Duration(milliseconds: 1000),
+            curve: Curves.easeInOutCubicEmphasized,
+          );
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoScrollTimer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final Map<String, String> screen = {
-      "image": "assets/Pictures/sunset.jpg",
-      "titleStatic": "Lebanon’s \nEndless \nAdventures",
-      "description":
-          "From sea trips to mountain hikes, explore curated experiences tailored for everyone.",
-    };
-
-    final List<String> dynamicWords = [
-      "Discover",
-      "Plan",
-      "Get Notified about"
-    ];
-
     return Scaffold(
       body: Stack(
         children: [
-          // Background Image
-          Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(screen['image']!),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          // Gradient Overlay
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: [
-                  Colors.black.withOpacity(1.0),
-                  Colors.black.withOpacity(0.5),
+          PageView.builder(
+            controller: _controller,
+            itemCount: screens.length,
+            onPageChanged: (index) {
+              _currentPage = index;
+            },
+            itemBuilder: (context, index) {
+              return Stack(
+                children: [
+                  // Background Image
+                  Container(
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage(screens[index]['image']!),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  // Gradient Overlay
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.9),
+                          Colors.black.withOpacity(0.4),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Content
+                  Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 100),
+                        RichText(
+                          text: const TextSpan(
+                            children: [
+                              TextSpan(
+                                text: "Discover ",
+                                style: TextStyle(
+                                  fontSize: 45,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xff007AFF),
+                                  fontFamily: 'Poppins',
+                                  height: 1.1,
+                                ),
+                              ),
+                              TextSpan(
+                                text: "Lebanon’s\nEndless\nAdventures",
+                                style: TextStyle(
+                                  fontSize: 45,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  fontFamily: 'Poppins',
+                                  height: 1.1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          screens[index]['description'] ?? '',
+                          style: const TextStyle(
+                            color: Color.fromRGBO(255, 255, 255, 0.7),
+                            fontSize: 16,
+                            fontFamily: 'Poppins',
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                        if (index == screens.length - 1)
+                          Center(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => SignUpPage()),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Color(0xff007AFF),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                fixedSize: const Size(376, 54),
+                              ),
+                              child: const Text(
+                                "Let's Get Started",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                  fontFamily: 'Poppins',
+                                ),
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
                 ],
+              );
+            },
+          ),
+
+          // Skip Button
+          Positioned(
+            top: 50,
+            right: 24,
+            child: TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => SignUpPage()),
+                );
+              },
+              child: const Text(
+                "Skip",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontFamily: 'Poppins',
+                ),
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title with dynamic first word and static part
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      WidgetSpan(
-                        alignment: PlaceholderAlignment.baseline,
-                        baseline: TextBaseline.alphabetic,
-                        child: DefaultTextStyle(
-                          style: TextStyle(
-                            fontSize: 55,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xff007AFF),
-                            height: 1,
-                            fontFamily: 'Raleway',
-                          ),
-                          child: AnimatedTextKit(
-                            animatedTexts: dynamicWords
-                                .map((word) => FadeAnimatedText(
-                                      word,
-                                      duration: Duration(milliseconds: 2200),
-                                    ))
-                                .toList(),
-                            repeatForever: true,
-                          ),
-                        ),
-                      ),
-                      TextSpan(
-                        text: screen['titleStatic']!,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 55,
-                          color: Color(0xffffffff),
-                          height: 1.0,
-                          fontFamily: 'Raleway',
-                        ),
-                      ),
-                    ],
-                  ),
+
+          // Page Indicator
+          Positioned(
+            bottom: 24,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: SmoothPageIndicator(
+                controller: _controller,
+                count: screens.length,
+                effect: ExpandingDotsEffect(
+                  dotColor: Colors.white30,
+                  activeDotColor: Color(0xff007AFF),
+                  dotHeight: 10,
+                  dotWidth: 10,
+                  expansionFactor: 4,
+                  spacing: 6,
                 ),
-                SizedBox(height: 16),
-                // Description
-                Text(
-                  screen['description']!,
-                  style: TextStyle(
-                    color: Color.fromRGBO(255, 255, 255, 0.7),
-                    fontSize: 16,
-                    height: 1.2,
-                  ),
-                ),
-                SizedBox(height: 48),
-                // Button
-                Center(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => SignUpPage()),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue, // Button color
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(20), // Rounded corners
-                      ),
-                      fixedSize: Size(376, 54), // Fixed width and height
-                    ),
-                    child: Text(
-                      "Let's Get Started",
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 32),
-              ],
+              ),
             ),
           ),
         ],
