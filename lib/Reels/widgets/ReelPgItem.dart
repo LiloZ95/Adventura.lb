@@ -40,17 +40,9 @@ class _ReelPgItemState extends State<ReelPgItem> {
   }
 
   Future<void> _loadLikeState() async {
-    final count = await ReelService.getReelLikes(widget.reel["reel_id"]);
-    final userId = Hive.box('authBox').get("userId");
-
-    final liked = await ReelService.didUserLikeReel(
-      userId: userId,
-      reelId: widget.reel["reel_id"],
-    );
-
     setState(() {
-      likeCount = count;
-      isLiked = liked;
+      likeCount = widget.reel["likeCount"] ?? 0;
+      isLiked = widget.reel["liked"] ?? false;
     });
   }
 
@@ -119,7 +111,6 @@ class _ReelPgItemState extends State<ReelPgItem> {
                   ),
                 )
               : Center(child: CircularProgressIndicator()),
-
           if (showMuteIcon)
             Center(
               child: Icon(
@@ -128,7 +119,6 @@ class _ReelPgItemState extends State<ReelPgItem> {
                 color: Colors.white70,
               ),
             ),
-
           if (showHeart)
             Center(
               child: Icon(
@@ -137,7 +127,6 @@ class _ReelPgItemState extends State<ReelPgItem> {
                 size: 100,
               ),
             ),
-
           Positioned(
             bottom: 70,
             left: 16,
@@ -160,7 +149,6 @@ class _ReelPgItemState extends State<ReelPgItem> {
               ],
             ),
           ),
-
           Positioned(
             bottom: 60,
             right: 16,

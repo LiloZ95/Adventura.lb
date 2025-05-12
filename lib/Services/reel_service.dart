@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:adventura/Reels/widgets/comment_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
@@ -65,7 +64,17 @@ class ReelService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        return List<Map<String, dynamic>>.from(data);
+        return List<Map<String, dynamic>>.from(
+          data.map((reel) {
+            final updatedReel = Map<String, dynamic>.from(reel);
+            print("Loaded video_url: ${updatedReel["video_url"]}");
+            if (!updatedReel["video_url"].toString().startsWith("http")) {
+              updatedReel["video_url"] = "$baseUrl${updatedReel["video_url"]}";
+            }
+            updatedReel["liked"] = updatedReel["liked"] ?? false;
+            return updatedReel;
+          }),
+        );
       } else {
         print("❌ Failed to fetch reels: ${response.body}");
         return [];

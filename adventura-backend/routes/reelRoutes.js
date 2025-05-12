@@ -37,10 +37,20 @@ const storage = multer.diskStorage({
 	},
 });
 
-const upload = multer({ storage });
+const upload = multer({
+	storage,
+	fileFilter: (req, file, cb) => {
+		if (file.mimetype === "video/mp4") {
+			cb(null, true);
+		} else {
+			cb(new Error("Only .mp4 files are allowed"));
+		}
+	},
+	limits: { fileSize: 100 * 1024 * 1024 }, // 100 MB limit
+});
 
 // Public: Get all reels
-router.get("/", getAllReels);
+router.get("/", authenticateToken, getAllReels);
 
 // Protected: Upload a reel (Provider-only)
 router.post("/upload", authenticateToken, upload.single("video"), uploadReel);

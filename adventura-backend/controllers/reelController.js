@@ -1,5 +1,7 @@
 // controllers/reelController.js
 
+const { sequelize } = require("../db/db.js");
+
 const Reel = require("../models/Reel");
 const Provider = require("../models/Provider");
 const ReelLike = require("../models/ReelLike");
@@ -56,6 +58,13 @@ const uploadReel = async (req, res) => {
 
 		console.log("✅ Reel created successfully:", newReel.reel_id);
 
+		console.log("📂 Uploaded file details:", {
+			original: req.file.originalname,
+			path: req.file.path,
+			mimetype: req.file.mimetype,
+			size: req.file.size,
+		});
+
 		return res
 			.status(201)
 			.json({ message: "Reel uploaded successfully!", reel: newReel });
@@ -68,10 +77,37 @@ const uploadReel = async (req, res) => {
 // ✅ Fetch all reels (public)
 const getAllReels = async (req, res) => {
 	try {
+		const userId = req.user?.userId || null;
+
 		const reels = await Reel.findAll({
 			order: [["timestamp", "DESC"]],
 			include: [{ model: Provider, attributes: ["business_name"] }],
 		});
+
+		if (userId) {
+			const likedReels = await ReelLike.findAll({
+				where: { user_id: userId },
+				attributes: ["reel_id"],
+			});
+
+			const likedIds = likedReels.map((r) => r.reel_id);
+
+			const likeCounts = await ReelLike.findAll({
+				attributes: [
+					"reel_id",
+					[sequelize.fn("COUNT", sequelize.col("id")), "count"],
+				],
+				group: ["reel_id"],
+			});
+			const likeMap = Object.fromEntries(
+				likeCounts.map((r) => [r.reel_id, parseInt(r.dataValues.count)])
+			);
+
+			for (const reel of reels) {
+				reel.dataValues.liked = likedIds.includes(reel.reel_id);
+				reel.dataValues.likeCount = likeMap[reel.reel_id] || 0;
+			}
+		}
 
 		res.status(200).json(reels);
 	} catch (err) {
