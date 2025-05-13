@@ -8,6 +8,7 @@ import 'package:adventura/TripPlanner/myTrips.dart';
 import 'package:adventura/search%20screen/searchScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:adventura/Reels/reels_pg.dart';
 
 import 'widgets/bottom_nav_bar.dart';
 
@@ -84,11 +85,11 @@ class _HomeControllerScreenState extends State<HomeControllerScreen>
       ),
       MyBookingsPage(onScrollChanged: _handleScrollChanged),
       MyTripsPage(),
-      ReelsPlayer(
+      ReelsPgScreen(
         onScrollChanged: _handleScrollChanged,
         onBackToMainTab: () {
           setState(() {
-            _selectedIndex = 0; // 👈 back to Main tab
+            _selectedIndex = 0;
           });
         },
       ),

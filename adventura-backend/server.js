@@ -79,6 +79,7 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const adminNotificationRoutes = require('./routes/adminNotificationRoutes');
 const followerRoutes = require("./routes/followerRoutes");
 const notificationPreferenceRoutes = require('./routes/notificationPreferenceRoutes');
+const reelRoutes = require("./routes/reelRoutes");
 
 // const socialAuthRoutes = require('./routes/socialAuthRoutes'); // optional
 
@@ -109,8 +110,7 @@ app.use('/uploads', (req, res, next) => {
   res.header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept");
   next();
 }, express.static(path.join(__dirname, 'uploads')));
-
-
+app.use("/reels", reelRoutes); // Reel routes
 
 // ===========================================================
 app.use((err, req, res, next) => {

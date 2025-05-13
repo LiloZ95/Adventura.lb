@@ -23,6 +23,9 @@ const Payment = require("./Payment")(sequelize, DataTypes);
 const ProviderRequest = require("./providerRequest"); // ✅ make sure path is correct
 const Followers = require("./Followers");
 const UserPfp = require("./UserPfp");
+const Reel = require("./Reel");
+const ReelLike = require("./ReelLike");
+const ReelComment = require("./ReelComment");
 
 // ✅ Define Relationships
 Activity.hasMany(ActivityImage, {
@@ -47,7 +50,7 @@ Activity.hasMany(TripPlan, {
 });
 
 Activity.belongsTo(Provider, { foreignKey: "provider_id", as: "provider" });
-Provider.hasMany(Activity, { foreignKey: 'provider_id', as: 'activities' });
+Provider.hasMany(Activity, { foreignKey: "provider_id", as: "activities" });
 
 TripPlan.belongsTo(Activity, {
 	foreignKey: "activity_id",
@@ -135,6 +138,15 @@ UserPfp.belongsTo(User, {
 	as: "user",
 });
 
+Provider.hasMany(Reel, { foreignKey: "provider_id" });
+Reel.belongsTo(Provider, { foreignKey: "provider_id" });
+
+User.hasMany(ReelLike, { foreignKey: "user_id" });
+ReelLike.belongsTo(User, { foreignKey: "user_id" });
+
+User.hasMany(ReelComment, { foreignKey: "user_id" });
+ReelComment.belongsTo(User, { foreignKey: "user_id" });
+
 // ✅ Sync DB
 sequelize
 	.sync({ alter: { drop: false } })
@@ -162,7 +174,7 @@ module.exports = {
 	availability,
 	ActivityCategory,
 	Notification,
-	UniversalNotification, // ✅ Include it here
+	UniversalNotification,
 	Followers,
 	UserPfp,
 };

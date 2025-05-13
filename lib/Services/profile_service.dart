@@ -35,8 +35,13 @@ class ProfileService {
 
     if (imageData.startsWith("data:image")) {
       try {
-        // ✅ Strip prefix and decode only the base64 content
-        String base64String = imageData.split(",")[1];
+        final parts = imageData.split(',');
+        if (parts.length != 2) {
+          print("❌ Malformed base64 image data.");
+          return;
+        }
+
+        String base64String = parts[1];
         Uint8List imageBytes = base64Decode(base64String);
 
         await storageBox.put("profileImageBytes_$userId", imageBytes);

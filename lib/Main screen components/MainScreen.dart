@@ -367,11 +367,12 @@ class _MainScreenState extends State<MainScreen>
                                               ),
                                             );
                                           },
-                                          icon: Image.asset(
-                                            'assets/Icons/bell-Bold.png',
-                                            width: screenWidth * 0.07,
-                                            height: screenWidth * 0.07,
-                                          ),
+                                          icon: Icon(
+  Icons.notifications, // or Icons.notifications
+  size: screenWidth * 0.07,
+  color: Theme.of(context).iconTheme.color,
+),
+
                                         ),
                                         SizedBox(width: 4),
                                         GestureDetector(
