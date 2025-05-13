@@ -9,6 +9,8 @@ const bodyParser = require("body-parser");
 const path = require("path");
 const cron = require("node-cron");
 const mime = require("mime-types");
+const serveStatic = require("serve-static");
+const uploadsPath = path.join(__dirname, "uploads");
 // ===========================================================
 // ✅ Database & ORM Setup
 // ===========================================================
@@ -108,20 +110,20 @@ app.use("/", notificationRoutes);
 app.use("/admin", adminNotificationRoutes);
 app.use("/notification-preferences", notificationPreferenceRoutes);
 app.use(
-	"/uploads",
-	(req, res, next) => {
-		res.header("Access-Control-Allow-Origin", "*");
-		res.header("Access-Control-Allow-Methods", "GET, OPTIONS");
-		res.header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept");
+  "/uploads",
+  serveStatic(uploadsPath, {
+    setHeaders: (res, filePath) => {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Origin, Content-Type, Accept");
 
-		const ext = path.extname(req.path);
-		if (ext) {
-			res.type(mime.lookup(ext)); // handles all types safely
-		}
-
-		next();
-	},
-	express.static(path.join(__dirname, "uploads"))
+      const contentType = mime.lookup(filePath);
+      if (contentType) {
+        res.setHeader("Content-Type", contentType);
+      }
+    },
+    acceptRanges: true, // 🔥 this is important for video streaming
+  })
 );
 app.use("/reels", reelRoutes); // Reel routes
 
