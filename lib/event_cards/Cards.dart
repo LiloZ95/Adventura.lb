@@ -492,11 +492,14 @@ Widget CategoryCard(String imagePath, String categoryName, String description,
           height: 240,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(15),
-            image: DecorationImage(
-              image: AssetImage('assets/Pictures/$imagePath'),
-              fit: BoxFit.cover,
-              alignment: Alignment(0, align),
-            ),
+            image: imagePath != '__fallback__'
+                ? DecorationImage(
+                    image: AssetImage('assets/Pictures/$imagePath'),
+                    fit: BoxFit.cover,
+                    alignment: Alignment(0, align),
+                  )
+                : null,
+            color: imagePath == '__fallback__' ? Colors.grey.shade300 : null,
             boxShadow: [
               BoxShadow(
                 color: isDarkMode
@@ -510,6 +513,11 @@ Widget CategoryCard(String imagePath, String categoryName, String description,
           ),
           child: Stack(
             children: [
+              if (imagePath == '__fallback__')
+                Center(
+                  child: Icon(Icons.image_not_supported,
+                      size: 64, color: Colors.grey.shade600),
+                ),
               Align(
                 alignment: Alignment.bottomCenter,
                 child: ClipRRect(

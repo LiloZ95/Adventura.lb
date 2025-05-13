@@ -5,6 +5,9 @@ const path = require("path");
 const { sequelize } = require("../db/db.js");
 const { QueryTypes } = require("sequelize");
 
+const {getAllCategories, getCategoryById, getCategoriesWithCounts, uploadCategoryImage,} = require("../controllers/categoryController");
+const { get } = require("http");
+
 const router = express.Router();
 
 // ✅ Configure multer storage for image uploads
@@ -23,71 +26,22 @@ const upload = multer({ storage: storage });
  * ✅ Get all categories
  * GET /categories
  */
-router.get("/", async (req, res) => {
-  try {
-    const categories = await sequelize.query(
-      `SELECT category_id, name FROM category`,
-      { type: QueryTypes.SELECT }
-    );
+router.get("/", getAllCategories);
 
-    res.status(200).json(categories);
-  } catch (error) {
-    console.error("❌ Error fetching categories:", error);
-    res.status(500).json({ error: "Server error" });
-  }
-});
+router.get("/with-counts", getCategoriesWithCounts);
 
 /**
  * ✅ Get a single category by ID
  * GET /categories/:categoryId
  */
-router.get("/:categoryId", async (req, res) => {
-  try {
-    const { categoryId } = req.params;
-    const category = await sequelize.query(
-      `SELECT category_id, name, description, encode(image, 'base64') AS image FROM category WHERE category_id = :categoryId`,
-      { replacements: { categoryId }, type: QueryTypes.SELECT }
-    );
+router.get("/:categoryId", getCategoryById);
 
-    if (!category.length) {
-      return res.status(404).json({ error: "Category not found" });
-    }
-
-    res.status(200).json(category[0]);
-  } catch (error) {
-    console.error("❌ Error fetching category:", error);
-    res.status(500).json({ error: "Server error" });
-  }
-});
 
 /**
  * ✅ Upload category image
  * POST /categories/upload-image/:categoryId
  */
-router.post("/upload-image/:categoryId", upload.single("image"), async (req, res) => {
-  try {
-    const { categoryId } = req.params;
-
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
-
-    // Read the uploaded image file as binary
-    const imagePath = req.file.path;
-    const imageBuffer = fs.readFileSync(imagePath);
-
-    // Update the database with the new image
-    await sequelize.query(
-      `UPDATE category SET image = :image WHERE category_id = :categoryId`,
-      { replacements: { image: imageBuffer, categoryId }, type: QueryTypes.UPDATE }
-    );
-
-    res.status(200).json({ message: "Image uploaded successfully!" });
-  } catch (error) {
-    console.error("❌ Error uploading image:", error);
-    res.status(500).json({ error: "Server error" });
-  }
-});
+router.post("/upload-image/:categoryId", upload.single("image"), uploadCategoryImage);
 
 /**
  * ✅ Create a new category

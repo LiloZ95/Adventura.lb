@@ -20,13 +20,41 @@ class HomeControllerScreen extends StatefulWidget {
 class _HomeControllerScreenState extends State<HomeControllerScreen>
     with TickerProviderStateMixin {
   int _selectedIndex = 0;
-  late final List<Widget> _screens;
+  List<Widget> get _screens => [
+        MainScreen(
+          onScrollChanged: _handleScrollChanged,
+          onTabSwitch: _onTabTapped,
+          setSearchFilterMode: (filter) {
+            setState(() {
+              _searchFilterMode = filter;
+            });
+          },
+          onCategorySelected: _navigateToSearchWithCategory,
+        ),
+        SearchScreen(
+          filterMode: _searchFilterMode,
+          initialCategory: _initialCategory, // ✅ always fresh
+          onScrollChanged: _handleScrollChanged,
+        ),
+        MyBookingsPage(onScrollChanged: _handleScrollChanged),
+        MyTripsPage(),
+        ReelsPgScreen(
+          onScrollChanged: _handleScrollChanged,
+          onBackToMainTab: () {
+            setState(() {
+              _selectedIndex = 0;
+            });
+          },
+        ),
+      ];
+
   final ScrollController _scrollController = ScrollController();
   bool _isNavBarVisible = true;
   Timer? _scrollStopTimer;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
   String _searchFilterMode = ""; // 👈 Add this to hold the filter
+  String? _initialCategory;
 
   void _onTabTapped(int index) {
     if (_selectedIndex == index) return;
@@ -43,6 +71,14 @@ class _HomeControllerScreenState extends State<HomeControllerScreen>
         _isNavBarVisible = visible;
       });
     }
+  }
+
+  void _navigateToSearchWithCategory(String categoryName) {
+    setState(() {
+      _selectedIndex = 1;
+      _initialCategory = categoryName;
+      _searchFilterMode = "";
+    });
   }
 
   @override
@@ -69,31 +105,7 @@ class _HomeControllerScreenState extends State<HomeControllerScreen>
       });
     });
 
-    _screens = [
-      MainScreen(
-        onScrollChanged: _handleScrollChanged,
-        onTabSwitch: _onTabTapped,
-        setSearchFilterMode: (filter) {
-          setState(() {
-            _searchFilterMode = filter;
-          });
-        },
-      ),
-      SearchScreen(
-        filterMode: _searchFilterMode,
-        onScrollChanged: _handleScrollChanged,
-      ),
-      MyBookingsPage(onScrollChanged: _handleScrollChanged),
-      MyTripsPage(),
-      ReelsPgScreen(
-        onScrollChanged: _handleScrollChanged,
-        onBackToMainTab: () {
-          setState(() {
-            _selectedIndex = 0;
-          });
-        },
-      ),
-    ];
+    _screens ;
 
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 400),

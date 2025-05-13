@@ -8,6 +8,7 @@ const helmet = require("helmet");
 const bodyParser = require("body-parser");
 const path = require("path");
 const cron = require("node-cron");
+const mime = require("mime-types");
 // ===========================================================
 // ✅ Database & ORM Setup
 // ===========================================================
@@ -26,13 +27,13 @@ const updateTrendingActivities = require("./controllers/trendingUpdater");
 
 // Schedule periodic jobs
 cron.schedule("0 * * * *", () => {
-  console.log("⏰ [Cron] Cleaning expired one-time events...");
-  deactivatePastEvents();
+	console.log("⏰ [Cron] Cleaning expired one-time events...");
+	deactivatePastEvents();
 });
 
 cron.schedule("0 */6 * * *", () => {
-  console.log("🔥 [Cron] Updating trending activities...");
-  updateTrendingActivities();
+	console.log("🔥 [Cron] Updating trending activities...");
+	updateTrendingActivities();
 });
 
 // ===========================================================
@@ -44,15 +45,17 @@ const app = express();
 // ✅ Middleware Setup
 // ===========================================================
 app.use(bodyParser.json());
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST","PATCH", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
 app.use(
-  helmet({
-    crossOriginResourcePolicy: false
-  })
+	cors({
+		origin: "*",
+		methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+		allowedHeaders: ["Content-Type", "Authorization"],
+	})
+);
+app.use(
+	helmet({
+		crossOriginResourcePolicy: false,
+	})
 );
 
 app.use(express.json());
@@ -73,12 +76,12 @@ const recommendationRoutes = require("./routes/recommendationRoutes");
 const interactionRoutes = require("./routes/interactionRoutes");
 const availabilityRoutes = require("./routes/availabilityRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
-const adminRoutes = require('./routes/adminRoutes');
+const adminRoutes = require("./routes/adminRoutes");
 const providerRequestRoutes = require("./routes/providerRequestRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
-const adminNotificationRoutes = require('./routes/adminNotificationRoutes');
+const adminNotificationRoutes = require("./routes/adminNotificationRoutes");
 const followerRoutes = require("./routes/followerRoutes");
-const notificationPreferenceRoutes = require('./routes/notificationPreferenceRoutes');
+const notificationPreferenceRoutes = require("./routes/notificationPreferenceRoutes");
 const reelRoutes = require("./routes/reelRoutes");
 
 // const socialAuthRoutes = require('./routes/socialAuthRoutes'); // optional
@@ -98,41 +101,51 @@ app.use("/recommendations", recommendationRoutes);
 app.use("/api", interactionRoutes); // Interaction endpoints
 app.use("/availability", availabilityRoutes);
 app.use("/booking", bookingRoutes);
-app.use('/admin', adminRoutes); // ← important to keep this prefix!
+app.use("/admin", adminRoutes); // ← important to keep this prefix!
 app.use("/api", providerRequestRoutes); // Provider request routes
 app.use("/followers", followerRoutes); // Follower routes
 app.use("/", notificationRoutes);
-app.use('/admin', adminNotificationRoutes);
-app.use('/notification-preferences', notificationPreferenceRoutes);
-app.use('/uploads', (req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept");
-  next();
-}, express.static(path.join(__dirname, 'uploads')));
+app.use("/admin", adminNotificationRoutes);
+app.use("/notification-preferences", notificationPreferenceRoutes);
+app.use(
+	"/uploads",
+	(req, res, next) => {
+		res.header("Access-Control-Allow-Origin", "*");
+		res.header("Access-Control-Allow-Methods", "GET, OPTIONS");
+		res.header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept");
+
+		const ext = path.extname(req.path);
+		if (ext) {
+			res.type(mime.lookup(ext)); // handles all types safely
+		}
+
+		next();
+	},
+	express.static(path.join(__dirname, "uploads"))
+);
 app.use("/reels", reelRoutes); // Reel routes
 
 // ===========================================================
 app.use((err, req, res, next) => {
-  console.error("❌ Server Error:", err);
-  res.status(500).json({ error: "Internal server error" });
+	console.error("❌ Server Error:", err);
+	res.status(500).json({ error: "Internal server error" });
 });
 
 // ===========================================================
 // ✅ Database Connection & Sync
 // ===========================================================
 connectDB()
-  .then(async () => {
-    try {
-      await sequelize.sync({ alter: false, force: false });
-      console.log("✅ Database synced with updated models.");
-    } catch (err) {
-      console.error("❌ Error syncing database:", err);
-    }
-  })
-  .catch((err) => {
-    console.error("❌ Error connecting to the database:", err);
-  });
+	.then(async () => {
+		try {
+			await sequelize.sync({ alter: false, force: false });
+			console.log("✅ Database synced with updated models.");
+		} catch (err) {
+			console.error("❌ Error syncing database:", err);
+		}
+	})
+	.catch((err) => {
+		console.error("❌ Error connecting to the database:", err);
+	});
 
 // ===========================================================
 // ✅ Start Server
@@ -141,16 +154,16 @@ const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
 
 app.listen(PORT, HOST, () => {
-  console.log(`🚀 Server running on http://${HOST}:${PORT}`);
+	console.log(`🚀 Server running on http://${HOST}:${PORT}`);
 });
 
 // ===========================================================
 // ✅ Handle Fatal Errors Gracefully
 // ===========================================================
 process.on("uncaughtException", (err) => {
-  console.error("❌ Uncaught Exception:", err);
+	console.error("❌ Uncaught Exception:", err);
 });
 
 process.on("unhandledRejection", (reason, promise) => {
-  console.error("❌ Unhandled Promise Rejection:", reason);
+	console.error("❌ Unhandled Promise Rejection:", reason);
 });
