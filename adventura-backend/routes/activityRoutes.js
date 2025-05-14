@@ -16,6 +16,7 @@ const {
 	getActivitiesByProvider,
 	softDeleteActivity,
 	getExpiredActivitiesByProvider,
+	getActivityThumbnail,
 } = require("../controllers/activityController");
 
 const {
@@ -100,5 +101,6 @@ router.post(
 router.get("/by-provider/:provider_id", getActivitiesByProvider);
 
 router.get("/expired/:provider_id", getExpiredActivitiesByProvider);
+router.get('/:id/thumbnail', getActivityThumbnail);
 
 module.exports = router;

@@ -670,6 +670,37 @@ const getAllEvents = async (req, res) => {
 	}
 };
 
+// 🟢 Get thumbnail image by activity_id
+// 🟢 Get thumbnail image by activity_id
+const getActivityThumbnail = async (req, res) => {
+  try {
+    const activity_id = parseInt(req.params.id);
+    if (isNaN(activity_id)) {
+      return res.status(400).json({ success: false, message: "Invalid ID" });
+    }
+
+    const image = await ActivityImage.findOne({
+      where: { activity_id },
+      order: [['is_primary', 'DESC'], ['createdAt', 'ASC']],
+      attributes: ['image_url'],
+    });
+
+    if (!image) {
+      return res.status(404).json({
+        success: false,
+        message: "No image found for this activity.",
+      });
+    }
+
+    const fullUrl = req.protocol + '://' + req.get('host') + image.image_url;
+    return res.status(200).json({ success: true, image_url: fullUrl });
+  } catch (error) {
+    console.error("❌ Error fetching image:", error);
+    return res.status(500).json({ success: false, message: "Server error." });
+  }
+};
+
+
 module.exports = {
 	createActivity,
 	getAllActivities,
@@ -683,4 +714,5 @@ module.exports = {
 	deactivatePastEvents,
 	getExpiredActivitiesByProvider,
 	getAllEvents,
+	getActivityThumbnail
 };
