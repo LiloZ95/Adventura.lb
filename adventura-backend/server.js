@@ -20,7 +20,8 @@ const { sequelize } = require("./models");
 // ===========================================================
 // ✅ Cron Tasks
 // ===========================================================
-const { deactivatePastEvents } = require("./controllers/activityController");
+const { deactivatePastEvents, deactivateEmptyRecurrentActivities } = require("./controllers/activityController");
+
 const updateTrendingActivities = require("./controllers/trendingUpdater");
 
 // Run once on server boot
@@ -31,6 +32,12 @@ const updateTrendingActivities = require("./controllers/trendingUpdater");
 cron.schedule("0 * * * *", () => {
 	console.log("⏰ [Cron] Cleaning expired one-time events...");
 	deactivatePastEvents();
+});
+
+// Runs every day at 2 AM
+cron.schedule("0 2 * * *", async () => {
+  console.log("⏰ [Cron] Deactivating empty recurrent activities...");
+  await deactivateEmptyRecurrentActivities();
 });
 
 cron.schedule("0 */6 * * *", () => {
