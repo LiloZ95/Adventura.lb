@@ -161,11 +161,12 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
 
       setState(() {
         _messages.add({
-          'text': botResponse['chatbot_reply'],
+          'text': botResponse['reply'] ?? "⚠️ EVA didn’t return a message.",
           'isUser': false,
-          'cards': botResponse['cards'],
+          'cards': botResponse['cards'] ?? [],
           'timestamp': DateTime.now(),
         });
+
         _isTyping = false;
       });
       await _saveMessagesToHive(); // 💾 Save after bot responds
