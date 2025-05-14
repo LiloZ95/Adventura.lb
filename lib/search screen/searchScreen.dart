@@ -9,9 +9,11 @@ import 'package:flutter/rendering.dart';
 
 class SearchScreen extends StatefulWidget {
   final String? filterMode;
+  final String? initialCategory;
   final Function(bool) onScrollChanged;
 
-  SearchScreen({this.filterMode, required this.onScrollChanged});
+  SearchScreen(
+      {this.filterMode, this.initialCategory, required this.onScrollChanged});
   @override
   _SearchScreenState createState() => _SearchScreenState();
 }
@@ -56,20 +58,36 @@ class _SearchScreenState extends State<SearchScreen>
   TextEditingController searchController = TextEditingController();
 
   @override
+  void didUpdateWidget(covariant SearchScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.initialCategory != null &&
+        widget.initialCategory != oldWidget.initialCategory) {
+      // Ensure chip UI is ready before selecting
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          selectedCategories = {
+            widget.initialCategory!
+          }; // ← create a new Set instance
+        });
+
+        _fetchResults();
+      });
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
-    _fetchResults();
 
     _scrollController.addListener(() {
       final direction = _scrollController.position.userScrollDirection;
-
-      // Cancel any running timer
       _scrollStopTimer?.cancel();
 
       if (direction == ScrollDirection.reverse) {
-        widget.onScrollChanged(false); // hide nav bar
+        widget.onScrollChanged(false);
       } else if (direction == ScrollDirection.forward) {
-        widget.onScrollChanged(true); // show nav bar
+        widget.onScrollChanged(true);
       }
 
       _scrollStopTimer = Timer(Duration(milliseconds: 300), () {

@@ -67,7 +67,7 @@ class ReelService {
         return List<Map<String, dynamic>>.from(
           data.map((reel) {
             final updatedReel = Map<String, dynamic>.from(reel);
-            print("Loaded video_url: ${updatedReel["video_url"]}");
+            print("🎯 Final reel video URL: ${updatedReel["video_url"]}");
             if (!updatedReel["video_url"].toString().startsWith("http")) {
               updatedReel["video_url"] = "$baseUrl${updatedReel["video_url"]}";
             }

@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:ui';
 import 'dart:typed_data';
 import 'dart:convert';
+import 'package:adventura/config.dart';
+import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:adventura/Services/profile_service.dart';
 import 'package:adventura/event_cards/Cards.dart';
@@ -23,12 +25,14 @@ class MainScreen extends StatefulWidget {
   final Function(bool) onScrollChanged;
   final Function(int) onTabSwitch;
   final Function(String) setSearchFilterMode;
+  final Function(String) onCategorySelected;
 
   const MainScreen({
     Key? key,
     required this.onScrollChanged,
     required this.onTabSwitch,
     required this.setSearchFilterMode,
+    required this.onCategorySelected,
   }) : super(key: key);
 
   @override
@@ -52,6 +56,7 @@ class _MainScreenState extends State<MainScreen>
   List<Map<String, dynamic>> limitedEvents = [];
   final ScrollController _scrollController = ScrollController();
   Timer? _scrollStopTimer;
+  List<Map<String, dynamic>> popularCategories = [];
 
   @override
   void initState() {
@@ -78,6 +83,7 @@ class _MainScreenState extends State<MainScreen>
     loadActivities();
     fetchUserData();
     _loadLimitedEvents();
+    loadPopularCategories();
   }
 
   Future<void> _loadLimitedEvents() async {
@@ -85,6 +91,17 @@ class _MainScreenState extends State<MainScreen>
     setState(() {
       limitedEvents = events;
     });
+  }
+
+  void loadPopularCategories() async {
+    try {
+      final categories = await fetchCategoriesWithCounts();
+      setState(() {
+        popularCategories = categories;
+      });
+    } catch (e) {
+      print("Error fetching categories: $e");
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -173,6 +190,17 @@ class _MainScreenState extends State<MainScreen>
       await box.put('recommendations', jsonEncode(fetchedRecommended));
     } catch (error) {
       print("❌ Error fetching activities: $error");
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchCategoriesWithCounts() async {
+    final response =
+        await http.get(Uri.parse("$baseUrl/categories/with-counts"));
+
+    if (response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(json.decode(response.body));
+    } else {
+      throw Exception("Failed to load categories with counts");
     }
   }
 
@@ -368,11 +396,13 @@ class _MainScreenState extends State<MainScreen>
                                             );
                                           },
                                           icon: Icon(
-  Icons.notifications, // or Icons.notifications
-  size: screenWidth * 0.07,
-  color: Theme.of(context).iconTheme.color,
-),
-
+                                            Icons
+                                                .notifications, // or Icons.notifications
+                                            size: screenWidth * 0.07,
+                                            color: Theme.of(context)
+                                                .iconTheme
+                                                .color,
+                                          ),
                                         ),
                                         SizedBox(width: 4),
                                         GestureDetector(
@@ -588,38 +618,55 @@ class _MainScreenState extends State<MainScreen>
                                   padding:
                                       const EdgeInsets.fromLTRB(0, 0, 16, 0),
                                   child: Row(
-                                    children: [
-                                      CategoryCard(
-                                          'paragliding.webp',
-                                          'Paragliding',
-                                          'Soar above the stunning bay of Jounieh and enjoy breath-taking aerial views of the Lebanese coast.',
-                                          9,
-                                          0),
-                                      CategoryCard(
-                                          'jetski.jpeg',
-                                          'Jetski Rentals',
-                                          'Experience the thrill of jetskiing along Lebanon’s shores, available at various coastal locations.',
-                                          2,
-                                          0.8),
-                                      CategoryCard(
-                                          'island.jpg',
-                                          'Island Trips',
-                                          'Explore Lebanon’s coastline with private boat rentals, island hopping, and unforgettable sea adventures.',
-                                          5,
-                                          0.0),
-                                      CategoryCard(
-                                          'picnic.webp',
-                                          'Picnic Spots',
-                                          'Relax and unwind at scenic picnic spots, options available for a perfect day out.',
-                                          5,
-                                          0.0),
-                                      CategoryCard(
-                                          'cars.webp',
-                                          'Car Events',
-                                          'Join Lebanon’s car enthusiasts at exciting car meets and events.',
-                                          5,
-                                          1),
-                                    ],
+                                    children: popularCategories.map((category) {
+                                      // Use a map of known image names for each category
+                                      final Map<String, String> imageMap = {
+                                        "Paragliding": "paragliding.webp",
+                                        "Jetski Rentals": "jetski.jpeg",
+                                        "Island Trips": "island.jpg",
+                                        "Picnic Spots": "picnic.webp",
+                                        "Car Events": "cars.webp",
+                                      };
+
+                                      final Map<String, double> alignMap = {
+                                        "Paragliding": 0.0,
+                                        "Jetski Rentals": 0.8,
+                                        "Island Trips": 0.0,
+                                        "Picnic Spots": 0.0,
+                                        "Car Events": 1.0,
+                                      };
+
+                                      final Map<String, String>
+                                          searchCategoryMap = {
+                                        "Paragliding": "Paragliding",
+                                        "Jetski Rentals": "Jetski",
+                                        "Island Trips": "Sea Trips",
+                                        "Picnic Spots": "Picnic",
+                                        "Car Events": "Car Events",
+                                      };
+
+                                      final name = category['name'];
+                                      final image =
+                                          imageMap[name] ?? '__fallback__';
+                                      final align = alignMap[name] ?? 0.0;
+                                      final searchName = searchCategoryMap[name] ?? name;
+
+                                      return GestureDetector(
+                                        onTap: () {
+                                          widget.onCategorySelected(searchName); // ← calls HomeController to switch
+                                        },
+                                        child: CategoryCard(
+                                          image,
+                                          name,
+                                          '',
+                                          int.tryParse(
+                                                  category['activity_count']
+                                                      .toString()) ??
+                                              0,
+                                          align,
+                                        ),
+                                      );
+                                    }).toList(),
                                   ),
                                 ),
                               ),
