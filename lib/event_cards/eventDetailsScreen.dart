@@ -818,12 +818,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => OrderDetailsPage(
-                              activityId: widget.activity["activity_id"],
                               selectedImage: images[_currentImageIndex],
-                              eventTitle: widget.activity["name"] ?? "Event",
-                              eventDate: isOneTime ? startDate : confirmedDate!,
-                              eventLocation:
-                                  widget.activity["location"] ?? "Location",
+                              activity: {
+                                ...widget.activity,
+                                "start_date":
+                                    isOneTime ? startDate : confirmedDate!,
+                                "addons": widget.activity["addons"] ?? [],
+                              },
                               selectedSlot:
                                   isOneTime ? "Fixed" : confirmedSlot!,
                             ),

@@ -1,6 +1,14 @@
 // const bookingService = require("../services/bookingService");
 
-const { Activity, Booking, availability, Client, User, Notification  } = require("../models");
+const {
+	Activity,
+	Booking,
+	availability,
+	Client,
+	User,
+	Notification,
+} = require("../models");
+const { get } = require("../routes/availabilityRoutes");
 
 const getUserBookings = async (req, res) => {
 	try {
@@ -77,7 +85,7 @@ const checkAvailability = async (req, res) => {
 			return res.status(404).json({ message: "Activity not found" });
 
 		const capacity = activity.capacity || 0;
-		const existingBookings = await booking.findAll({
+		const existingBookings = await Booking.findAll({
 			where: {
 				activity_id,
 				booking_date: date,
@@ -103,82 +111,153 @@ const checkAvailability = async (req, res) => {
 
 const createBooking = async (req, res) => {
 	try {
-	  console.log("📥 Booking Payload:", req.body);
-  
-	  const { activity_id, client_id, booking_date, slot, total_price } = req.body;
-  
-	  // Check if the activity exists
-	  const activity = await Activity.findByPk(activity_id);
-	  if (!activity)
-		return res.status(404).json({ message: "Activity not found" });
-  
-	  // 🟢 Check if it's a one-time activity
-	  if (activity.listing_type === "oneTime") {
-		// Skip availability check
+		console.log("📥 Booking Payload:", req.body);
+
+		let {
+			activity_id,
+			client_id,
+			booking_date,
+			slot,
+			total_price,
+			provider_id,
+		} = req.body;
+
+		// ✅ 1. Validate ticket count
+		if (!total_price || total_price <= 0) {
+			return res
+				.status(400)
+				.json({ message: "Must book at least one ticket." });
+		}
+
+		// ✅ 2. Fetch activity
+		const activity = await Activity.findByPk(activity_id);
+		if (!activity) {
+			return res.status(404).json({ message: "Activity not found" });
+		}
+
+		// ✅ 3. Prevent provider from booking their own activity
+		if (provider_id && provider_id === activity.provider_id) {
+			return res
+				.status(403)
+				.json({ message: "You can't book your own activity." });
+		}
+
+		// ✅ 4. Determine who is making the booking
+		let bookedByUserId = client_id;
+		if (!client_id && provider_id) {
+			const Provider = require("../models/Provider");
+			const provider = await Provider.findByPk(provider_id);
+			if (!provider) {
+				return res.status(404).json({ message: "Provider not found" });
+			}
+			bookedByUserId = provider.user_id;
+		}
+
+		if (!bookedByUserId) {
+			return res
+				.status(400)
+				.json({ message: "Invalid user making the booking." });
+		}
+
+		// ✅ 5. Handle one-time bookings
+		if (activity.listing_type === "oneTime") {
+			const newBooking = await Booking.create({
+				activity_id,
+				client_id: client_id ?? null,
+				booking_date,
+				slot,
+				total_price,
+				status: "pending",
+				booked_by_provider_user_id: provider_id ?? null,
+			});
+
+			await Notification.create({
+				user_id: bookedByUserId,
+				title: "Booking Confirmed",
+				description: `Your booking for "${activity.name}" on ${booking_date} is confirmed.`,
+				icon: "book",
+			});
+
+			return res.status(201).json({
+				message: "Booking successful",
+				booking: newBooking,
+			});
+		}
+
+		// ✅ 6. Handle recurring activity availability
+		const availabilitySlot = await availability.findOne({
+			where: { activity_id, date: booking_date, slot },
+		});
+
+		if (!availabilitySlot) {
+			return res.status(404).json({
+				message: "No availability for selected date/slot",
+			});
+		}
+
+		if (availabilitySlot.available_seats <= 0) {
+			return res.status(400).json({
+				message: "Slot is fully booked",
+			});
+		}
+
+		// ✅ 7. Proceed with booking and update seats
 		const newBooking = await Booking.create({
-		  activity_id,
-		  client_id,
-		  booking_date,
-		  slot,
-		  total_price,
-		  status: "pending",
+			activity_id,
+			client_id: client_id ?? null,
+			booking_date,
+			slot,
+			total_price,
+			status: "pending",
+			booked_by_provider_user_id: provider_id ?? null,
 		});
-  
+
+		availabilitySlot.available_seats -= 1;
+		await availabilitySlot.save();
+
 		await Notification.create({
-		  user_id: client_id,
-		  title: "Booking Successful",
-		  description: `Your booking for "${activity.name}" on ${booking_date} is confirmed.`,
-		  icon: "book",
+			user_id: bookedByUserId,
+			title: "Booking Confirmed",
+			description: `Your booking for "${activity.name}" on ${booking_date} at ${slot} is confirmed.`,
+			icon: "book",
 		});
-  
-		return res.status(201).json({ message: "Booking successful", booking: newBooking });
-	  }
-  
-	  // 🔁 Recurrent: Check availability
-	  const availabilitySlot = await availability.findOne({
-		where: {
-		  activity_id,
-		  date: booking_date,
-		  slot,
-		},
-	  });
-  
-	  if (!availabilitySlot) {
-		return res.status(404).json({ message: "No availability for selected date/slot" });
-	  }
-  
-	  if (availabilitySlot.available_seats <= 0) {
-		return res.status(400).json({ message: "Slot is fully booked" });
-	  }
-  
-	  const newBooking = await Booking.create({
-		activity_id,
-		client_id,
-		booking_date,
-		slot,
-		total_price,
-		status: "pending",
-	  });
-  
-	  // Decrease available seats
-	  availabilitySlot.available_seats -= 1;
-	  await availabilitySlot.save();
-  
-	  await Notification.create({
-		user_id: client_id,
-		title: "Booking Successful",
-		description: `Your booking for "${activity.name}" on ${booking_date} at ${slot} was successful.`,
-		icon: "book",
-	  });
-  
-	  res.status(201).json({ message: "Booking successful", booking: newBooking });
+
+		return res.status(201).json({
+			message: "Booking successful",
+			booking: newBooking,
+		});
 	} catch (error) {
-	  console.error("❌ Booking error:", error);
-	  console.error("🪵 Full stack:", error.stack);
-	  res.status(500).json({ message: "Server error" });
+		console.error("❌ Booking error:", error);
+		res.status(500).json({ message: "Server error", error: error.message });
 	}
-  };
-  
+};
+
+const getBookingsByProviderUserId = async (req, res) => {
+	try {
+		const providerUserId = req.params.userId;
+		if (!providerUserId) return res.status(400).json({ message: "Missing user ID" });
+
+		console.log("📥 Provider booking fetch for userId:", providerUserId);
+
+		const bookings = await Booking.findAll({
+			where: { booked_by_provider_user_id: providerUserId },
+			include: [
+				{
+					model: Activity,
+					as: "activity", // 👈 make sure this matches the alias in Booking.js
+					include: ["activity_images"],
+				},
+			],
+			order: [["created_at", "DESC"]],
+		});
+
+		res.json(bookings);
+	} catch (error) {
+		console.error("❌ Error fetching provider bookings:", error);
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
 
 const updateBookingStatus = async (req, res) => {
 	try {
@@ -239,5 +318,6 @@ module.exports = {
 	getBookingById,
 	updateBookingStatus,
 	getUserBookings,
-	cancelBooking // ✅ this MUST be here
+	getBookingsByProviderUserId,
+	cancelBooking, // ✅ this MUST be here
 };

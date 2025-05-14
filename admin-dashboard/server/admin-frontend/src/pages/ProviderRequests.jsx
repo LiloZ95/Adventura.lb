@@ -61,12 +61,12 @@ const ProviderRequests = () => {
         <div className="flex gap-4 my-4">
   <div>
     <img
-      src={`http://localhost:3000/uploads/provider_docs/${selectedRequest.user_id}/${selectedRequest.selfie_url.split('\\').pop()}`}
+      src={`${process.env.REACT_APP_API_URL}/${selectedRequest.selfie_url.split('\\').pop()}`}
       alt="Selfie"
       className="w-40 h-auto rounded border cursor-pointer"
       onClick={() =>
         setPreviewImage(
-          `http://localhost:3000/uploads/provider_docs/${selectedRequest.user_id}/${selectedRequest.selfie_url.split('\\').pop()}`
+          `${process.env.REACT_APP_API_URL}/${selectedRequest.selfie_url.split('\\').pop()}`
         )
       }
     />
@@ -74,12 +74,12 @@ const ProviderRequests = () => {
   </div>
   <div>
     <img
-      src={`http://localhost:3000/uploads/provider_docs/${selectedRequest.user_id}/${selectedRequest.gov_id_url.split('\\').pop()}`}
+      src={`${process.env.REACT_APP_API_URL}/${selectedRequest.gov_id_url.split('\\').pop()}`}
       alt="Gov ID"
       className="w-40 h-auto rounded border cursor-pointer"
       onClick={() =>
         setPreviewImage(
-          `http://localhost:3000/uploads/provider_docs/${selectedRequest.user_id}/${selectedRequest.gov_id_url.split('\\').pop()}`
+          `${process.env.REACT_APP_API_URL}/${selectedRequest.gov_id_url.split('\\').pop()}`
         )
       }
     />

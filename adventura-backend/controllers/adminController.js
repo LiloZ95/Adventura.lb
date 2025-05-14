@@ -1,95 +1,117 @@
-const { sequelize, Booking, Payment, Notification, ProviderRequest, Activity, ActivityCategory, User, Provider, Client, Administrator } = require('../models');
+const { pushToUser } = require("../websocketServer");
+
+const {
+	sequelize,
+	Booking,
+	Payment,
+	Notification,
+	ProviderRequest,
+	Activity,
+	ActivityCategory,
+	User,
+	Provider,
+	Client,
+	Administrator,
+} = require("../models");
 // GET all activities with category name
 const getAllActivities = async (req, res) => {
-  try {
-    const activities = await Activity.findAll({
-      include: [{ model: ActivityCategory, as: 'category', attributes: ['name'] }]
-    });
+	try {
+		const activities = await Activity.findAll({
+			include: [
+				{ model: ActivityCategory, as: "category", attributes: ["name"] },
+			],
+		});
 
-    res.json(activities);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+		res.json(activities);
+	} catch (err) {
+		res.status(500).json({ error: err.message });
+	}
 };
 const getAllUsers = async (req, res) => {
-    try {
-      const users = await User.findAll();
-      res.json(users);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  };
-  
+	try {
+		const users = await User.findAll();
+		res.json(users);
+	} catch (err) {
+		res.status(500).json({ error: err.message });
+	}
+};
 
 // MODIFY activity
 const modifyActivity = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updated = await Activity.update(req.body, { where: { activity_id: id } });
+	try {
+		const { id } = req.params;
+		const updated = await Activity.update(req.body, {
+			where: { activity_id: id },
+		});
 
-    if (updated[0] === 0)
-      return res.status(404).json({ message: 'Activity not found or no changes' });
+		if (updated[0] === 0)
+			return res
+				.status(404)
+				.json({ message: "Activity not found or no changes" });
 
-    res.json({ message: 'Activity updated successfully' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+		res.json({ message: "Activity updated successfully" });
+	} catch (err) {
+		res.status(500).json({ error: err.message });
+	}
 };
 
 // DELETE activity
 const deleteActivity = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deleted = await Activity.destroy({ where: { activity_id: id } });
+	try {
+		const { id } = req.params;
+		const deleted = await Activity.destroy({ where: { activity_id: id } });
 
-    if (!deleted) return res.status(404).json({ message: 'Activity not found' });
+		if (!deleted)
+			return res.status(404).json({ message: "Activity not found" });
 
-    res.json({ message: 'Activity deleted successfully' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+		res.json({ message: "Activity deleted successfully" });
+	} catch (err) {
+		res.status(500).json({ error: err.message });
+	}
 };
 // Overall Stats
 const getSummaryStats = async (req, res) => {
-  try {
-    const totalUsers = await User.count();
-    const totalActivities = await Activity.count();
+	try {
+		const totalUsers = await User.count();
+		const totalActivities = await Activity.count();
 
-    const totalRevenue = await sequelize.query(
-      "SELECT COALESCE(SUM(amount), 0) FROM payment",
-      { type: sequelize.QueryTypes.SELECT }
-    );
+		const totalRevenue = await sequelize.query(
+			"SELECT COALESCE(SUM(amount), 0) FROM payment",
+			{ type: sequelize.QueryTypes.SELECT }
+		);
 
-    res.json({
-      totalUsers,
-      totalActivities,
-      totalRevenue: totalRevenue[0].coalesce,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+		res.json({
+			totalUsers,
+			totalActivities,
+			totalRevenue: totalRevenue[0].coalesce,
+		});
+	} catch (err) {
+		res.status(500).json({ error: err.message });
+	}
 };
 
 // Best-selling activity
 const getBestActivity = async (req, res) => {
-  try {
-    const bestActivity = await sequelize.query(`
+	try {
+		const bestActivity = await sequelize.query(
+			`
       SELECT activities.name, COUNT(booking.activity_id) AS bookings_count
       FROM booking
       JOIN activities ON booking.activity_id = activities.activity_id
       GROUP BY activities.name
       ORDER BY bookings_count DESC
       LIMIT 1;
-    `, {
-      type: sequelize.QueryTypes.SELECT
-    });
+    `,
+			{
+				type: sequelize.QueryTypes.SELECT,
+			}
+		);
 
-    res.json(bestActivity[0] || { message: "No activity bookings found" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+		res.json(bestActivity[0] || { message: "No activity bookings found" });
+	} catch (err) {
+		res.status(500).json({ error: err.message });
+	}
 };
-
 
 // Gender Distribution
 /*
@@ -111,123 +133,133 @@ const getTopGender = async (req, res) => {
 */
 // Monthly Revenue Trends
 const getRevenueByType = async (req, res) => {
-  const { type = 'monthly' } = req.query;
+	const { type = "monthly" } = req.query;
 
-  let groupBy, label;
-  switch (type) {
-    case 'daily':
-      groupBy = `TO_CHAR(payment_date, 'YYYY-MM-DD')`;
-      label = 'day';
-      break;
-    case 'weekly':
-      groupBy = `TO_CHAR(DATE_TRUNC('week', payment_date), 'IYYY-IW')`; // ISO week
-      label = 'week';
-      break;
-    case 'yearly':
-      groupBy = `TO_CHAR(payment_date, 'YYYY')`;
-      label = 'year';
-      break;
-    case 'monthly':
-    default:
-      groupBy = `TO_CHAR(payment_date, 'YYYY-MM')`;
-      label = 'month';
-      break;
-  }
+	let groupBy, label;
+	switch (type) {
+		case "daily":
+			groupBy = `TO_CHAR(payment_date, 'YYYY-MM-DD')`;
+			label = "day";
+			break;
+		case "weekly":
+			groupBy = `TO_CHAR(DATE_TRUNC('week', payment_date), 'IYYY-IW')`; // ISO week
+			label = "week";
+			break;
+		case "yearly":
+			groupBy = `TO_CHAR(payment_date, 'YYYY')`;
+			label = "year";
+			break;
+		case "monthly":
+		default:
+			groupBy = `TO_CHAR(payment_date, 'YYYY-MM')`;
+			label = "month";
+			break;
+	}
 
-  try {
-    const data = await sequelize.query(`
+	try {
+		const data = await sequelize.query(
+			`
       SELECT ${groupBy} AS ${label}, SUM(amount) AS revenue
       FROM payment
       GROUP BY ${label}
       ORDER BY ${label} ASC
-    `, {
-      type: sequelize.QueryTypes.SELECT
-    });
+    `,
+			{
+				type: sequelize.QueryTypes.SELECT,
+			}
+		);
 
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+		res.json(data);
+	} catch (err) {
+		res.status(500).json({ error: err.message });
+	}
 };
 
 // MODIFY user
 const modifyUser = async (req, res) => {
-    try {
-      const { id } = req.params;
-      const updated = await User.update(req.body, { where: { user_id: id } });
-  
-      if (updated[0] === 0)
-        return res.status(404).json({ message: 'User not found or no changes' });
-  
-      res.json({ message: 'User updated successfully' });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  };
-  
-  // DELETE user
-  const deleteUser = async (req, res) => {
-    const { id } = req.params;
-  
-    try {
-      const client = await Client.findOne({ where: { user_id: id } });
-      const provider = await Provider.findOne({ where: { user_id: id } });
-  
-      let bookingIds = [];
-  
-      if (client) {
-        const clientBookings = await Booking.findAll({ where: { client_id: client.client_id } });
-        bookingIds.push(...clientBookings.map(b => b.booking_id));
-      }
-  
-      if (provider) {
-        const providerActivities = await Activity.findAll({ where: { provider_id: provider.provider_id } });
-        const providerActivityIds = providerActivities.map(a => a.activity_id);
-        const providerBookings = await Booking.findAll({ where: { activity_id: providerActivityIds } });
-        bookingIds.push(...providerBookings.map(b => b.booking_id));
-      }
-  
-      // Delete related payments first
-      await Payment.destroy({ where: { booking_id: bookingIds } });
-  
-      // Then delete bookings
-      await Booking.destroy({ where: { booking_id: bookingIds } });
-  
-      // Delete from role tables
-      await Client.destroy({ where: { user_id: id } });
-      await Provider.destroy({ where: { user_id: id } });
-      await Administrator.destroy({ where: { user_id: id } });
-  
-      // Finally, delete the user
-      await User.destroy({ where: { user_id: id } });
-  
-      res.json({ message: "User deleted successfully" });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: err.message });
-    }
-  };
-  
-  const getTopCities = async (req, res) => {
-    try {
-      const result = await sequelize.query(
-        `SELECT location AS city, COUNT(*) AS count
+	try {
+		const { id } = req.params;
+		const updated = await User.update(req.body, { where: { user_id: id } });
+
+		if (updated[0] === 0)
+			return res.status(404).json({ message: "User not found or no changes" });
+
+		res.json({ message: "User updated successfully" });
+	} catch (err) {
+		res.status(500).json({ error: err.message });
+	}
+};
+
+// DELETE user
+const deleteUser = async (req, res) => {
+	const { id } = req.params;
+
+	try {
+		const client = await Client.findOne({ where: { user_id: id } });
+		const provider = await Provider.findOne({ where: { user_id: id } });
+
+		let bookingIds = [];
+
+		if (client) {
+			const clientBookings = await Booking.findAll({
+				where: { client_id: client.client_id },
+			});
+			bookingIds.push(...clientBookings.map((b) => b.booking_id));
+		}
+
+		if (provider) {
+			const providerActivities = await Activity.findAll({
+				where: { provider_id: provider.provider_id },
+			});
+			const providerActivityIds = providerActivities.map((a) => a.activity_id);
+			const providerBookings = await Booking.findAll({
+				where: { activity_id: providerActivityIds },
+			});
+			bookingIds.push(...providerBookings.map((b) => b.booking_id));
+		}
+
+		// Delete related payments first
+		await Payment.destroy({ where: { booking_id: bookingIds } });
+
+		// Then delete bookings
+		await Booking.destroy({ where: { booking_id: bookingIds } });
+
+		// Delete from role tables
+		await Client.destroy({ where: { user_id: id } });
+		await Provider.destroy({ where: { user_id: id } });
+		await Administrator.destroy({ where: { user_id: id } });
+
+		// Finally, delete the user
+		await User.destroy({ where: { user_id: id } });
+
+		res.json({ message: "User deleted successfully" });
+	} catch (err) {
+		console.error(err);
+		res.status(500).json({ error: err.message });
+	}
+};
+
+const getTopCities = async (req, res) => {
+	try {
+		const result = await sequelize.query(
+			`SELECT location AS city, COUNT(*) AS count
          FROM activities
          WHERE location IS NOT NULL AND location != ''
          GROUP BY location
          ORDER BY count DESC
          LIMIT 5;`,
-        { type: sequelize.QueryTypes.SELECT }
-      );
-      res.json(result);
-    } catch (err) {
-      console.error('Error fetching top cities:', err);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  };
-  const getTopClients = async (req, res) => {
-    try {
-      const topClients = await sequelize.query(`
+			{ type: sequelize.QueryTypes.SELECT }
+		);
+		res.json(result);
+	} catch (err) {
+		console.error("Error fetching top cities:", err);
+		res.status(500).json({ error: "Internal server error" });
+	}
+};
+const getTopClients = async (req, res) => {
+	try {
+		const topClients = await sequelize.query(
+			`
         SELECT 
           u.first_name || ' ' || u.last_name AS client_name,
           COUNT(b.booking_id) AS booking_count
@@ -237,19 +269,21 @@ const modifyUser = async (req, res) => {
         GROUP BY client_name
         ORDER BY booking_count DESC
         LIMIT 5;
-      `, { type: sequelize.QueryTypes.SELECT });
-  
-      res.json(topClients);
-    } catch (err) {
-      console.error("Error fetching top clients:", err);
-      res.status(500).json({ error: err.message });
-    }
-  };
-  
+      `,
+			{ type: sequelize.QueryTypes.SELECT }
+		);
 
-  const getTopProviders = async (req, res) => {
-    try {
-      const topProviders = await sequelize.query(`
+		res.json(topClients);
+	} catch (err) {
+		console.error("Error fetching top clients:", err);
+		res.status(500).json({ error: err.message });
+	}
+};
+
+const getTopProviders = async (req, res) => {
+	try {
+		const topProviders = await sequelize.query(
+			`
         SELECT 
           u.first_name || ' ' || u.last_name AS provider_name,
           COUNT(a.activity_id) AS activity_count
@@ -259,35 +293,41 @@ const modifyUser = async (req, res) => {
         GROUP BY provider_name
         ORDER BY activity_count DESC
         LIMIT 5;
-      `, { type: sequelize.QueryTypes.SELECT });
-  
-      res.json(topProviders);
-    } catch (err) {
-      console.error("Error fetching top providers:", err);
-      res.status(500).json({ error: err.message });
-    }
-  };
-  // In adminController.js or a similar file
-  const getTopCategories = async (req, res) => {
-    try {
-      const result = await sequelize.query(`
+      `,
+			{ type: sequelize.QueryTypes.SELECT }
+		);
+
+		res.json(topProviders);
+	} catch (err) {
+		console.error("Error fetching top providers:", err);
+		res.status(500).json({ error: err.message });
+	}
+};
+// In adminController.js or a similar file
+const getTopCategories = async (req, res) => {
+	try {
+		const result = await sequelize.query(
+			`
         SELECT c.name AS category_name, COUNT(a.activity_id) AS activity_count
         FROM category c
         LEFT JOIN activities a ON a.category_id = c.category_id
         GROUP BY c.name
         ORDER BY activity_count DESC
         LIMIT 5;
-      `, { type: sequelize.QueryTypes.SELECT });
-  
-      res.json(result);
-    } catch (err) {
-      console.error('Error in getTopCategories:', err);
-      res.status(500).json({ error: err.message });
-    }
-  };
-  const getTopCategoriesByRevenue = async (req, res) => {
-    try {
-      const data = await sequelize.query(`
+      `,
+			{ type: sequelize.QueryTypes.SELECT }
+		);
+
+		res.json(result);
+	} catch (err) {
+		console.error("Error in getTopCategories:", err);
+		res.status(500).json({ error: err.message });
+	}
+};
+const getTopCategoriesByRevenue = async (req, res) => {
+	try {
+		const data = await sequelize.query(
+			`
         SELECT 
           c.name AS category_name,
           SUM(p.amount) AS total_revenue
@@ -298,20 +338,23 @@ const modifyUser = async (req, res) => {
         WHERE p.payment_status = 'confirmed'
         GROUP BY c.name
         ORDER BY total_revenue DESC;
-      `, {
-        type: sequelize.QueryTypes.SELECT
-      });
-  
-      res.json(data);
-    } catch (err) {
-      console.error("Error in getTopCategoriesByRevenue:", err);
-      res.status(500).json({ error: err.message });
-    }
-  };
-  
-  const getTopCitiesByRevenue = async (req, res) => {
-    try {
-      const data = await sequelize.query(`
+      `,
+			{
+				type: sequelize.QueryTypes.SELECT,
+			}
+		);
+
+		res.json(data);
+	} catch (err) {
+		console.error("Error in getTopCategoriesByRevenue:", err);
+		res.status(500).json({ error: err.message });
+	}
+};
+
+const getTopCitiesByRevenue = async (req, res) => {
+	try {
+		const data = await sequelize.query(
+			`
         SELECT 
           a.location AS city,
           SUM(p.amount) AS total_revenue
@@ -321,23 +364,25 @@ const modifyUser = async (req, res) => {
         GROUP BY city
         ORDER BY total_revenue DESC
         LIMIT 5;
-      `, {
-        type: sequelize.QueryTypes.SELECT
-      });
-  
-      res.json(data);
-    } catch (err) {
-      console.error("Error fetching top cities by revenue:", err);
-      res.status(500).json({ error: err.message });
-    }
-  };
-  
-  const getPayments = async (req, res) => {
-    const { status } = req.query;
-  
-    try {
-      const payments = await sequelize.query(
-        `
+      `,
+			{
+				type: sequelize.QueryTypes.SELECT,
+			}
+		);
+
+		res.json(data);
+	} catch (err) {
+		console.error("Error fetching top cities by revenue:", err);
+		res.status(500).json({ error: err.message });
+	}
+};
+
+const getPayments = async (req, res) => {
+	const { status } = req.query;
+
+	try {
+		const payments = await sequelize.query(
+			`
         SELECT 
           p.payment_id,
           p.amount,
@@ -353,132 +398,164 @@ const modifyUser = async (req, res) => {
         ${status ? "WHERE p.payment_status = :status" : ""}
         ORDER BY p.payment_date DESC
         `,
-        {
-          replacements: status ? { status } : {},
-          type: sequelize.QueryTypes.SELECT
-        }
-      );
-  
-      res.json(payments);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  };
+			{
+				replacements: status ? { status } : {},
+				type: sequelize.QueryTypes.SELECT,
+			}
+		);
+
+		res.json(payments);
+	} catch (err) {
+		res.status(500).json({ error: err.message });
+	}
+};
 // Get all provider requests
 const getAllProviderRequests = async (req, res) => {
-  try {
-    const requests = await ProviderRequest.findAll({
-      order: [['submitted_at', 'DESC']]
-    });
-    res.json(requests);
-  } catch (err) {
-    console.error("Error fetching provider requests:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
+	try {
+		const requests = await ProviderRequest.findAll({
+			order: [["submitted_at", "DESC"]],
+		});
+		res.json(requests);
+	} catch (err) {
+		console.error("Error fetching provider requests:", err);
+		res.status(500).json({ error: "Internal server error" });
+	}
 };
 
 // Approve provider request
 const approveProviderRequest = async (req, res) => {
-  const { id } = req.params;
+	const { id } = req.params;
 
-  try {
-    const request = await ProviderRequest.findOne({ where: { request_id: id } });
+	try {
+		const request = await ProviderRequest.findOne({
+			where: { request_id: id },
+		});
 
-    if (!request) return res.status(404).json({ message: "Request not found" });
+		if (!request) return res.status(404).json({ message: "Request not found" });
 
-    const user = await User.findOne({ where: { user_id: request.user_id } });
+		const user = await User.findOne({ where: { user_id: request.user_id } });
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+		if (!user) return res.status(404).json({ message: "User not found" });
 
-    await ProviderRequest.update(
-      { status: 'approved' },
-      { where: { request_id: id } }
-    );
+		await ProviderRequest.update(
+			{ status: "approved" },
+			{ where: { request_id: id } }
+		);
 
-    await Provider.create({
-      user_id: request.user_id,
-      birth_date: request.birth_date || new Date('2000-01-01'),
-      city: request.city || 'Unknown City',
-      address: request.address || 'Unknown Address',
-      gov_id_url: request.gov_id_url || 'default_gov_id_url.jpg',
-      selfie_url: request.selfie_url || 'default_selfie.jpg',
-      certificate_url: request.certificate_url || 'default_certificate.jpg',
-      business_name: user.username || 'Default Business Name'
-    });
+		await User.update(
+			{ user_type: "provider" },
+			{ where: { user_id: user.user_id } }
+		);
 
-    // 🔔 Send personal notification
-    await Notification.create({
-      user_id: user.user_id,
-      title: 'Request Approved ✅',
-      description: 'Your provider request has been approved. You can now start offering services!',
-      icon: 'CheckCircle'
-    });
+		await Provider.create({
+			user_id: request.user_id,
+			birth_date: request.birth_date || new Date("2000-01-01"),
+			city: request.city || "Unknown City",
+			address: request.address || "Unknown Address",
+			gov_id_url: request.gov_id_url || "default_gov_id_url.jpg",
+			selfie_url: request.selfie_url || "default_selfie.jpg",
+			certificate_url: request.certificate_url || "default_certificate.jpg",
+			business_name:
+				user.first_name + " " + user.last_name || "Default Business Name",
+		});
 
-    res.json({ message: "Provider request approved, provider created, and notification sent" });
-  } catch (err) {
-    console.error("Error approving request and creating provider:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
+		await Booking.update({ client_id: null }, { where: { client_id: request.user_id } });
+
+		// ✅ Remove user from Client table if they exist
+		await Client.destroy({ where: { user_id: user.user_id } });
+
+		// 🔔 Send personal notification
+		await Notification.create({
+			user_id: user.user_id,
+			title: "Request Approved ✅",
+			description:
+				"Your provider request has been approved. You can now start offering services!",
+			icon: "CheckCircle",
+		});
+
+		await pushToUser(
+			user.user_id,
+			"Request Approved ✅",
+			"Your provider request has been approved. You can now start offering services!"
+		);
+
+		res.json({
+			message:
+				"Provider request approved, provider created, and notification sent",
+		});
+	} catch (err) {
+		console.error("Error approving request and creating provider:", err);
+		res.status(500).json({ error: "Internal server error" });
+	}
 };
 
 // Reject provider request
 const rejectProviderRequest = async (req, res) => {
-  const { id } = req.params;
+	const { id } = req.params;
 
-  try {
-    const request = await ProviderRequest.findOne({ where: { request_id: id } });
+	try {
+		const request = await ProviderRequest.findOne({
+			where: { request_id: id },
+		});
 
-    if (!request) {
-      return res.status(404).json({ message: "Request not found" });
-    }
+		if (!request) {
+			return res.status(404).json({ message: "Request not found" });
+		}
 
-    const user = await User.findOne({ where: { user_id: request.user_id } });
+		const user = await User.findOne({ where: { user_id: request.user_id } });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found. Cannot send notification." });
-    }
+		if (!user) {
+			return res
+				.status(404)
+				.json({ message: "User not found. Cannot send notification." });
+		}
 
-    await ProviderRequest.update(
-      { status: 'rejected' },
-      { where: { request_id: id } }
-    );
+		await ProviderRequest.update(
+			{ status: "rejected" },
+			{ where: { request_id: id } }
+		);
 
-    await Notification.create({
-      user_id: user.user_id,
-      title: 'Request Rejected ❌',
-      description: 'Unfortunately, your provider request has been rejected. Please review and try again.',
-      icon: 'XCircle'
-    });
+		await Notification.create({
+			user_id: user.user_id,
+			title: "Request Rejected ❌",
+			description:
+				"Unfortunately, your provider request has been rejected. Please review and try again.",
+			icon: "XCircle",
+		});
 
-    res.json({ message: "Provider request rejected and notification sent" });
-  } catch (err) {
-    console.error("Error rejecting request:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
+		await pushToUser(
+			user.user_id,
+			"Request Rejected ❌",
+			"Unfortunately, your provider request has been rejected. Please review and try again."
+		);
+
+		res.json({ message: "Provider request rejected and notification sent" });
+	} catch (err) {
+		console.error("Error rejecting request:", err);
+		res.status(500).json({ error: "Internal server error" });
+	}
 };
 
-  
 module.exports = {
-    getAllUsers,
-    modifyUser,
-    getTopCategoriesByRevenue,
-    deleteUser,
-    getAllActivities,
-    modifyActivity,
-    deleteActivity,
-    getTopCities,
-    getSummaryStats,
-    getTopProviders,
-    getBestActivity,
-    getTopClients,
-    getTopCitiesByRevenue,
-   // getTopGender,
-    getRevenueByType,
-    getPayments,
-    getTopCategories,
-    Administrator,
-    getAllProviderRequests,
-    approveProviderRequest,
-    rejectProviderRequest
-  };
-  
+	getAllUsers,
+	modifyUser,
+	getTopCategoriesByRevenue,
+	deleteUser,
+	getAllActivities,
+	modifyActivity,
+	deleteActivity,
+	getTopCities,
+	getSummaryStats,
+	getTopProviders,
+	getBestActivity,
+	getTopClients,
+	getTopCitiesByRevenue,
+	// getTopGender,
+	getRevenueByType,
+	getPayments,
+	getTopCategories,
+	Administrator,
+	getAllProviderRequests,
+	approveProviderRequest,
+	rejectProviderRequest,
+};

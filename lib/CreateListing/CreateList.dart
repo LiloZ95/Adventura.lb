@@ -13,6 +13,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:adventura/services/activity_service.dart';
 import 'package:adventura/controllers/create_listing_controller.dart';
 import 'package:intl/intl.dart';
+import 'widgets/addons_section.dart';
 import 'widgets/age_selector.dart';
 import 'widgets/calendar_date_selector.dart';
 import 'widgets/description_section.dart';
@@ -108,6 +109,14 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
   // Seats
   final TextEditingController _seatsController = TextEditingController();
+
+  // Add-ons
+  List<Map<String, TextEditingController>> _addonControllers = [
+    {
+      "label": TextEditingController(),
+      "price": TextEditingController(),
+    },
+  ];
 
   // Features
   // List<TextEditingController> _featureControllers = [TextEditingController()];
@@ -323,6 +332,16 @@ class _CreateListingPageState extends State<CreateListingPage> {
       };
     }).toList();
 
+    final addons = _addonControllers
+        .where((c) =>
+            c["label"]!.text.trim().isNotEmpty &&
+            c["price"]!.text.trim().isNotEmpty)
+        .map((c) => {
+              "label": c["label"]!.text.trim(),
+              "price": double.tryParse(c["price"]!.text.trim()) ?? 0.0,
+            })
+        .toList();
+
     final activityData = {
       "name": _titleController.text.trim(),
       "description": _descriptionController.text.trim(),
@@ -335,6 +354,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
       "longitude": _mapLatLng!.longitude,
       "features": _selectedFeatures,
       "trip_plan": tripPlans,
+      "addons": addons,
       "from_time": _formatTime(_fromTime!),
       "to_time": _formatTime(_toTime!),
       "listing_type": _selectedListingType.toString().split('.').last,
@@ -784,6 +804,27 @@ class _CreateListingPageState extends State<CreateListingPage> {
                 const SizedBox(height: 20),
 
                 // ---------------------------------
+                // Add-ons
+                // ---------------------------------
+                AddonsSection(
+                  controllers: _addonControllers,
+                  onAdd: () {
+                    setState(() {
+                      _addonControllers.add({
+                        "label": TextEditingController(),
+                        "price": TextEditingController(),
+                      });
+                    });
+                  },
+                  onDelete: (index) {
+                    setState(() {
+                      _addonControllers.removeAt(index);
+                    });
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                // ---------------------------------
                 // Features
                 // ---------------------------------
                 FeaturesSection(
@@ -878,6 +919,12 @@ class _CreateListingPageState extends State<CreateListingPage> {
                   // PREVIEW BUTTON
                   OutlinedButton(
                     onPressed: () {
+                      if (_mapLatLng == null) {
+                        showAppSnackBar(
+                            context, "⚠️ Please pick a location first.");
+                        return;
+                      }
+
                       final builtTripPlan = _tripPlanControllers
                           .where((map) =>
                               map['time']!.text.trim().isNotEmpty &&
@@ -888,28 +935,61 @@ class _CreateListingPageState extends State<CreateListingPage> {
                               })
                           .toList();
 
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PreviewPage(
-                            title: _titleController.text.trim(),
-                            description: _descriptionController.text.trim(),
-                            location: _locationDisplayController.text.trim(),
-                            features: _selectedFeatures,
-                            tripPlan: builtTripPlan,
-                            images: _images.isNotEmpty
-                                ? _images.map((img) => img.path).toList()
-                                : ['assets/Pictures/island.jpg'],
-                            mapLatLng: _mapLatLng!,
-                            seats:
-                                int.tryParse(_seatsController.text.trim()) ?? 0,
-                            ageAllowed: _selectedAge,
-                            price:
-                                int.tryParse(_priceController.text.trim()) ?? 0,
-                            priceType: _selectedTicketPriceType,
+                      try {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PreviewPage(
+                              title: _titleController.text.trim(),
+                              description: _descriptionController.text.trim(),
+                              location: _locationDisplayController.text.trim(),
+                              features: _selectedFeatures,
+                              tripPlan: builtTripPlan,
+                              images: _images.isNotEmpty
+                                  ? _images.map((img) => img.path).toList()
+                                  : ['assets/Pictures/island.jpg'],
+                              mapLatLng: _mapLatLng!,
+                              seats:
+                                  int.tryParse(_seatsController.text.trim()) ??
+                                      0,
+                              ageAllowed: _selectedAge,
+                              price:
+                                  int.tryParse(_priceController.text.trim()) ??
+                                      0,
+                              priceType: _selectedTicketPriceType,
+                              fromTime: _fromTime != null
+                                  ? _formatTime(_fromTime!)
+                                  : "N/A",
+                              toTime: _toTime != null
+                                  ? _formatTime(_toTime!)
+                                  : "N/A",
+                              listingType: _selectedListingType
+                                  .toString()
+                                  .split('.')
+                                  .last,
+                              startDate:
+                                  _startDate?.toIso8601String().split("T")[0],
+                              endDate:
+                                  _endDate?.toIso8601String().split("T")[0],
+                              repeatDays: _selectedWeekdays.toList(),
+                              durationMinutes: _selectedDuration?.inMinutes,
+                              addons: _addonControllers
+                                  .where((c) =>
+                                      c["label"]!.text.trim().isNotEmpty &&
+                                      c["price"]!.text.trim().isNotEmpty)
+                                  .map((c) => {
+                                        "label": c["label"]!.text.trim(),
+                                        "price": double.tryParse(
+                                                c["price"]!.text.trim()) ??
+                                            0.0,
+                                      })
+                                  .toList(),
+                            ),
                           ),
-                        ),
-                      );
+                        );
+                      } catch (e) {
+                        print("❌ Error launching preview: $e");
+                      }
                     },
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(

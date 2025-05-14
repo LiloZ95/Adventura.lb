@@ -26,6 +26,7 @@ const UserPfp = require("./UserPfp");
 const Reel = require("./Reel");
 const ReelLike = require("./ReelLike");
 const ReelComment = require("./ReelComment");
+const Addon = require("./Addon");
 
 // ✅ Define Relationships
 Activity.hasMany(ActivityImage, {
@@ -147,6 +148,9 @@ ReelLike.belongsTo(User, { foreignKey: "user_id" });
 User.hasMany(ReelComment, { foreignKey: "user_id" });
 ReelComment.belongsTo(User, { foreignKey: "user_id" });
 
+Addon.belongsTo(Activity, { foreignKey: "activity_id" });
+Activity.hasMany(Addon, { foreignKey: "activity_id", as: "addons" });
+
 // ✅ Sync DB
 sequelize
 	.sync({ alter: { drop: false } })
@@ -177,4 +181,5 @@ module.exports = {
 	UniversalNotification,
 	Followers,
 	UserPfp,
+	Addon,
 };

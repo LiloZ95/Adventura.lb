@@ -1,23 +1,26 @@
 import 'dart:convert';
 import 'package:adventura/config.dart';
+import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 
 class BookingService {
   static Future<bool> createBooking({
     required int activityId,
-    required int clientId,
     required String date,
     required String slot,
     required double totalPrice,
+    int? clientId,
+    int? providerId,
   }) async {
     final url = Uri.parse("$baseUrl/booking/create");
 
     final body = jsonEncode({
       "activity_id": activityId,
-      "client_id": clientId,
       "booking_date": date,
       "slot": slot,
       "total_price": totalPrice,
+      if (clientId != null) "client_id": clientId,
+      if (providerId != null) "provider_id": providerId,
     });
 
     print("📤 Sending booking: $body");
@@ -52,6 +55,65 @@ class BookingService {
     } catch (e) {
       print("❌ Exception fetching bookings: $e");
     }
+    return [];
+  }
+
+  static Future<List<Map<String, dynamic>>> getProviderBookings(
+      int userId) async {
+    Uri url = Uri.parse('$baseUrl/booking/by-provider/$userId');
+    Box box = await Hive.openBox("authBox");
+    final token = box.get("accessToken");
+
+    final response = await http.get(url, headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
+
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      if (body["success"]) {
+        return List<Map<String, dynamic>>.from(body["bookings"]);
+      }
+    } else {
+      print(
+          "❌ Failed to fetch provider bookings. Status: ${response.statusCode}");
+      print("❌ Response: ${response.body}");
+    }
+    return [];
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchBookings(
+      int userId, String userType) async {
+    try {
+      Uri url;
+      if (userType == "provider") {
+        url = Uri.parse('$baseUrl/booking/by-provider/$userId');
+      } else {
+        url = Uri.parse('$baseUrl/booking/user/$userId');
+      }
+
+      Box box = await Hive.openBox("authBox");
+      final token = box.get("accessToken");
+
+      final response = await http.get(url, headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      });
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is List) {
+          return List<Map<String, dynamic>>.from(decoded);
+        } else {
+          print("❌ Unexpected response type: ${decoded.runtimeType}");
+        }
+      } else {
+        print("❌ Failed to fetch bookings. Status: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("❌ Error fetching bookings: $e");
+    }
+
     return [];
   }
 }

@@ -5,6 +5,8 @@ const TripPlan = require("../models/TripPlan");
 const Feature = require("../models/Feature");
 const path = require("path");
 const Availability = require("../models/Availability");
+const Addon = require("../models/Addon");
+const Notification = require("../models/Notification");
 // const Provider = require("../models/Provider");
 // const User = require("../models/User");
 
@@ -205,6 +207,24 @@ const createActivity = async (req, res) => {
 		}
 		console.log("📦 Received listing_type:", listing_type);
 
+		// 🧩 Save Addons
+		if (req.body.addons && Array.isArray(req.body.addons)) {
+			const validAddons = req.body.addons.filter(
+				(addon) => addon.label && addon.price
+			);
+
+			if (validAddons.length > 0) {
+				const addonData = validAddons.map((addon) => ({
+					activity_id: newActivity.activity_id,
+					label: addon.label,
+					price: addon.price,
+				}));
+
+				await Addon.bulkCreate(addonData, { transaction: t });
+				console.log("✅ Add-ons saved:", addonData);
+			}
+		}
+
 		await t.commit();
 
 		res.status(201).json({
@@ -287,12 +307,14 @@ const getAllActivities = async (req, res) => {
 			include: [
 				{
 					model: Provider,
-					as: 'provider',
-					include: [{
-					  model: User,
-					  as: 'USER'
-					}]
-				  },
+					as: "provider",
+					include: [
+						{
+							model: User,
+							as: "USER",
+						},
+					],
+				},
 				{
 					model: ActivityImage,
 					as: "activity_images",
@@ -324,12 +346,14 @@ const getActivityById = async (req, res) => {
 			include: [
 				{
 					model: Provider,
-					as: 'provider',
-					include: [{
-					  model: User,
-					  as: 'USER'
-					}]
-				  },
+					as: "provider",
+					include: [
+						{
+							model: User,
+							as: "USER",
+						},
+					],
+				},
 				{ model: ActivityImage, as: "activity_images" },
 				{
 					model: TripPlan,
@@ -515,12 +539,14 @@ const getActivitiesByProvider = async (req, res) => {
 			include: [
 				{
 					model: Provider,
-					as: 'provider',
-					include: [{
-					  model: User,
-					  as: 'USER'
-					}]
-				  },
+					as: "provider",
+					include: [
+						{
+							model: User,
+							as: "USER",
+						},
+					],
+				},
 				{
 					model: ActivityImage,
 					as: "activity_images",
@@ -584,6 +610,54 @@ async function deactivatePastEvents() {
 	// }
 }
 
+const deactivateEmptyRecurrentActivities = async () => {
+	try {
+		const today = new Date().toISOString().split("T")[0];
+
+		const recurrentActivities = await Activity.findAll({
+			where: {
+				listing_type: "recurrent",
+				availability_status: true,
+			},
+		});
+
+		for (const activity of recurrentActivities) {
+			const hasFutureSlots = await Availability.findOne({
+				where: {
+					activity_id: activity.activity_id,
+					date: {
+						[Op.gte]: today,
+					},
+					available_seats: {
+						[Op.gt]: 0,
+					},
+				},
+			});
+
+			const isPastEndDate =
+				activity.end_date && new Date(activity.end_date) < new Date(today);
+
+			if (!hasFutureSlots || isPastEndDate) {
+				await Activity.update(
+					{ availability_status: false },
+					{ where: { activity_id: activity.activity_id } }
+				);
+
+				await Notification.create({
+					user_id: activity.provider_id,
+					title: "Activity Deactivated",
+					description: `Your recurrent activity "${activity.name}" has been deactivated because it's expired or has no more available seats.`,
+					icon: "activity",
+				});
+
+				console.log(`🔒 Activity ${activity.name} marked as unavailable`);
+			}
+		}
+	} catch (error) {
+		console.error("❌ Error deactivating recurrent activities:", error);
+	}
+};
+
 const getExpiredActivitiesByProvider = async (req, res) => {
 	try {
 		const { provider_id } = req.params;
@@ -602,12 +676,14 @@ const getExpiredActivitiesByProvider = async (req, res) => {
 			include: [
 				{
 					model: Provider,
-					as: 'provider',
-					include: [{
-					  model: User,
-					  as: 'USER'
-					}]
-				  },
+					as: "provider",
+					include: [
+						{
+							model: User,
+							as: "USER",
+						},
+					],
+				},
 				{
 					model: ActivityImage,
 					as: "activity_images",
@@ -649,12 +725,14 @@ const getAllEvents = async (req, res) => {
 			include: [
 				{
 					model: Provider,
-					as: 'provider',
-					include: [{
-					  model: User,
-					  as: 'USER'
-					}]
-				  },
+					as: "provider",
+					include: [
+						{
+							model: User,
+							as: "USER",
+						},
+					],
+				},
 				{
 					model: ActivityImage,
 					as: "activity_images",
@@ -681,6 +759,7 @@ module.exports = {
 	getActivitiesByProvider,
 	softDeleteActivity,
 	deactivatePastEvents,
+	deactivateEmptyRecurrentActivities,
 	getExpiredActivitiesByProvider,
 	getAllEvents,
 };

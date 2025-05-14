@@ -17,6 +17,14 @@ class PreviewPage extends StatefulWidget {
   final String? ageAllowed;
   final int price;
   final String priceType;
+  final String fromTime;
+  final String toTime;
+  final String listingType;
+  final String? startDate;
+  final String? endDate;
+  final List<String> repeatDays;
+  final int? durationMinutes;
+  final List<Map<String, dynamic>> addons;
 
   const PreviewPage({
     Key? key,
@@ -31,6 +39,14 @@ class PreviewPage extends StatefulWidget {
     required this.ageAllowed,
     required this.price,
     required this.priceType,
+    required this.fromTime,
+    required this.toTime,
+    required this.listingType,
+    this.startDate,
+    this.endDate,
+    required this.repeatDays,
+    this.durationMinutes,
+    required this.addons,
   }) : super(key: key);
 
   @override
@@ -105,6 +121,31 @@ class _PreviewPageState extends State<PreviewPage> {
               ),
             ),
             const SizedBox(height: 12),
+            if (widget.durationMinutes != null) ...[
+              SizedBox(height: 6),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isDarkMode ? const Color(0xFF1F1F1F) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.schedule, size: 16, color: Colors.blue),
+                    SizedBox(width: 6),
+                    Text(
+                      "${widget.durationMinutes} min",
+                      style: TextStyle(
+                        color: Colors.blue.shade800,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             confirmedDate != null && confirmedSlot != null
                 ? Row(
                     children: [
@@ -140,6 +181,52 @@ class _PreviewPageState extends State<PreviewPage> {
                         style: TextStyle(color: Colors.white)),
                   ),
             const SizedBox(height: 12),
+            if (widget.listingType == "oneTime" && widget.startDate != null)
+              Row(
+                children: [
+                  Icon(Icons.event,
+                      size: 18,
+                      color: isDarkMode ? Colors.grey[300] : Colors.grey),
+                  const SizedBox(width: 6),
+                  Text(
+                    "Event Date: ${widget.startDate}",
+                    style: TextStyle(
+                        fontSize: 14,
+                        color: isDarkMode ? Colors.grey[300] : Colors.grey),
+                  ),
+                ],
+              )
+            else if (widget.listingType == "recurrent") ...[
+              Row(
+                children: [
+                  Icon(Icons.repeat,
+                      size: 18,
+                      color: isDarkMode ? Colors.grey[300] : Colors.grey),
+                  const SizedBox(width: 6),
+                  Text(
+                    "Repeats: ${widget.repeatDays.join(", ")}",
+                    style: TextStyle(
+                        fontSize: 14,
+                        color: isDarkMode ? Colors.grey[300] : Colors.grey),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(Icons.date_range,
+                      size: 18,
+                      color: isDarkMode ? Colors.grey[300] : Colors.grey),
+                  const SizedBox(width: 6),
+                  Text(
+                    "From ${widget.startDate} to ${widget.endDate ?? widget.startDate}",
+                    style: TextStyle(
+                        fontSize: 14,
+                        color: isDarkMode ? Colors.grey[300] : Colors.grey),
+                  ),
+                ],
+              ),
+            ],
             Row(
               children: [
                 Icon(Icons.location_on,
@@ -156,6 +243,28 @@ class _PreviewPageState extends State<PreviewPage> {
             ),
             const SizedBox(height: 20),
             _buildTripPlan(widget.tripPlan, isDarkMode),
+            const SizedBox(height: 16),
+            _sectionTitle("Add-ons", isDarkMode),
+            const SizedBox(height: 6),
+            if (widget.addons.isEmpty)
+              Text("No add-ons added.",
+                  style: TextStyle(
+                      color: isDarkMode ? Colors.white54 : Colors.black87)),
+            ...widget.addons.map((addon) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.add_box,
+                          size: 16,
+                          color: isDarkMode ? Colors.white60 : Colors.blue),
+                      const SizedBox(width: 6),
+                      Text("${addon["label"]}: \$${addon["price"]}",
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.white70 : Colors.black87,
+                          )),
+                    ],
+                  ),
+                )),
             const SizedBox(height: 16),
             _sectionTitle("Description", isDarkMode),
             const SizedBox(height: 4),

@@ -24,143 +24,157 @@ Future<void> showExpiredListingsModal(BuildContext context) async {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent, // key for blur to work
+    backgroundColor: Colors.transparent,
     barrierColor: Colors.black.withOpacity(0.25),
-    isDismissible: true, // ✅ allow tap outside to close
+    isDismissible: true,
     enableDrag: true,
     builder: (context) {
-  return GestureDetector(
-    behavior: HitTestBehavior.opaque,
-    onTap: () => Navigator.of(context).pop(), // Dismiss on outside tap
-    child: GestureDetector(
-      onTap: () {}, // Absorb taps inside modal
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: FractionallySizedBox(
-            heightFactor: 0.45,
-            widthFactor: 0.95,
-            child: Material(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? const Color(0xFF1E1E1E).withOpacity(0.95)
-                  : Colors.white.withOpacity(0.95),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(24)),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Text(
-                        "Expired Listings",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Poppins',
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white70
-                              : Colors.grey.shade600,
-                        ),
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => Navigator.of(context).pop(),
+        child: GestureDetector(
+          onTap: () {}, // Absorb tap events
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: FractionallySizedBox(
+                heightFactor: 0.55,
+                widthFactor: 0.95,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF1E1E1E).withOpacity(0.95)
+                        : Colors.white.withOpacity(0.95),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(24)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.blue.withOpacity(0.2),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                        offset: const Offset(0, -2),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (expiredListings.isEmpty)
-                      Expanded(
-                        child: Center(
-                          child: Text(
-                            "No expired listings found.",
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.white70
-                                  : Colors.grey.shade600,
-                            ),
+                    ],
+                  ),
+                  child: DefaultTabController(
+                    length: 2,
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 12),
+                        Container(
+  width: 40,
+  height: 4,
+  margin: const EdgeInsets.only(top: 8, bottom: 12),
+  decoration: BoxDecoration(
+    color: Colors.grey.shade400,
+    borderRadius: BorderRadius.circular(4),
+  ),
+),
+
+                        TabBar(
+  indicator: BoxDecoration(
+    borderRadius: BorderRadius.circular(30),
+    color: Colors.blue.withOpacity(0.15),
+  ),
+  labelColor: Colors.blue,
+  unselectedLabelColor:
+      Theme.of(context).brightness == Brightness.dark
+          ? Colors.white70
+          : Colors.grey.shade600,
+  labelStyle: const TextStyle(
+    fontWeight: FontWeight.w600,
+    fontFamily: 'Poppins',
+  ),
+  tabs: const [
+    Tab(child: Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Text("One-Time"),
+    )),
+    Tab(child: Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Text("Recurrent"),
+    )),
+  ],
+),
+
+                        Expanded(
+                          child: TabBarView(
+                            children: [
+                              _buildExpiredList(
+                                  context, expiredListings["oneTime"]),
+                              _buildExpiredList(
+                                  context, expiredListings["recurrent"]),
+                            ],
                           ),
                         ),
-                      )
-                    else
-                      Expanded(
-                        child: ListView.separated(
-                          itemCount: expiredListings.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final activity = expiredListings[index];
-                            final imageUrl = activity["activity_images"]
-                                        ?.isNotEmpty ==
-                                    true
-                                ? "$baseUrl${activity["activity_images"][0]["image_url"]}"
-                                : null;
-
-                            return Card(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 2,
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.all(12),
-                                leading: SizedBox(
-                                  width: 64,
-                                  height: 64,
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: imageUrl != null
-                                        ? Image.network(
-                                            imageUrl,
-                                            width: 64,
-                                            height: 64,
-                                            fit: BoxFit.cover,
-                                            errorBuilder:
-                                                (context, error, stackTrace) {
-                                              return Image.asset(
-                                                "assets/Pictures/island.jpg",
-                                                width: 64,
-                                                height: 64,
-                                                fit: BoxFit.cover,
-                                              );
-                                            },
-                                          )
-                                        : Image.asset(
-                                            "assets/Pictures/island.jpg",
-                                            width: 64,
-                                            height: 64,
-                                            fit: BoxFit.cover,
-                                          ),
-                                  ),
-                                ),
-                                title: Text(
-                                  activity["name"] ?? "Unnamed",
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  (activity["listing_type"] == "oneTime" &&
-                                          DateTime.tryParse(
-                                                      activity["to_time"] ?? "")
-                                                  ?.isBefore(DateTime.now()) ==
-                                              true)
-                                      ? "Expired • ${activity["location"] ?? 'Unknown location'}"
-                                      : "Deleted • ${activity["location"] ?? 'Unknown location'}",
-                                  style: TextStyle(color: Colors.grey.shade600),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                  ],
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),
-    ),
+      );
+    },
   );
-},
+}
+
+Widget _buildExpiredList(BuildContext context, List<dynamic>? listings) {
+  if (listings == null || listings.isEmpty) {
+    return const Center(child: Text("No expired listings found."));
+  }
+
+  return ListView.separated(
+    padding: const EdgeInsets.all(16),
+    itemCount: listings.length,
+    separatorBuilder: (_, __) => const SizedBox(height: 12),
+    itemBuilder: (context, index) {
+      final activity = listings[index];
+      final imageUrl = activity["activity_images"]?.isNotEmpty == true
+          ? "$baseUrl${activity["activity_images"][0]["image_url"]}"
+          : null;
+
+      return Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 2,
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(12),
+          leading: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: imageUrl != null
+                ? Image.network(
+                    imageUrl,
+                    width: 64,
+                    height: 64,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Image.asset(
+                      "assets/Pictures/island.jpg",
+                      width: 64,
+                      height: 64,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : Image.asset(
+                    "assets/Pictures/island.jpg",
+                    width: 64,
+                    height: 64,
+                    fit: BoxFit.cover,
+                  ),
+          ),
+          title: Text(
+            activity["name"] ?? "Unnamed",
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          subtitle: Text(
+            activity["listing_type"] == "oneTime"
+                ? "Expired • ${activity["location"] ?? 'Unknown'}"
+                : "Archived • ${activity["location"] ?? 'Unknown'}",
+            style: TextStyle(color: Colors.grey.shade600),
+          ),
+        ),
+      );
+    },
   );
 }

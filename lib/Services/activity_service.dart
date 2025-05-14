@@ -6,7 +6,7 @@ import 'package:hive/hive.dart'; // ✅ Use Hive instead of StorageService
 import 'package:adventura/config.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
-import 'package:http_parser/http_parser.dart'; 
+import 'package:http_parser/http_parser.dart';
 
 class ActivityService {
   /// ✅ Create Activity
@@ -152,7 +152,7 @@ class ActivityService {
     return [];
   }
 
-  static Future<List<Map<String, dynamic>>> fetchExpiredListings(
+  static Future<Map<String, List<Map<String, dynamic>>>> fetchExpiredListings(
       int providerId) async {
     final url = Uri.parse('$baseUrl/activities/expired/$providerId');
     final response = await http.get(url);
@@ -160,10 +160,17 @@ class ActivityService {
     if (response.statusCode == 200) {
       final body = jsonDecode(response.body);
       if (body["success"]) {
-        return List<Map<String, dynamic>>.from(body["activities"]);
+        return {
+          "oneTime": List<Map<String, dynamic>>.from(body["oneTime"] ?? []),
+          "recurrent": List<Map<String, dynamic>>.from(body["recurrent"] ?? []),
+        };
       }
     }
-    return [];
+
+    return {
+      "oneTime": [],
+      "recurrent": [],
+    };
   }
 
   static Future<bool> uploadActivityImages({

@@ -4,15 +4,19 @@ import '../config.dart';
 import 'storage_service.dart';
 
 class AvailabilityService {
-  static Future<List<String>> fetchAvailableSlots(int activityId, String date) async {
-    final url = Uri.parse('$baseUrl/availability?activityId=$activityId&date=$date');
+  static Future<List<String>> fetchAvailableSlots(
+      int activityId, String date) async {
+    final url =
+        Uri.parse('$baseUrl/availability?activityId=$activityId&date=$date');
 
     try {
       final response = await http.get(url).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
-        if (json != null && json is Map<String, dynamic> && json['availableSlots'] != null) {
+        if (json != null &&
+            json is Map<String, dynamic> &&
+            json['availableSlots'] != null) {
           return List<String>.from(json['availableSlots']);
         } else {
           print('⚠️ Unexpected API response structure: $json');
@@ -67,5 +71,23 @@ class AvailabilityService {
       print('❌ Exception during booking: $e');
       return false;
     }
+  }
+
+  static Future<List<String>> fetchAvailableDates(int activityId) async {
+    final url = Uri.parse(
+        '$baseUrl/availability/dates-with-slots?activityId=$activityId');
+
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        if (json["availableDates"] != null) {
+          return List<String>.from(json["availableDates"]);
+        }
+      }
+    } catch (e) {
+      print('❌ Error fetching available dates: $e');
+    }
+    return [];
   }
 }

@@ -71,39 +71,47 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
 
   Future<void> _fetchBookings() async {
     final box = await Hive.openBox('authBox');
-    final clientId = int.tryParse(box.get('userId') ?? '');
-    print("📦 Logged-in client ID: $clientId");
+    final userId = int.tryParse(box.get("userId", defaultValue: "0"));
+    final userType = box.get("userType", defaultValue: "client");
+    print("📦 Logged-in user ID: $userId | Type: $userType");
 
-    if (clientId == null) {
-      print("❌ No valid user ID");
+    if (userId == null || userType == null) {
+      print("❌ Missing user info");
       return;
     }
 
-    final fetched = await BookingService.getUserBookings(clientId);
+    final fetched = await BookingService.fetchBookings(userId, userType);
     print("📥 Bookings fetched: $fetched");
 
     setState(() {
       bookings = fetched
-          .map((b) => {
-                "activity": {
-                  "name": b["activity"]["name"],
-                  "location": b["activity"]["location"],
-                  "date": b["booking_date"],
-                  "price": b["total_price"].toString(),
-                  "description": b["activity"]["description"],
-                  "activity_images": (b["activity"]["activity_images"] ?? [])
-                      .map<String>((img) => img.toString())
-                      .toList(),
-                },
-                "bookingId": "#${b["booking_id"]}",
-                "guests": "1 Guest",
-                "status": (() {
-                  final s = b["status"]?.toLowerCase();
-                  if (s == "pending") return "Upcoming";
-                  return "Past";
-                })(),
-                "raw_status": b["status"], // 👈 Used for badge coloring
-              })
+          .map((b) {
+            final activity = b["activity"];
+            if (activity == null) return null;
+
+            return {
+              "activity": {
+                "name": activity["name"] ?? "Unknown",
+                "location": activity["location"] ?? "Unknown",
+                "date": b["booking_date"],
+                "price": b["total_price"]?.toString() ?? "0.0",
+                "description": activity["description"] ?? "",
+                "activity_images": (activity["activity_images"] ?? [])
+                    .map<String>((img) => img.toString())
+                    .toList(),
+              },
+              "bookingId": "#${b["booking_id"]}",
+              "guests": "1 Guest",
+              "status": (() {
+                final s = b["status"]?.toLowerCase();
+                if (s == "pending") return "Upcoming";
+                return "Past";
+              })(),
+              "raw_status": b["status"],
+            };
+          })
+          .where((e) => e != null)
+          .cast<Map<String, dynamic>>()
           .toList();
     });
 
@@ -208,7 +216,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                                 ),
                               )
                             : ListView.builder(
-                                controller: _scrollController, 
+                                controller: _scrollController,
                                 padding: EdgeInsets.only(bottom: 120),
                                 itemCount: bookings
                                     .where((b) => isUpcomingSelected

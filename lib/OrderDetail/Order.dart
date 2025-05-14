@@ -27,19 +27,13 @@ enum PaymentMethod { card, whish }
 
 class OrderDetailsPage extends StatefulWidget {
   final String selectedImage;
-  final String eventTitle;
-  final String eventDate;
-  final String eventLocation;
-  final int activityId;
+  final Map<String, dynamic> activity;
   final String selectedSlot;
 
   const OrderDetailsPage({
     Key? key,
-    required this.activityId,
     required this.selectedImage,
-    required this.eventTitle,
-    required this.eventDate,
-    required this.eventLocation,
+    required this.activity,
     required this.selectedSlot,
   }) : super(key: key);
 
@@ -48,15 +42,25 @@ class OrderDetailsPage extends StatefulWidget {
 }
 
 class _OrderDetailsPageState extends State<OrderDetailsPage> {
-  int tickets = 0;
-  int bbqShare = 0;
-  int waterBottles = 0;
-  int energyDrinks = 0;
+  // int tickets = 0;
+  // int bbqShare = 0;
+  // int waterBottles = 0;
+  // int energyDrinks = 0;
 
-  double ticketPrice = 15.0;
-  double bbqPrice = 5.0;
-  double waterPrice = 1.0;
-  double energyPrice = 2.0;
+  // double ticketPrice = 15.0;
+  // double bbqPrice = 5.0;
+  // double waterPrice = 1.0;
+  // double energyPrice = 2.0;
+
+  late String title;
+  late String location;
+  late String imageUrl;
+  late String date;
+  late double basePrice;
+  late int maxSeats;
+  late List<Map<String, dynamic>> addons;
+
+  Map<String, int> selectedQuantities = {};
 
   PaymentMethod _selectedMethod = PaymentMethod.card;
 
@@ -75,13 +79,37 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    title = widget.activity["name"] ?? "Event";
+    location = widget.activity["location"] ?? "Unknown";
+    date = widget.activity["start_date"] ?? "N/A";
+    imageUrl = widget.selectedImage; // Create helper if needed
+    basePrice =
+        double.tryParse(widget.activity["price"]?.toString() ?? '') ?? 0.0;
+    maxSeats = widget.activity["nb_seats"] ?? 0;
+    addons = List<Map<String, dynamic>>.from(widget.activity["addons"] ?? []);
+
+    // Init quantities
+    selectedQuantities["Tickets"] = 1;
+    for (var addon in addons) {
+      selectedQuantities[addon["label"]] = 0;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final double ticketsTotal = tickets * ticketPrice;
-    final double bbqTotal = bbqShare * bbqPrice;
-    final double waterTotal = waterBottles * waterPrice;
-    final double energyTotal = energyDrinks * energyPrice;
-    final double subtotal = ticketsTotal + bbqTotal + waterTotal + energyTotal;
-    final double totalDue = subtotal + 3.50;
+    final double ticketsTotal = selectedQuantities["Tickets"]! * basePrice;
+
+    final double addonsTotal = addons.fold(0.0, (sum, addon) {
+      final label = addon["label"];
+      final qty = selectedQuantities[label]!;
+      final price = double.tryParse(addon["price"].toString()) ?? 0.0;
+      return sum + qty * price;
+    });
+
+    final double subtotal = ticketsTotal + addonsTotal;
+    final double totalDue = subtotal + 3.5;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final double screenHeight = MediaQuery.of(context).size.height;
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -165,7 +193,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                         padding: EdgeInsets.all(screenWidth * 0.04),
                         alignment: Alignment.bottomLeft,
                         child: Text(
-                          '${widget.eventTitle}\n${widget.eventDate}\n${widget.eventLocation}',
+                          '${title}\n${date}\n${location}',
                           style: TextStyle(
                             color: isDarkMode ? Colors.white : Colors.black,
                             fontSize: 16,
@@ -217,41 +245,40 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                           ),
                           SizedBox(height: screenHeight * 0.005),
                           _buildTicketOptionRow(
-                            label: 'Tickets per person',
-                            quantity: tickets,
-                            onAdd: () =>
-                                increment((val) => tickets = val, tickets),
-                            onRemove: () =>
-                                decrement((val) => tickets = val, tickets),
+                            label: 'Tickets',
+                            quantity: selectedQuantities["Tickets"]!,
+                            onAdd: () {
+                              if (selectedQuantities["Tickets"]! < maxSeats) {
+                                setState(() => selectedQuantities["Tickets"] =
+                                    selectedQuantities["Tickets"]! + 1);
+                              }
+                            },
+                            onRemove: () {
+                              if (selectedQuantities["Tickets"]! > 1) {
+                                setState(() => selectedQuantities["Tickets"] =
+                                    selectedQuantities["Tickets"]! - 1);
+                              }
+                            },
                             isDarkMode: isDarkMode,
                           ),
-                          _buildTicketOptionRow(
-                            label: 'Barbeque share',
-                            quantity: bbqShare,
-                            onAdd: () =>
-                                increment((val) => bbqShare = val, bbqShare),
-                            onRemove: () =>
-                                decrement((val) => bbqShare = val, bbqShare),
-                            isDarkMode: isDarkMode,
-                          ),
-                          _buildTicketOptionRow(
-                            label: 'Water bottles',
-                            quantity: waterBottles,
-                            onAdd: () => increment(
-                                (val) => waterBottles = val, waterBottles),
-                            onRemove: () => decrement(
-                                (val) => waterBottles = val, waterBottles),
-                            isDarkMode: isDarkMode,
-                          ),
-                          _buildTicketOptionRow(
-                            label: 'Energy drink',
-                            quantity: energyDrinks,
-                            onAdd: () => increment(
-                                (val) => energyDrinks = val, energyDrinks),
-                            onRemove: () => decrement(
-                                (val) => energyDrinks = val, energyDrinks),
-                            isDarkMode: isDarkMode,
-                          ),
+                          ...addons.map((addon) {
+                            final label = addon["label"];
+                            return _buildTicketOptionRow(
+                              label: label,
+                              quantity: selectedQuantities[label]!,
+                              onAdd: () {
+                                setState(() => selectedQuantities[label] =
+                                    selectedQuantities[label]! + 1);
+                              },
+                              onRemove: () {
+                                if (selectedQuantities[label]! > 0) {
+                                  setState(() => selectedQuantities[label] =
+                                      selectedQuantities[label]! - 1);
+                                }
+                              },
+                              isDarkMode: isDarkMode,
+                            );
+                          }).toList(),
                         ],
                       ),
                     ),
@@ -282,16 +309,25 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                           SizedBox(height: screenHeight * 0.01),
 
                           // Rows
-                          _buildSummaryRow('Tickets', tickets, ticketsTotal,
-                              isDarkMode: isDarkMode),
-                          _buildSummaryRow('BBQ Share', bbqShare, bbqTotal,
-                              isDarkMode: isDarkMode),
                           _buildSummaryRow(
-                              'Water Bottles', waterBottles, waterTotal,
-                              isDarkMode: isDarkMode),
-                          _buildSummaryRow(
-                              'Energy Drinks', energyDrinks, energyTotal,
-                              isDarkMode: isDarkMode),
+                            'Tickets',
+                            selectedQuantities["Tickets"]!,
+                            ticketsTotal,
+                            isDarkMode: isDarkMode,
+                          ),
+                          ...addons.map((addon) {
+                            final label = addon["label"];
+                            final qty = selectedQuantities[label]!;
+                            final price =
+                                double.tryParse(addon["price"].toString()) ??
+                                    0.0;
+                            return _buildSummaryRow(
+                              label,
+                              qty,
+                              (qty * price).toDouble(), // ✅ FIX HERE
+                              isDarkMode: isDarkMode,
+                            );
+                          }).toList(),
 
                           Divider(
                             color: isDarkMode
@@ -301,6 +337,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
 
                           _buildSummaryRow('Subtotal', 0, subtotal,
                               isSubtotal: true, isDarkMode: isDarkMode),
+
                           SizedBox(height: screenHeight * 0.005),
 
                           // Total
@@ -389,12 +426,18 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                           ),
                           onPressed: () async {
                             final box = await Hive.openBox('authBox');
-                            final clientId =
+                            final userId =
                                 int.tryParse(box.get('userId') ?? '');
+                            final userType =
+                                box.get('userType'); // 'client' or 'provider'
+                            final providerId =
+                                int.tryParse(box.get('providerId') ?? '');
 
-                            if (clientId == null) {
+                            if (userType == null || userId == null) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("❌ User not logged in")),
+                                SnackBar(
+                                    content:
+                                        Text("❌ User not logged in properly")),
                               );
                               return;
                             }
@@ -402,11 +445,14 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                             print("🟢 Proceed tapped - sending booking");
 
                             final success = await BookingService.createBooking(
-                              activityId: widget.activityId,
-                              clientId: clientId,
-                              date: widget.eventDate,
+                              activityId: widget.activity["activity_id"],
+                              date: date,
                               slot: widget.selectedSlot,
                               totalPrice: totalDue,
+                              clientId: userType == "client" ? userId : null,
+                              providerId: userType == "provider"
+                                  ? providerId
+                                  : null, // ✅ USE THIS
                             );
 
                             if (success) {
@@ -417,8 +463,8 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
 
                               // 👇 Log the 'purchase' interaction
                               await InteractionService.logInteraction(
-                                userId: clientId,
-                                activityId: widget.activityId,
+                                userId: userId,
+                                activityId: widget.activity["activity_id"],
                                 type: "purchase",
                               );
                               Box box = await Hive.openBox('authBox');
@@ -430,12 +476,13 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                                 MaterialPageRoute(
                                   builder: (context) =>
                                       PurchaseConfirmationPage(
-                                    eventTitle: widget.eventTitle,
+                                    eventTitle: title,
                                     clientName:
                                         "$firstName $lastName", // or get from Hive
                                     eventTime: widget.selectedSlot,
                                     numberOfAttendees:
-                                        tickets, // or however you store it
+                                        selectedQuantities["Tickets"]!,
+                                    // or however you store it
                                     ticketId: "696969",
                                     // or real bookingId
                                     status:

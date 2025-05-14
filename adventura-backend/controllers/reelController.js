@@ -6,6 +6,7 @@ const Reel = require("../models/Reel");
 const Provider = require("../models/Provider");
 const ReelLike = require("../models/ReelLike");
 const ReelComment = require("../models/ReelComment");
+const User = require("../models/User");
 
 // ✅ Upload a new reel (Provider-only)
 const uploadReel = async (req, res) => {
