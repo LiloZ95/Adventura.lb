@@ -22,6 +22,7 @@ class _HomeControllerScreenState extends State<HomeControllerScreen>
   int _selectedIndex = 0;
   List<Widget> get _screens => [
         MainScreen(
+          key: const PageStorageKey('MainScreen'),
           onScrollChanged: _handleScrollChanged,
           onTabSwitch: _onTabTapped,
           setSearchFilterMode: (filter) {
@@ -32,13 +33,20 @@ class _HomeControllerScreenState extends State<HomeControllerScreen>
           onCategorySelected: _navigateToSearchWithCategory,
         ),
         SearchScreen(
+          key: const PageStorageKey('SearchScreen'),
           filterMode: _searchFilterMode,
-          initialCategory: _initialCategory, // ✅ always fresh
+          initialCategory: _initialCategory,
           onScrollChanged: _handleScrollChanged,
         ),
-        MyBookingsPage(onScrollChanged: _handleScrollChanged),
-        MyTripsPage(),
+        MyBookingsPage(
+          key: const PageStorageKey('BookingsPage'),
+          onScrollChanged: _handleScrollChanged,
+        ),
+        MyTripsPage(
+          key: const PageStorageKey('TripsPage'),
+        ),
         ReelsPgScreen(
+          key: const PageStorageKey('ReelsPage'),
           onScrollChanged: _handleScrollChanged,
           onBackToMainTab: () {
             setState(() {
@@ -58,6 +66,9 @@ class _HomeControllerScreenState extends State<HomeControllerScreen>
 
   void _onTabTapped(int index) {
     if (_selectedIndex == index) return;
+
+    FocusScope.of(context).unfocus();
+
     _fadeController.reset();
     setState(() {
       _selectedIndex = index;
@@ -105,7 +116,7 @@ class _HomeControllerScreenState extends State<HomeControllerScreen>
       });
     });
 
-    _screens ;
+    _screens;
 
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 400),

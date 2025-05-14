@@ -20,6 +20,11 @@ import 'package:adventura/Provider%20Only/ticketScanner.dart';
 import 'package:adventura/CreateListing/CreateList.dart';
 import 'package:adventura/Chatbot/chatBot.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart'; // for listEquals
+
+import 'widgets/limited_time_section.dart';
+import 'widgets/popular_categories_section.dart';
+import 'widgets/recommended_activities_section.dart';
 
 class MainScreen extends StatefulWidget {
   final Function(bool) onScrollChanged;
@@ -57,6 +62,7 @@ class _MainScreenState extends State<MainScreen>
   final ScrollController _scrollController = ScrollController();
   Timer? _scrollStopTimer;
   List<Map<String, dynamic>> popularCategories = [];
+  ImageProvider? profileImageProvider;
 
   @override
   void initState() {
@@ -88,9 +94,11 @@ class _MainScreenState extends State<MainScreen>
 
   Future<void> _loadLimitedEvents() async {
     final events = await ActivityService.fetchEvents();
-    setState(() {
-      limitedEvents = events;
-    });
+    if (!listEquals(limitedEvents, events)) {
+      setState(() {
+        limitedEvents = events;
+      });
+    }
   }
 
   void loadPopularCategories() async {
@@ -116,33 +124,41 @@ class _MainScreenState extends State<MainScreen>
     Uint8List? cachedBytes = box.get('profileImageBytes_$userId');
     profilePicture = cachedBytes != null ? 'cached' : ""; // placeholder check
 
-    setState(() => isLoading = false);
+    if (isLoading) {
+      setState(() => isLoading = false);
+    }
   }
 
   void fetchUserData() async {
     Box box = await Hive.openBox('authBox');
     String? userIdString = box.get("userId");
+
     if (userIdString == null) return;
     userId = userIdString;
 
-    // Try to load cached bytes specific to this user
     Uint8List? cachedBytes = box.get('profileImageBytes_$userId');
 
     if (cachedBytes != null) {
-      setState(() {
-        profilePicture = 'cached';
-      });
-    } else {
-      // Fetch from API as fallback
-      String fetchedProfilePic =
-          await ProfileService.fetchProfilePicture(userId);
-      if (fetchedProfilePic.isNotEmpty) {
-        // Cache by userId
-        await box.put(
-            'profileImageBytes_$userId', base64Decode(fetchedProfilePic));
+      if (profileImageProvider == null) {
         setState(() {
-          profilePicture = 'cached';
+          profileImageProvider = MemoryImage(cachedBytes);
         });
+      }
+    } else {
+      try {
+        String fetchedProfilePic =
+            await ProfileService.fetchProfilePicture(userId);
+
+        if (fetchedProfilePic.isNotEmpty) {
+          Uint8List decodedBytes = base64Decode(fetchedProfilePic);
+          await box.put('profileImageBytes_$userId', decodedBytes);
+
+          setState(() {
+            profileImageProvider = MemoryImage(decodedBytes);
+          });
+        }
+      } catch (e) {
+        print("⚠️ Failed to load profile picture: $e");
       }
     }
   }
@@ -155,10 +171,17 @@ class _MainScreenState extends State<MainScreen>
     final String? cachedRecommendations = box.get('recommendations');
 
     if (cachedActivities != null && cachedRecommendations != null) {
-      setState(() {
-        activities = jsonDecode(cachedActivities);
-        recommendedActivities = jsonDecode(cachedRecommendations);
-      });
+      final decodedActivities = jsonDecode(cachedActivities);
+      final decodedRecommendations = jsonDecode(cachedRecommendations);
+
+      if (!listEquals(activities, decodedActivities) ||
+          !listEquals(recommendedActivities, decodedRecommendations)) {
+        setState(() {
+          activities = decodedActivities;
+          recommendedActivities = decodedRecommendations;
+        });
+      }
+
       return;
     }
 
@@ -181,10 +204,13 @@ class _MainScreenState extends State<MainScreen>
       print("✅ Fetched Activities: ${fetchedActivities.length}");
       print("✅ Fetched Recommendations: ${fetchedRecommended.length}");
 
-      setState(() {
-        activities = fetchedActivities;
-        recommendedActivities = fetchedRecommended;
-      });
+      if (!listEquals(activities, fetchedActivities) ||
+          !listEquals(recommendedActivities, fetchedRecommended)) {
+        setState(() {
+          activities = fetchedActivities;
+          recommendedActivities = fetchedRecommended;
+        });
+      }
 
       await box.put('activities', jsonEncode(fetchedActivities));
       await box.put('recommendations', jsonEncode(fetchedRecommended));
@@ -214,11 +240,6 @@ class _MainScreenState extends State<MainScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-
-    // ✅ Unfocus anything when MainScreen is built
-    FocusScope.of(context).unfocus();
-
-    print("✅ MainScreen build() called");
 
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
@@ -436,11 +457,13 @@ class _MainScreenState extends State<MainScreen>
 
                                                 if (userBytes != null) {
                                                   return CircleAvatar(
-                                                    radius: 20,
+                                                    radius: 22,
                                                     backgroundColor:
                                                         Colors.transparent,
                                                     backgroundImage:
-                                                        MemoryImage(userBytes),
+                                                        profileImageProvider ??
+                                                            const AssetImage(
+                                                                "assets/images/default_user.png"),
                                                   );
                                                 } else {
                                                   return Container(
@@ -512,254 +535,37 @@ class _MainScreenState extends State<MainScreen>
                               ),
                             ),
                             // Limited Time Activities Section
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 0, 0, 0),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
-                                children: [
-                                  Text(
-                                    "Limited Time Activities",
-                                    style: TextStyle(
-                                      fontSize: screenWidth *
-                                          0.06, // Dynamic font size
-                                      fontFamily: 'Poppins',
-                                      fontWeight: FontWeight.bold,
-                                      color: isDarkMode
-                                          ? Colors.white
-                                          : Colors.black, // ✅ dynamic color
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      widget.setSearchFilterMode(
-                                          "limited_events_only");
-                                      widget.onTabSwitch(
-                                          1); // Switch to Search tab
-                                    },
-                                    child: Text(
-                                      "See All",
-                                      style: TextStyle(
-                                        color: AppColors
-                                            .blue, // 👈 You can make this dynamic if you want
-                                        fontFamily: 'Poppins',
-                                        fontSize: screenWidth * 0.035,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.4,
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(0, 0, 16, 0),
-                                  child: Row(
-                                    children: limitedEvents.map((event) {
-                                      // print("🧠 Event object: $event");
-
-                                      return LimitedEventCard(
-                                        context: context,
-                                        activity: event,
-                                        imageUrl: getEventImageUrl(event),
-                                        name: event["name"] ?? "Unnamed Event",
-                                        date: event["event_date"] != null
-                                            ? DateFormat('MMM d, yyyy').format(
-                                                DateTime.parse(
-                                                    event["event_date"]))
-                                            : "No date",
-                                        location:
-                                            event["location"] ?? "No location",
-                                        price: event["price"] != null
-                                            ? "\$${event["price"]}"
-                                            : "Free",
-                                      );
-                                    }).toList(),
-                                  ),
-                                ),
-                              ),
+                            LimitedTimeActivitiesSection(
+                              events: limitedEvents,
+                              isDarkMode: isDarkMode,
+                              screenWidth: screenWidth,
+                              screenHeight: screenHeight,
+                              onSeeAll: () {
+                                widget
+                                    .setSearchFilterMode("limited_events_only");
+                                widget.onTabSwitch(1); // switch to Search tab
+                              },
                             ),
 
                             // Popular Categories Section
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    "Popular Categories",
-                                    style: TextStyle(
-                                      fontSize: screenWidth *
-                                          0.06, // Dynamic font size
-                                      fontFamily: 'Poppins',
-                                      fontWeight: FontWeight.bold,
-                                      color: isDarkMode
-                                          ? Colors.white
-                                          : Colors.black, // ✅ dynamic color
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            PopularCategoriesSection(
+                              categories: popularCategories,
+                              screenWidth: screenWidth,
+                              screenHeight: screenHeight,
+                              isDarkMode: isDarkMode,
+                              onCategorySelected: widget.onCategorySelected,
                             ),
 
-                            // SizedBox(height: 6),
-                            SizedBox(
-                              height: screenHeight * 0.27, // Dynamic height
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(0, 0, 16, 0),
-                                  child: Row(
-                                    children: popularCategories.map((category) {
-                                      // Use a map of known image names for each category
-                                      final Map<String, String> imageMap = {
-                                        "Paragliding": "paragliding.webp",
-                                        "Jetski Rentals": "jetski.jpeg",
-                                        "Island Trips": "island.jpg",
-                                        "Picnic Spots": "picnic.webp",
-                                        "Car Events": "cars.webp",
-                                      };
-
-                                      final Map<String, double> alignMap = {
-                                        "Paragliding": 0.0,
-                                        "Jetski Rentals": 0.8,
-                                        "Island Trips": 0.0,
-                                        "Picnic Spots": 0.0,
-                                        "Car Events": 1.0,
-                                      };
-
-                                      final Map<String, String>
-                                          searchCategoryMap = {
-                                        "Paragliding": "Paragliding",
-                                        "Jetski Rentals": "Jetski",
-                                        "Island Trips": "Sea Trips",
-                                        "Picnic Spots": "Picnic",
-                                        "Car Events": "Car Events",
-                                      };
-
-                                      final name = category['name'];
-                                      final image =
-                                          imageMap[name] ?? '__fallback__';
-                                      final align = alignMap[name] ?? 0.0;
-                                      final searchName = searchCategoryMap[name] ?? name;
-
-                                      return GestureDetector(
-                                        onTap: () {
-                                          widget.onCategorySelected(searchName); // ← calls HomeController to switch
-                                        },
-                                        child: CategoryCard(
-                                          image,
-                                          name,
-                                          '',
-                                          int.tryParse(
-                                                  category['activity_count']
-                                                      .toString()) ??
-                                              0,
-                                          align,
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ),
-                                ),
-                              ),
-                            ),
                             // You Might Like Section
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline
-                                    .alphabetic, // This is required for baseline alignment
-                                children: [
-                                  Text(
-                                    "You Might Like",
-                                    style: TextStyle(
-                                      fontSize: screenWidth * 0.06,
-                                      fontFamily: 'Poppins',
-                                      fontWeight: FontWeight.bold,
-                                      color: isDarkMode
-                                          ? Colors.white
-                                          : Colors.black, // ✅ dark mode ready
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      widget.onTabSwitch(
-                                          1); // 👈 Switch to Search tab
-                                    },
-                                    child: Text(
-                                      "See All",
-                                      style: TextStyle(
-                                        color: AppColors
-                                            .blue, // 🔵 Optional: make dynamic if needed
-                                        fontFamily: 'Poppins',
-                                        fontSize: screenWidth * 0.035,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            RecommendedActivitiesSection(
+                              recommendedActivities: recommendedActivities,
+                              screenWidth: screenWidth,
+                              screenHeight: screenHeight,
+                              isDarkMode: isDarkMode,
+                              onSeeAll: () {
+                                widget.onTabSwitch(1); // go to search tab
+                              },
                             ),
-
-                            SizedBox(height: 6),
-
-                            // ✅ Activity List (Dynamically Loaded)
-                            recommendedActivities.isEmpty
-                                ? Padding(
-                                    padding: EdgeInsets.all(32),
-                                    child: Column(
-                                      children: [
-                                        Icon(
-                                          Icons.warning,
-                                          size: 48,
-                                          color: isDarkMode
-                                              ? Colors.grey.shade400
-                                              : Colors.grey, // ✅
-                                        ),
-                                        SizedBox(height: 10),
-                                        Text(
-                                          "No recommendations found.",
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontFamily: 'Poppins',
-                                            color: isDarkMode
-                                                ? Colors.grey.shade400
-                                                : Colors.grey, // ✅
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                : Column(
-                                    children: [
-                                      ...recommendedActivities
-                                          .where((activity) =>
-                                              activity['availability_status'] ==
-                                              true)
-                                          .map((activity) => EventCard(
-                                                context: context,
-                                                activity: activity,
-                                              ))
-                                          .toList(),
-
-                                      SizedBox(
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.12),
-                                      // 👈 this avoids getting covered
-                                    ],
-                                  ),
                           ],
                         ),
                       ),

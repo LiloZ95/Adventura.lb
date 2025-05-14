@@ -13,7 +13,11 @@ class SearchScreen extends StatefulWidget {
   final Function(bool) onScrollChanged;
 
   SearchScreen(
-      {this.filterMode, this.initialCategory, required this.onScrollChanged});
+      {Key? key,
+      this.filterMode,
+      this.initialCategory,
+      required this.onScrollChanged})
+      : super(key: key);
   @override
   _SearchScreenState createState() => _SearchScreenState();
 }
