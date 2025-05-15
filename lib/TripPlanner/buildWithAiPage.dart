@@ -167,14 +167,14 @@ class _BuildWithAIPageState extends State<BuildWithAIPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Colors.grey.shade800,
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
+            colorScheme: const ColorScheme.light(
+              primary: Colors.blue, // Header background color
+              onPrimary: Colors.white, // Header text/icon color
+              onSurface: Colors.black, // Default text color
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: Colors.grey.shade800,
+                foregroundColor: Colors.blue, // Button text color
               ),
             ),
           ),
@@ -442,7 +442,23 @@ class _BuildWithAIPageState extends State<BuildWithAIPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Build with AI"), centerTitle: true),
+      appBar: AppBar(
+        title: const Text(
+          "Build with AI",
+          style: TextStyle(fontFamily: "poppins"),
+        ),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (_currentStep > 0) {
+              setState(() => _currentStep--);
+            } else {
+              Navigator.pop(context); // Exit the page if already at step 0
+            }
+          },
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(

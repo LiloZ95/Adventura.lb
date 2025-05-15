@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:ui';
 import 'dart:typed_data';
 import 'dart:convert';
+import 'package:adventura/Reels/reels_pg.dart';
+import 'package:adventura/Reels/uploadReel.dart';
 import 'package:adventura/config.dart';
 import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
@@ -63,7 +65,8 @@ class _MainScreenState extends State<MainScreen>
   Timer? _scrollStopTimer;
   List<Map<String, dynamic>> popularCategories = [];
   ImageProvider? profileImageProvider;
-
+  bool _isFabOpen = false;
+  double _fabScale = 1.0;
   @override
   void initState() {
     super.initState();
@@ -228,6 +231,18 @@ class _MainScreenState extends State<MainScreen>
     } else {
       throw Exception("Failed to load categories with counts");
     }
+  }
+
+  void _toggleFab() {
+    setState(() {
+      _fabScale = 0.9;
+    });
+    Future.delayed(Duration(milliseconds: 100), () {
+      setState(() {
+        _fabScale = 1.0;
+        _isFabOpen = !_isFabOpen;
+      });
+    });
   }
 
   @override
@@ -570,124 +585,232 @@ class _MainScreenState extends State<MainScreen>
                         ),
                       ),
 
-                      // 🔵 TWO SQUARE BUTTONS ABOVE NAVBAR
-                      Positioned(
-                        bottom: 100, // Adjust depending on your nav bar height
-                        right: 20,
-                        child: Column(
-                          children: [
-                            if (!isLoading && isProvider) ...[
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => TicketScanner(),
-                                    ),
-                                  );
-                                },
+                      // 🔵 TWO BLUE BUTTONS ABOVE NAVBAR
+                      // Wrap this in a Stack to use Positioned and AnimatedPositioned
+                      Stack(
+                        children: [
+                          // Your screen content...
+
+                          if (!isLoading && isProvider) ...[
+                            // 🔹 Create Listing (Widest)
+                            AnimatedPositioned(
+                              duration: Duration(milliseconds: 300),
+                              right: 20,
+                              bottom: _isFabOpen ? 270 : 80,
+                              child: AnimatedOpacity(
+                                duration: Duration(milliseconds: 300),
+                                opacity: _isFabOpen ? 1.0 : 0.0,
                                 child: Container(
-                                  width: screenWidth * 0.14,
-                                  height: 55,
+                                  margin: const EdgeInsets.only(bottom: 8),
                                   decoration: BoxDecoration(
-                                    color: Color.fromRGBO(137, 69, 247, 1),
-                                    borderRadius: BorderRadius.circular(50),
+                                    color: Colors.blue,
+                                    borderRadius: BorderRadius.circular(16),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.8),
-                                        blurRadius: 6,
-                                        offset: Offset(0, 3),
+                                        color: Colors.black26,
+                                        blurRadius: 8,
+                                        offset: Offset(0, 4),
                                       ),
                                     ],
                                   ),
-                                  child: Center(
-                                    child: Image.asset(
-                                      'assets/Icons/qr-code.png',
-                                      width: screenWidth * 0.08,
-                                      height: screenWidth * 0.08,
-                                      fit: BoxFit
-                                          .contain, // ✅ Forces it to stay inside the 30x30 box
+                                  child: TextButton.icon(
+                                    onPressed: () async {
+                                      final box = await Hive.openBox('authBox');
+                                      final userType = box.get('userType');
+                                      final providerId = box.get('providerId');
+
+                                      if (userType != 'provider' ||
+                                          providerId == null) {
+                                        showAppSnackBar(context,
+                                            "Only providers can create listings.");
+                                        return;
+                                      }
+
+                                      Navigator.of(context).push(
+                                        PageRouteBuilder(
+                                          transitionDuration:
+                                              Duration(milliseconds: 450),
+                                          reverseTransitionDuration:
+                                              Duration(milliseconds: 300),
+                                          pageBuilder: (_, __, ___) =>
+                                              const CreateListingPage(),
+                                          transitionsBuilder:
+                                              (_, animation, __, child) {
+                                            final curved = CurvedAnimation(
+                                              parent: animation,
+                                              curve: Curves.easeInOutCubic,
+                                            );
+                                            return SlideTransition(
+                                              position: Tween<Offset>(
+                                                begin: const Offset(0.25, 0),
+                                                end: Offset.zero,
+                                              ).animate(curved),
+                                              child: FadeTransition(
+                                                opacity: curved,
+                                                child: ScaleTransition(
+                                                  scale: Tween<double>(
+                                                          begin: 0.97, end: 1.0)
+                                                      .animate(curved),
+                                                  child: child,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      );
+                                      _toggleFab();
+                                    },
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 24, vertical: 12),
+                                    ),
+                                    icon: const Icon(Icons.add,
+                                        color: Colors.white),
+                                    label: const Text(
+                                      "Create Listing",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontFamily: "poppins",
+                                        fontSize: 14,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                              SizedBox(height: 8),
-                              GestureDetector(
-                                onTap: () async {
-                                  final box = await Hive.openBox('authBox');
-                                  final userType = box.get('userType');
-                                  final providerId = box.get('providerId');
+                            ),
 
-                                  if (userType != 'provider' ||
-                                      providerId == null) {
-                                    showAppSnackBar(context,
-                                        "Only providers can create listings.");
-                                    return;
-                                  }
-
-                                  Navigator.of(context).push(
-                                    PageRouteBuilder(
-                                      transitionDuration:
-                                          const Duration(milliseconds: 450),
-                                      reverseTransitionDuration:
-                                          const Duration(milliseconds: 300),
-                                      pageBuilder: (_, __, ___) =>
-                                          const CreateListingPage(),
-                                      transitionsBuilder:
-                                          (_, animation, __, child) {
-                                        final curved = CurvedAnimation(
-                                            parent: animation,
-                                            curve: Curves.easeInOutCubic);
-
-                                        return SlideTransition(
-                                          position: Tween<Offset>(
-                                            begin: const Offset(0.25,
-                                                0), // Slide in from right subtly
-                                            end: Offset.zero,
-                                          ).animate(curved),
-                                          child: FadeTransition(
-                                            opacity: curved,
-                                            child: ScaleTransition(
-                                              scale: Tween<double>(
-                                                      begin: 0.97, end: 1.0)
-                                                  .animate(
-                                                      curved), // slight zoom-in
-                                              child: child,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  );
-                                },
+                            // 🔹 Scan Barcode (Medium width)
+                            AnimatedPositioned(
+                              duration: Duration(milliseconds: 300),
+                              right: 20,
+                              bottom: _isFabOpen ? 210 : 80,
+                              child: AnimatedOpacity(
+                                duration: Duration(milliseconds: 300),
+                                opacity: _isFabOpen ? 1.0 : 0.0,
                                 child: Container(
-                                  width: screenWidth * 0.14,
-                                  height: 55,
+                                  margin: const EdgeInsets.only(bottom: 8),
                                   decoration: BoxDecoration(
-                                    color: AppColors.blue,
-                                    borderRadius: BorderRadius.circular(12),
+                                    color: Colors.blue,
+                                    borderRadius: BorderRadius.circular(16),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.8),
-                                        blurRadius: 6,
-                                        offset: Offset(0, 3),
+                                        color: Colors.black26,
+                                        blurRadius: 8,
+                                        offset: Offset(0, 4),
                                       ),
                                     ],
                                   ),
-                                  child: Center(
-                                    child: Image.asset(
-                                      'assets/Icons/add.png',
-                                      width: screenWidth * 0.08,
-                                      height: screenWidth * 0.08,
-                                      fit: BoxFit.contain,
+                                  child: TextButton.icon(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                TicketScanner()),
+                                      );
+                                      _toggleFab();
+                                    },
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 14, vertical: 12),
+                                    ),
+                                    icon: const Icon(Icons.qr_code_scanner,
+                                        color: Colors.white),
+                                    label: const Text(
+                                      "Scan Barcode",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontFamily: "poppins",
+                                        fontSize: 14,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ]
+                            ),
+
+                            // 🔹 Create Reel (Shortest label)
+                            AnimatedPositioned(
+                              duration: Duration(milliseconds: 300),
+                              right: 20,
+                              bottom: _isFabOpen ? 150 : 80,
+                              child: AnimatedOpacity(
+                                duration: Duration(milliseconds: 300),
+                                opacity: _isFabOpen ? 1.0 : 0.0,
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue,
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black26,
+                                        blurRadius: 8,
+                                        offset: Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: TextButton.icon(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (_) => UploadReelPage()),
+                                      );
+                                      _toggleFab();
+                                    },
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 12),
+                                    ),
+                                    icon: const Icon(Icons.video_call,
+                                        color: Colors.white),
+                                    label: const Text(
+                                      "Create Reel",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontFamily: "poppins",
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // 🔘 Main FAB Button
+                            Positioned(
+                              bottom: 100,
+                              right: 20,
+                              child: AnimatedScale(
+                                scale: _fabScale,
+                                duration: const Duration(milliseconds: 200),
+                                curve: Curves.easeOutBack,
+                                child: FloatingActionButton(
+                                  backgroundColor: Colors.blue,
+                                  elevation: 6,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(100)),
+                                  onPressed: _toggleFab,
+                                  child: AnimatedRotation(
+                                    duration: const Duration(milliseconds: 300),
+                                    turns: _isFabOpen ? 0.75 : 0,
+                                    curve: Curves.easeInOutCubic,
+                                    child: Icon(
+                                      _isFabOpen ? Icons.close : Icons.add,
+                                      color: Colors.white,
+                                      size: 28,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ],
-                        ),
-                      ),
+                        ],
+                      )
 
                       // Bottom Navigation Bar stays fixed at the bottom
                     ],

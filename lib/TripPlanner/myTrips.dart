@@ -235,13 +235,33 @@ class _MyTripsPageState extends State<MyTripsPage> {
               child: AnimatedOpacity(
                 duration: Duration(milliseconds: 300),
                 opacity: _isFabOpen ? 1.0 : 0.0,
-                child: _buildFabOption(
-                  label: "Create a trip",
-                  icon: Icons.add,
-                  onPressed: () {
-                    print("Manual Trip");
-                    _toggleFab();
-                  },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 8,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: TextButton.icon(
+                    onPressed: () {
+                      print("Manual Trip");
+                      _toggleFab();
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                    ),
+                    icon: Icon(Icons.add, color: Colors.white),
+                    label: Text("Create a trip",
+                        style: TextStyle(color: Colors.white,fontFamily: "poppins")),
+                  ),
                 ),
               ),
             ),
@@ -254,17 +274,38 @@ class _MyTripsPageState extends State<MyTripsPage> {
               child: AnimatedOpacity(
                 duration: Duration(milliseconds: 300),
                 opacity: _isFabOpen ? 1.0 : 0.0,
-                child: _buildFabOption(
-                  label: "Build a trip with AI",
-                  icon: Icons.auto_awesome,
-                  onPressed: () {
-                    _toggleFab();
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const BuildWithAIPage()),
-                    );
-                  },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 8,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: TextButton.icon(
+                    onPressed: () {
+                      _toggleFab();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const BuildWithAIPage()),
+                      );
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                    ),
+                    icon: Icon(Icons.auto_awesome, color: Colors.white),
+                    label: Text("Build a trip with AI",
+                        style: TextStyle(color: Colors.white,
+                        fontFamily: "poppins")),
+                  ),
                 ),
               ),
             ),
@@ -274,21 +315,21 @@ class _MyTripsPageState extends State<MyTripsPage> {
               bottom: 80,
               right: 0,
               child: FloatingActionButton(
-                backgroundColor: Colors.white,
+                backgroundColor: Colors.blue,
                 onPressed: _toggleFab,
                 child: AnimatedRotation(
                   duration: Duration(milliseconds: 300),
                   turns: _isFabOpen ? 0.75 : 0,
                   child: Icon(
                     _isFabOpen ? Icons.close : Icons.add,
-                    color: Colors.black,
+                    color: Colors.white,
                   ),
                 ),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
+      ), 
+    ); 
+  } 
+} 
