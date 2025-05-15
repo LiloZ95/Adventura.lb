@@ -72,12 +72,19 @@ class _BuildWithAIPageState extends State<BuildWithAIPage> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      Navigator.push(
+
+      // 👇 Push to TripResultPage and await result
+      final shouldRefresh = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
           builder: (_) => TripResultPage(plan: data["trip_plan"]),
         ),
       );
+
+      // 👇 If trip was saved, pop back to MyTripsPage and trigger reload
+      if (shouldRefresh == true && mounted) {
+        Navigator.pop(context, true);
+      }
     } else {
       final error =
           jsonDecode(response.body)['error'] ?? "Trip generation failed.";
@@ -468,29 +475,57 @@ class _BuildWithAIPageState extends State<BuildWithAIPage> {
             const SizedBox(height: 16),
             Expanded(child: _buildStepContent()),
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _nextStep,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                child: isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        _currentStep == _totalSteps - 1
-                            ? "Generate Trip"
-                            : "Next",
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'poppins',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16),
+            Row(
+              children: [
+                if (_currentStep > 0) // Only show back if not on first step
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        setState(() {
+                          _currentStep--;
+                        });
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
-              ),
+                      child: const Text(
+                        "Back",
+                        style: TextStyle(
+                          fontFamily: 'poppins',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (_currentStep > 0)
+                  const SizedBox(width: 16), // spacing between buttons
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _nextStep,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Text(
+                            _currentStep == _totalSteps - 1
+                                ? "Generate Trip"
+                                : "Next",
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontFamily: 'poppins',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16),
+                          ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

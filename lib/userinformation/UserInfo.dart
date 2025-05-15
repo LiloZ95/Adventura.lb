@@ -7,6 +7,8 @@ import 'package:adventura/OrganizerProfile/OrganizerProfile.dart';
 import 'package:adventura/Reels/uploadReel.dart';
 import 'package:adventura/Reels/upload_reel_pg.dart';
 import 'package:adventura/Services/activity_service.dart';
+import 'package:adventura/Services/reel_service.dart';
+import 'package:adventura/config.dart';
 import 'package:adventura/userinformation/widgets/Agreements.dart';
 import 'package:adventura/userinformation/widgets/RateUs.dart';
 import 'package:adventura/userinformation/widgets/Security&Privacy.dart';
@@ -369,9 +371,16 @@ class _UserInfoState extends State<UserInfo>
                                         onTap: () {
                                           Navigator.push(
                                             context,
-                                            SecurityPageRoute(
-                                                child: UploadReelPgPage()),
-                                          );
+                                            MaterialPageRoute(
+                                                builder: (_) =>
+                                                    UploadReelPgPage()),
+                                          ).then((shouldRefresh) {
+                                            if (shouldRefresh == true) {
+                                              // ✅ Trigger refresh on ReelsPg if it's mounted
+                                              // You can call a static method or use a global key to refresh ReelsPg
+                                              reelsRefreshNotifier.value++;
+                                            }
+                                          });
                                         },
                                       ),
                                       ProfileOptionTile(

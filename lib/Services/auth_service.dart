@@ -127,6 +127,7 @@ class AuthService {
 
           String userType = user["user_type"] ?? "client";
           await storageBox.put("userType", userType);
+          print("✅ Stored userType: $userType");
 
           if (userType == "provider" && user["provider_id"] != null) {
             await storageBox.put("providerId", user["provider_id"]);

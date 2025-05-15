@@ -166,6 +166,9 @@ app.listen(PORT, HOST, () => {
 	console.log(`🚀 Server running on http://${HOST}:${PORT}`);
 });
 
+const { startWebSocketServer } = require("./websocketServer");
+startWebSocketServer();
+
 // ===========================================================
 // ✅ Handle Fatal Errors Gracefully
 // ===========================================================

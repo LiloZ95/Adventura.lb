@@ -182,4 +182,7 @@ module.exports = {
 	Followers,
 	UserPfp,
 	Addon,
+	Reel,
+	ReelLike,
+	ReelComment,
 };

@@ -5,7 +5,7 @@ const { sequelize } = require("../db/db.js");
 const Reel = require("../models/Reel");
 const Provider = require("../models/Provider");
 const ReelLike = require("../models/ReelLike");
-const ReelComment = require("../models/ReelComment");
+const { ReelComment, UserPfp } = require("../models/index.js");
 const User = require("../models/User");
 
 // ✅ Upload a new reel (Provider-only)
@@ -154,13 +154,45 @@ const postComment = async (req, res) => {
 };
 
 const getComments = async (req, res) => {
-	const { reelId } = req.params;
-	const comments = await ReelComment.findAll({
-		where: { reel_id: reelId },
-		include: [{ model: User, attributes: ["first_name", "last_name"] }],
-		order: [["timestamp", "ASC"]],
-	});
-	res.json(comments);
+	try {
+		const reelId = req.params.reelId;
+
+		const comments = await ReelComment.findAll({
+			where: { reel_id: reelId },
+			include: [
+				{
+					model: User,
+					as: "USER",
+					attributes: ["first_name", "last_name"],
+					include: [
+						{
+							model: UserPfp,
+							as: "user_pfp",
+							attributes: ["image_data"],
+						},
+					],
+				},
+			],
+			order: [["createdAt", "DESC"]],
+		});
+
+		const formatted = comments.map((c) => ({
+			text: c.text,
+			createdAt: c.createdAt,
+			first_name: c.USER?.first_name || "Unknown",
+			last_name: c.USER?.last_name || "",
+			profile_image_bytes: c.USER?.user_pfp?.image_data
+				? `data:image/png;base64,${c.USER.user_pfp.image_data.toString(
+						"base64"
+				  )}`
+				: null,
+		}));
+
+		res.json(formatted);
+	} catch (error) {
+		console.error("❌ Error fetching comments:", error);
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
 };
 
 module.exports = {

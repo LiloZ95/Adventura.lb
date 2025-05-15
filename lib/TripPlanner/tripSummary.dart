@@ -1,9 +1,50 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 class TripResultPage extends StatelessWidget {
   final Map plan;
 
   const TripResultPage({required this.plan});
+  void _saveTrip(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedTripsJson = prefs.getStringList('savedTrips') ?? [];
+
+    final uuid = Uuid();
+    final tripId = uuid.v4();
+    final shortId = tripId.substring(0, 4); // 👈 First 4 chars only
+
+    final newTrip = {
+      'id': tripId,
+      'title': 'Trip on ${plan["start_date"] ?? "Unknown"} [$shortId]',
+      'date': plan["start_date"] ?? "Unknown",
+      'saves': 1,
+      'plan': plan,
+    };
+
+    final alreadyExists = savedTripsJson.any((tripStr) {
+      final decoded = jsonDecode(tripStr);
+      return decoded['id'] == tripId;
+    });
+
+    if (alreadyExists) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Trip already saved.")),
+      );
+      return;
+    }
+
+    savedTripsJson.add(jsonEncode(newTrip));
+    await prefs.setStringList('savedTrips', savedTripsJson);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Trip saved successfully!")),
+    );
+
+    Navigator.pop(context, true);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -169,6 +210,18 @@ class TripResultPage extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     fontFamily: 'poppins'),
+              ),
+              ElevatedButton.icon(
+                onPressed: () => _saveTrip(context),
+                icon: Icon(Icons.bookmark),
+                label: Text("Save Trip"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
               ),
             ],
           ),

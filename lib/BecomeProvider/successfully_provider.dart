@@ -39,9 +39,11 @@ class _ProviderWelcomeScreenState extends State<ProviderWelcomeScreen>
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor:
+          isDarkMode ? const Color(0xFF121212) : const Color(0xFFF6F6F6),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -91,11 +93,11 @@ class _ProviderWelcomeScreenState extends State<ProviderWelcomeScreen>
               ),
               const SizedBox(height: 10),
 
-              const Text(
+              Text(
                 "Thank you for applying as a provider. Our team is reviewing your information and will get back to you shortly.",
                 style: TextStyle(
                     fontSize: 14,
-                    color: Colors.black87,
+                    color: isDarkMode ? Colors.white : Colors.black87,
                     fontFamily: 'poppins',
                     height: 1.6),
                 textAlign: TextAlign.center,
@@ -148,6 +150,7 @@ class _ProviderWelcomeScreenState extends State<ProviderWelcomeScreen>
   }
 
   Widget buildFeatureTile(IconData icon, String text) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
@@ -164,7 +167,7 @@ class _ProviderWelcomeScreenState extends State<ProviderWelcomeScreen>
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 14, fontFamily: 'poppins'),
+              style: TextStyle(fontSize: 14, fontFamily: 'poppins', color: isDarkMode ? Colors.white : Colors.black87),
             ),
           ),
         ],

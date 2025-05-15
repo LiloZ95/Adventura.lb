@@ -1,5 +1,9 @@
+import 'dart:convert';
+
 import 'package:adventura/TripPlanner/buildWithAiPage.dart';
+import 'package:adventura/TripPlanner/tripSummary.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MyTripsPage extends StatefulWidget {
   const MyTripsPage({super.key});
@@ -10,6 +14,11 @@ class MyTripsPage extends StatefulWidget {
 
 class _MyTripsPageState extends State<MyTripsPage> {
   List<Map<String, dynamic>> trips = [];
+  @override
+  void initState() {
+    super.initState();
+    _loadTrips();
+  }
 
   bool _isFabOpen = false;
 
@@ -17,8 +26,35 @@ class _MyTripsPageState extends State<MyTripsPage> {
     setState(() => _isFabOpen = !_isFabOpen);
   }
 
+  void _loadTrips() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedTripsJson = prefs.getStringList('savedTrips') ?? [];
+
+    final loadedTrips = savedTripsJson.map((tripStr) {
+      return jsonDecode(tripStr);
+    }).toList();
+
+    setState(() => trips = List<Map<String, dynamic>>.from(loadedTrips));
+  }
+
   Widget _buildTripTile(Map<String, dynamic> trip) {
     return ListTile(
+      onTap: () {
+        final plan = trip['plan'];
+        if (plan != null && plan is Map) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  TripResultPage(plan: Map<String, dynamic>.from(plan)),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Invalid trip data')),
+          );
+        }
+      },
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       leading: Container(
         width: 48,
@@ -69,7 +105,30 @@ class _MyTripsPageState extends State<MyTripsPage> {
           ),
         ],
       ),
-      trailing: const Icon(Icons.more_vert),
+      trailing: PopupMenuButton<String>(
+        onSelected: (value) async {
+          if (value == 'delete') {
+            final prefs = await SharedPreferences.getInstance();
+            final savedTripsJson = prefs.getStringList('savedTrips') ?? [];
+
+            // Remove the exact trip match (serialized version)
+            final updatedTrips = savedTripsJson.where((tripStr) {
+              final decoded = jsonDecode(tripStr);
+              return decoded['title'] != trip['title'] ||
+                  decoded['date'] != trip['date'];
+            }).toList();
+
+            await prefs.setStringList('savedTrips', updatedTrips);
+            _loadTrips(); // Refresh UI
+          }
+        },
+        itemBuilder: (context) => [
+          const PopupMenuItem(
+            value: 'delete',
+            child: Text('Delete Trip'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -274,38 +333,21 @@ class _MyTripsPageState extends State<MyTripsPage> {
               child: AnimatedOpacity(
                 duration: Duration(milliseconds: 300),
                 opacity: _isFabOpen ? 1.0 : 0.0,
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: TextButton.icon(
-                    onPressed: () {
-                      _toggleFab();
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const BuildWithAIPage()),
-                      );
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                    ),
-                    icon: Icon(Icons.auto_awesome, color: Colors.white),
-                    label: Text("Build a trip with AI",
-                        style: TextStyle(color: Colors.white,
-                        fontFamily: "poppins")),
-                  ),
+                child: _buildFabOption(
+                  label: "Build a trip with AI",
+                  icon: Icons.auto_awesome,
+                  onPressed: () async {
+                    _toggleFab();
+                    final shouldReload = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const BuildWithAIPage()),
+                    );
+
+                    if (shouldReload == true && mounted) {
+                      _loadTrips(); // 🔄 Refresh saved trips list
+                    }
+                  },
                 ),
               ),
             ),

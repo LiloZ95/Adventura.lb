@@ -340,10 +340,10 @@ class BookingCard extends StatelessWidget {
                         color: _getStatusColor(status),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Text(
-                        // Assume status is already capitalized
-                        'Confirmed',
-                        style: TextStyle(
+                      child: Text(
+                        status[0].toUpperCase() +
+                            status.substring(1).toLowerCase(),
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Poppins',
