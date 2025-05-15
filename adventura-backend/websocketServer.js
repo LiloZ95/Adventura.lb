@@ -24,6 +24,7 @@ wss.on("connection", (ws, req) => {
 			}
 
 			// Check if Redis has offline messages
+			const userId = data.userId;
 			const offlineKey = `offline_msgs:${userId}`;
 			const stored = await redis.lrange(offlineKey, 0, -1);
 
@@ -59,8 +60,10 @@ async function pushToUser(userId, title, body) {
 	}
 }
 
-server.listen(4000, () =>
-	console.log("🧠 WebSocket server running on port 4000")
-);
+function startWebSocketServer(port = 4000) {
+	server.listen(port, () => {
+		console.log(`🧠 WebSocket server running on port ${port}`);
+	});
+}
 
-module.exports = { pushToUser };
+module.exports = { pushToUser, startWebSocketServer };

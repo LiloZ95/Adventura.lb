@@ -6,9 +6,7 @@ import 'package:adventura/config.dart';
 import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:adventura/Services/profile_service.dart';
-import 'package:adventura/event_cards/Cards.dart';
 import 'package:adventura/colors.dart';
-import 'package:adventura/utils.dart';
 import 'package:adventura/utils/snackbars.dart';
 import 'package:flutter/material.dart';
 import 'package:adventura/userinformation/UserInfo.dart';
@@ -19,7 +17,6 @@ import 'package:hive/hive.dart';
 import 'package:adventura/Provider%20Only/ticketScanner.dart';
 import 'package:adventura/CreateListing/CreateList.dart';
 import 'package:adventura/Chatbot/chatBot.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart'; // for listEquals
 
 import 'widgets/limited_time_section.dart';

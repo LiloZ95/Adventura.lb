@@ -70,6 +70,9 @@ dependencies:
   web_socket_channel: ^2.4.3
   flutter_local_notifications: ^18.0.1
   smooth_page_indicator: ^1.2.1
+  camera: ^0.11.1
+  permission_handler: ^12.0.0+1
+  path_provider: ^2.1.5
 
   
 

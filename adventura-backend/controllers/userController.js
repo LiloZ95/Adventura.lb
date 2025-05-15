@@ -17,6 +17,8 @@ const Client = require("../models/client.js");
 const Administrator = require("../models/Administrator.js");
 const Booking = require("../models/Booking");
 const Activity = require("../models/Activity");
+const Notification = require("../models/Notification");
+const Followers = require("../models/Followers.js");
 
 const refreshTokens = new Set(); // Store refresh tokens (replace with DB for production)
 const getProviderId = async (userId) => {
@@ -315,7 +317,7 @@ const deleteUser = async (req, res) => {
 	const transaction = await sequelize.transaction();
 
 	try {
-		// 1️⃣ Handle client bookings
+		// 1️⃣ Delete client bookings
 		const client = await Client.findOne({
 			where: { user_id: id },
 			transaction,
@@ -323,11 +325,14 @@ const deleteUser = async (req, res) => {
 		if (client) {
 			const clientId = client.client_id;
 			console.log("→ Deleting bookings for client_id:", clientId);
-			await Booking.destroy({ where: { client_id: clientId }, transaction });
+			await Booking.destroy({
+				where: { client_id: clientId },
+				transaction,
+			});
 			console.log("   ✅ Client bookings deleted");
 		}
 
-		// 2️⃣ Handle provider activity bookings & soft delete activities
+		// 2️⃣ Delete provider bookings + soft delete activities
 		const provider = await Provider.findOne({
 			where: { user_id: id },
 			transaction,
@@ -363,7 +368,7 @@ const deleteUser = async (req, res) => {
 			}
 		}
 
-		// 3️⃣ Admins — informational only
+		// 3️⃣ Admin check
 		const admin = await Administrator.findOne({
 			where: { user_id: id },
 			transaction,
@@ -372,7 +377,7 @@ const deleteUser = async (req, res) => {
 			console.log("ℹ️ Admin account found. Proceeding with deletion.");
 		}
 
-		// 4️⃣ Delete from other tables
+		// 4️⃣ Clean other tables (must come before USER delete)
 		await Provider.destroy({ where: { user_id: id }, transaction });
 		await Administrator.destroy({ where: { user_id: id }, transaction });
 		await Client.destroy({ where: { user_id: id }, transaction });
@@ -380,17 +385,38 @@ const deleteUser = async (req, res) => {
 			where: { user_id: id },
 			transaction,
 		});
-		await User.destroy({ where: { user_id: id }, transaction });
+		await Notification.destroy({ where: { user_id: id }, transaction });
+		await UserActivityInteraction.destroy({ where: { user_id: id }, transaction });
+		await Followers.destroy({ where: { user_id: id }, transaction });
+
+		// ✅ Nullify FK reference to USER in bookings
+		try {
+			await Booking.update(
+				{ booked_by_provider_user_id: null },
+				{ where: { booked_by_provider_user_id: id }, transaction }
+			);
+		} catch (err) {
+			console.error("❌ Failed to nullify booked_by_provider_user_id:", err);
+			throw err;
+		}
+
+		// 5️⃣ Delete user
+		try {
+			await User.destroy({ where: { user_id: id }, transaction });
+		} catch (err) {
+			console.error("❌ Failed to delete user from USER table:", err);
+			throw err;
+		}
 
 		await transaction.commit();
-		res.status(200).json({
+		return res.status(200).json({
 			success: true,
 			message: `User ${id} and all related data/bookings/activities deleted.`,
 		});
 	} catch (err) {
 		console.error("❌ Error during user deletion:", err);
 		await transaction.rollback();
-		res.status(500).json({
+		return res.status(500).json({
 			success: false,
 			error: err.message || "Server error during user deletion.",
 		});
@@ -445,7 +471,7 @@ const loginUser = async (req, res) => {
 				userId: user.user_id,
 				email: user.email,
 				userType: user.user_type,
-				provider_id: provider_id, 
+				provider_id: provider_id,
 			},
 			process.env.JWT_SECRET,
 			{ expiresIn: "7d" }
@@ -738,7 +764,9 @@ const resetPassword = async (req, res) => {
 	const { email, newPassword } = req.body;
 
 	if (!email || !newPassword) {
-		return res.status(400).json({ error: "Email and new password are required." });
+		return res
+			.status(400)
+			.json({ error: "Email and new password are required." });
 	}
 
 	try {
@@ -750,7 +778,9 @@ const resetPassword = async (req, res) => {
 		const hashedPassword = await bcrypt.hash(newPassword, 10);
 		await user.update({ password_hash: hashedPassword });
 
-		res.status(200).json({ success: true, message: "Password reset successful." });
+		res
+			.status(200)
+			.json({ success: true, message: "Password reset successful." });
 	} catch (error) {
 		console.error("❌ Error resetting password:", error);
 		res.status(500).json({ error: "Server error." });

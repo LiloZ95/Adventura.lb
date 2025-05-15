@@ -19,7 +19,9 @@ const getUserBookings = async (req, res) => {
 				{
 					model: Activity,
 					as: "activity",
+					include: ["activity_images"],
 				},
+				
 			],
 			order: [["booking_date", "DESC"]],
 		});

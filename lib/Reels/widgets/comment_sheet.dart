@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:hive/hive.dart';
 import 'package:adventura/config.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
 class CommentSheet extends StatefulWidget {
   final int reelId;
@@ -83,16 +85,56 @@ class _CommentSheetState extends State<CommentSheet> {
                           child: Text("No comments",
                               style: TextStyle(color: Colors.white70)))
                       : ListView.builder(
-                          controller: controller,
                           itemCount: comments.length,
-                          itemBuilder: (_, index) {
-                            final c = comments[index];
+                          itemBuilder: (context, index) {
+                            final comment = comments[index];
+
+                            final firstName =
+                                comment?["first_name"] ?? "Unknown";
+                            final lastName = comment?["last_name"] ?? "";
+
                             return ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: Colors.transparent,
+                                backgroundImage: (() {
+                                  final img = comment?["profile_image_bytes"];
+                                  final isDarkMode =
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark;
+
+                                  ImageProvider<Object> fallback = AssetImage(
+                                    isDarkMode
+                                        ? "assets/images/default_user_white.png"
+                                        : "assets/images/default_user.png",
+                                  );
+
+                                  if (img != null &&
+                                      img is String &&
+                                      img.isNotEmpty) {
+                                    try {
+                                      // Remove the data URI prefix if present
+                                      final base64Str = img.contains(",")
+                                          ? img.split(",")[1]
+                                          : img;
+                                      return MemoryImage(
+                                          base64Decode(base64Str));
+                                    } catch (e) {
+                                      print(
+                                          "⚠️ Failed to decode profile image: $e");
+                                    }
+                                  }
+
+                                  return fallback;
+                                })(),
+                              ),
                               title: Text(
-                                  "${c['user']['first_name']} ${c['user']['last_name']}",
-                                  style: TextStyle(color: Colors.white)),
-                              subtitle: Text(c['text'],
-                                  style: TextStyle(color: Colors.white70)),
+                                "$firstName $lastName",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              subtitle: Text(
+                                comment?["text"] ?? "",
+                                style: TextStyle(color: Colors.grey[300]),
+                              ),
                             );
                           },
                         ),

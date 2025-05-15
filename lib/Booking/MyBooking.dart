@@ -96,15 +96,18 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                 "date": b["booking_date"],
                 "price": b["total_price"]?.toString() ?? "0.0",
                 "description": activity["description"] ?? "",
-                "activity_images": (activity["activity_images"] ?? [])
-                    .map<String>((img) => img.toString())
+                "activity_images": (b["activity"]["activity_images"] ?? [])
+                    .map<String>((img) => img["image_url"].toString())
                     .toList(),
+                "listing_type": b["activity"]["listing_type"],
+                "start_date": b["activity"]["start_date"],
+                "activity_id": b["activity"]["activity_id"],
               },
               "bookingId": "#${b["booking_id"]}",
               "guests": "1 Guest",
               "status": (() {
                 final s = b["status"]?.toLowerCase();
-                if (s == "pending") return "Upcoming";
+                if (s == "pending" || s == "confirmed") return "Upcoming";
                 return "Past";
               })(),
               "raw_status": b["status"],

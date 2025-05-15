@@ -62,9 +62,11 @@ class _PurchaseConfirmationPageState extends State<PurchaseConfirmationPage>
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor:
+          isDarkMode ? const Color(0xFF121212) : const Color(0xFFF6F6F6),
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: Center(
@@ -107,7 +109,7 @@ class _PurchaseConfirmationPageState extends State<PurchaseConfirmationPage>
                     fontSize: screenWidth * 0.07,
                     fontWeight: FontWeight.bold,
                     fontFamily: "Poppins",
-                    color: Colors.black,
+                    color: isDarkMode ? Colors.white : Colors.black,
                   ),
                 ),
                 SizedBox(height: screenHeight * 0.015),
@@ -117,7 +119,7 @@ class _PurchaseConfirmationPageState extends State<PurchaseConfirmationPage>
                   style: TextStyle(
                     fontSize: screenWidth * 0.042,
                     fontFamily: "Poppins",
-                    color: Colors.grey.shade700,
+                    color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
                   ),
                 ),
                 SizedBox(height: screenHeight * 0.05),
@@ -155,7 +157,7 @@ class _PurchaseConfirmationPageState extends State<PurchaseConfirmationPage>
                     label: Text(
                       "View E-Ticket",
                       style: TextStyle(
-                        color: Colors.white,
+                        color: isDarkMode ? Colors.white : Colors.black,
                         fontSize: screenWidth * 0.045,
                         fontFamily: "Poppins",
                       ),

@@ -1,10 +1,15 @@
+import 'package:adventura/config.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hive/hive.dart';
-import 'package:adventura/Services/reel_service.dart'; // 👈 Import the logic
-import 'package:adventura/utils/snackbars.dart'; // Optional helper if you have it
+import 'package:adventura/Services/reel_service.dart';
+import 'package:adventura/utils/snackbars.dart';
 
 class UploadReelPgPage extends StatefulWidget {
+  final VoidCallback? onUploadComplete;
+
+  UploadReelPgPage({this.onUploadComplete});
+
   @override
   _UploadReelPgPageState createState() => _UploadReelPgPageState();
 }
@@ -35,13 +40,8 @@ class _UploadReelPgPageState extends State<UploadReelPgPage> {
     );
 
     if (result["success"]) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("✅ ${result["message"]}")),
-      );
-      setState(() {
-        _selectedVideo = null;
-        _descriptionController.clear();
-      });
+      reelsRefreshNotifier.value++;
+      Navigator.pop(context, true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("❌ ${result["error"]}")),
@@ -51,72 +51,125 @@ class _UploadReelPgPageState extends State<UploadReelPgPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryBlue = Colors.blue;
 
     return Scaffold(
-      appBar: AppBar(title: Text("Upload Reel")),
+      backgroundColor:
+          isDark ? const Color(0xFF121212) : const Color(0xFFF6F6F6),
+      appBar: AppBar(
+        title: Text("Upload Reel"),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: primaryBlue,
+      ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(children: [
-          GestureDetector(
-            onTap: () async {
-              final picked = await _picker.pickVideo(source: ImageSource.gallery);
-              if (picked != null) setState(() => _selectedVideo = picked);
-            },
-            child: Container(
-              height: 200,
-              decoration: BoxDecoration(
-                color: isDarkMode ? Colors.grey[900] : Colors.grey[200],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _selectedVideo == null ? Colors.grey : Colors.green,
-                  width: 1.5,
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Upload Box
+            GestureDetector(
+              onTap: () async {
+                final picked =
+                    await _picker.pickVideo(source: ImageSource.gallery);
+                if (picked != null) setState(() => _selectedVideo = picked);
+              },
+              child: AnimatedContainer(
+                duration: Duration(milliseconds: 300),
+                height: 220,
+                decoration: BoxDecoration(
+                  color:
+                      isDark ? Colors.grey[850] : primaryBlue.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color:
+                        _selectedVideo == null ? Colors.blueGrey : Colors.green,
+                    width: 1.5,
+                  ),
+                ),
+                child: Center(
+                  child: _selectedVideo == null
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.video_library_rounded,
+                                size: 48, color: primaryBlue),
+                            SizedBox(height: 8),
+                            Text("Tap to upload video",
+                                style: TextStyle(color: Colors.black54)),
+                          ],
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.check_circle_rounded,
+                                size: 42, color: Colors.green),
+                            SizedBox(height: 4),
+                            Text("Video selected"),
+                            SizedBox(height: 4),
+                            Text(
+                              _selectedVideo!.name,
+                              style: TextStyle(
+                                  fontSize: 12, color: Colors.black87),
+                            ),
+                          ],
+                        ),
                 ),
               ),
-              child: Center(
-                child: _selectedVideo == null
-                    ? Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.video_library, size: 40, color: Colors.grey),
-                          SizedBox(height: 8),
-                          Text("Tap to add a video"),
-                        ],
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.check_circle, color: Colors.green, size: 36),
-                          Text("Video selected"),
-                          SizedBox(height: 4),
-                          Text(_selectedVideo!.name, style: TextStyle(fontSize: 12)),
-                        ],
-                      ),
+            ),
+
+            SizedBox(height: 30),
+
+            // Organizer Field
+            TextField(
+              controller: _organizerController,
+              readOnly: true,
+              decoration: InputDecoration(
+                labelText: "Organizer",
+                floatingLabelStyle: TextStyle(color: primaryBlue),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: Icon(Icons.person, color: primaryBlue),
               ),
             ),
-          ),
-          SizedBox(height: 24),
-          TextField(
-            controller: _organizerController,
-            readOnly: true,
-            decoration: InputDecoration(labelText: "Organizer"),
-          ),
-          SizedBox(height: 16),
-          TextField(
-            controller: _descriptionController,
-            maxLines: 3,
-            decoration: InputDecoration(
-              hintText: "Write something about the reel...",
-              labelText: "Description",
+
+            SizedBox(height: 20),
+
+            // Description Field
+            TextField(
+              controller: _descriptionController,
+              maxLines: 4,
+              decoration: InputDecoration(
+                labelText: "Description",
+                hintText: "Write something about the reel...",
+                floatingLabelStyle: TextStyle(color: primaryBlue),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: Icon(Icons.edit, color: primaryBlue),
+              ),
             ),
-          ),
-          SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: _handleUpload,
-            icon: Icon(Icons.cloud_upload),
-            label: Text("Upload Reel"),
-          ),
-        ]),
+
+            SizedBox(height: 32),
+
+            // Upload Button
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryBlue,
+                padding: EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                elevation: 4,
+              ),
+              onPressed: _handleUpload,
+              icon: Icon(Icons.cloud_upload_rounded),
+              label: Text("Upload Reel",
+                  style: TextStyle(
+                      fontSize: 16,
+                      color: isDark ? Colors.white : Colors.black)),
+            ),
+          ],
+        ),
       ),
     );
   }

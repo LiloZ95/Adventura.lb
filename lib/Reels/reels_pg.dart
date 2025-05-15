@@ -1,6 +1,6 @@
+import 'package:adventura/config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:video_player/video_player.dart';
 import 'package:adventura/services/reel_service.dart';
 
 import 'widgets/ReelPgItem.dart';
@@ -22,10 +22,31 @@ class ReelsPgScreen extends StatefulWidget {
 class _ReelsPgScreenState extends State<ReelsPgScreen> {
   late Future<List<Map<String, dynamic>>> _reelsFuture;
 
+  // Future<void> _refreshReels() async {
+  //   final updatedReels = await ReelService.fetchReelsFromServer();
+  //   setState(() {
+  //     _reelsFuture = updatedReels;
+  //   });
+  // }
+
   @override
   void initState() {
     super.initState();
+
     _reelsFuture = ReelService.fetchReelsFromServer();
+
+    reelsRefreshNotifier.addListener(() async {
+      final updatedReels = await ReelService.fetchReelsFromServer();
+      setState(() {
+        _reelsFuture = Future.value(updatedReels);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    reelsRefreshNotifier.removeListener(() {});
+    super.dispose();
   }
 
   @override

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:adventura/config.dart';
 import 'package:http/http.dart' as http;
+import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -22,7 +23,7 @@ class PushService {
     print("📡 Connecting to ws://$wsUrl");
     // 2. Connect to WebSocket
     _channel = WebSocketChannel.connect(
-      Uri.parse('ws://$wsUrl'),
+      Uri.parse('$wsUrl'),
     );
 
     print("🔐 Sending auth with userId: $userId");
@@ -31,6 +32,7 @@ class PushService {
       "type": "auth",
       "userId": userId,
     }));
+    print("📡 Sent registration for userId: $userId");
 
     // 4. Listen for push messages
     _channel.stream.listen(

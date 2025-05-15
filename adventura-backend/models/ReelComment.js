@@ -28,7 +28,8 @@ const ReelComment = sequelize.define(
 	},
 	{
 		tableName: "reel_comment",
-		timestamps: false,
+		timestamps: true,
+		underscored: true,
 	}
 );
 
