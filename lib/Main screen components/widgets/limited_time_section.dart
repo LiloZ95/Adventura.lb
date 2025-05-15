@@ -61,9 +61,15 @@ class LimitedTimeActivitiesSection extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(0, 0, 16, 0),
               child: Row(
-                children: events.map((event) {
+                children: events.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final event = entry.value;
+                  final uniqueKey = event['id'] != null
+                      ? ValueKey(event['id'])
+                      : ValueKey("event_$index");
+
                   return LimitedEventCard(
-                    key: ValueKey(event['id']), // ✅ enables tracking
+                    key: uniqueKey,
                     activity: event,
                     imageUrl: getEventImageUrl(event),
                     name: event["name"] ?? "Unnamed Event",
