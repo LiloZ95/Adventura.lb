@@ -274,7 +274,7 @@ const getAllActivities = async (req, res) => {
 		}
 
 		if (rating) {
-			where.rating = { [Op.gte]: parseFloat(rating) }; // only if you have a rating column!
+			where.rating = { [Op.gte]: parseFloat(rating) }; // if we have a rating column
 		}
 
 		where.availability_status = true;

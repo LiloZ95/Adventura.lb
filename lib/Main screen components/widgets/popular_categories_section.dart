@@ -19,6 +19,7 @@ class PopularCategoriesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    
     return Column(
       children: [
         Padding(
@@ -48,26 +49,41 @@ class PopularCategoriesSection extends StatelessWidget {
                 children: categories.map((category) {
                   final Map<String, String> imageMap = {
                     "Paragliding": "paragliding.webp",
-                    "Jetski Rentals": "jetski.jpeg",
-                    "Island Trips": "island.jpg",
-                    "Picnic Spots": "picnic.webp",
+                    "Jetski": "jetski.jpeg",
+                    "Sea Trips": "island.jpg",
+                    "Picnic": "picnic.webp",
                     "Car Events": "cars.webp",
+                    "Tours": "nakhil.jpg",
+                    "Sunsets": "sunset.jpg",
+                    "Festivals": "festivals.jpg",
+                    "Museums": "museum.jpg",
+                    "Snow Skiing": "snow.jpg",
+                    "Boats": "boats.jpg",
+                    "Hikes": "hikes.jpg",
                   };
 
                   final Map<String, double> alignMap = {
                     "Paragliding": 0.0,
-                    "Jetski Rentals": 0.8,
-                    "Island Trips": 0.0,
-                    "Picnic Spots": 0.0,
+                    "Jetski": 0.8,
+                    "Sea Trips": 0.0,
+                    "Picnic": 0.0,
                     "Car Events": 1.0,
+                    "Tours": 0.0,
+                    "Sunsets": 0.0,
+                    "Festivals": 0.0,
+                    "Museums": 0.0,
                   };
 
                   final Map<String, String> searchCategoryMap = {
                     "Paragliding": "Paragliding",
-                    "Jetski Rentals": "Jetski",
-                    "Island Trips": "Sea Trips",
-                    "Picnic Spots": "Picnic",
+                    "Jetski": "Jetski",
+                    "Sea Trips": "Sea Trips",
+                    "Picnic": "Picnic",
                     "Car Events": "Car Events",
+                    "Tours": "Tours",
+                    "Sunsets": "Sunsets",
+                    "Festivals": "Festivals",
+                    "Museums": "Museums",
                   };
 
                   final name = category['name'];
