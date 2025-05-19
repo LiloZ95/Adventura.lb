@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'package:adventura/Reels/reels_pg.dart';
 import 'package:adventura/Reels/uploadReel.dart';
+import 'package:adventura/Reels/upload_reel_pg.dart';
 import 'package:adventura/config.dart';
 import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
@@ -754,7 +755,7 @@ class _MainScreenState extends State<MainScreen>
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                            builder: (_) => UploadReelPage()),
+                                            builder: (_) => UploadReelPgPage()),
                                       );
                                       _toggleFab();
                                     },
