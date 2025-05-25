@@ -282,7 +282,7 @@ class _MainScreenState extends State<MainScreen>
                           children: [
                             // Header Section
                             Padding(
-                              padding: EdgeInsets.fromLTRB(16, 10, 16, 6),
+                              padding: EdgeInsets.fromLTRB(16, 10, 0, 6),
                               child: Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
@@ -290,155 +290,10 @@ class _MainScreenState extends State<MainScreen>
                                 children: [
                                   // Text Content
                                   Expanded(
-                                    child: Column(
+                                    child: Row(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          "Welcome \nback, $firstName !",
-                                          style: TextStyle(
-                                            height: 0.96,
-                                            fontSize: screenWidth * 0.075,
-                                            fontWeight: FontWeight.bold,
-                                            fontFamily: 'Poppins',
-                                            color: isDarkMode
-                                                ? Colors.white
-                                                : Colors.black,
-                                          ),
-                                        ),
-                                        SizedBox(height: 10.0),
-                                        // **Current Location Dropdown**
-                                        Text(
-                                          "Current Location",
-                                          style: TextStyle(
-                                            fontSize: screenWidth * 0.045,
-                                            color: isDarkMode
-                                                ? Colors.grey.shade300
-                                                : Colors.grey.shade400,
-                                          ),
-                                        ),
-                                        Container(
-                                            width: 130,
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 12),
-                                            decoration: BoxDecoration(
-                                              color: isDarkMode
-                                                  ? const Color.fromRGBO(
-                                                      200, 200, 200, 0.08)
-                                                  : const Color.fromRGBO(
-                                                      124, 124, 124, 0.07),
-                                              border: Border.all(
-                                                color: isDarkMode
-                                                    ? Colors.grey.shade700
-                                                    : Colors.white,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(14),
-                                            ),
-                                            child: DropdownButtonHideUnderline(
-                                                child: DropdownButton<String>(
-                                                    value: selectedLocation,
-                                                    items: [
-                                                      "Tripoli",
-                                                      "Beirut",
-                                                      "Jbeil",
-                                                      "Jounieh",
-                                                      "Sayda"
-                                                    ].map((location) {
-                                                      return DropdownMenuItem(
-                                                        value: location,
-                                                        child: Text(
-                                                          location,
-                                                          style: TextStyle(
-                                                            fontFamily:
-                                                                'poppins',
-                                                            color: isDarkMode
-                                                                ? Colors.white
-                                                                : Colors.black,
-                                                          ),
-                                                        ),
-                                                      );
-                                                    }).toList(),
-                                                    onChanged: (newValue) {
-                                                      setState(() {
-                                                        selectedLocation =
-                                                            newValue!;
-                                                      });
-                                                    }))),
-                                      ],
-                                    ),
-                                  ),
-                                  // Icons
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(0, 0, 0, 0),
-                                    child: Row(
-                                      children: [
-                                        IconButton(
-                                          onPressed: () {
-                                            Navigator.push(
-                                              context,
-                                              PageRouteBuilder(
-                                                transitionDuration:
-                                                    Duration(milliseconds: 250),
-                                                pageBuilder: (context,
-                                                        animation,
-                                                        secondaryAnimation) =>
-                                                    AdventuraChatPage(
-                                                  userName: firstName,
-                                                  userId: userId,
-                                                ),
-                                                transitionsBuilder: (context,
-                                                    animation,
-                                                    secondaryAnimation,
-                                                    child) {
-                                                  return FadeTransition(
-                                                    opacity: animation,
-                                                    child: child,
-                                                  );
-                                                },
-                                              ),
-                                            );
-                                          },
-                                          icon: Image.asset(
-                                            'assets/Icons/ai.png',
-                                            width: screenWidth * 0.075,
-                                            height: screenWidth * 0.075,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          onPressed: () {
-                                            Navigator.push(
-                                              context,
-                                              PageRouteBuilder(
-                                                transitionDuration:
-                                                    Duration(milliseconds: 250),
-                                                pageBuilder: (context,
-                                                        animation,
-                                                        secondaryAnimation) =>
-                                                    NotificationScreen(),
-                                                transitionsBuilder: (context,
-                                                    animation,
-                                                    secondaryAnimation,
-                                                    child) {
-                                                  return FadeTransition(
-                                                    opacity: animation,
-                                                    child: child,
-                                                  );
-                                                },
-                                              ),
-                                            );
-                                          },
-                                          icon: Icon(
-                                            Icons
-                                                .notifications, // or Icons.notifications
-                                            size: screenWidth * 0.07,
-                                            color: Theme.of(context)
-                                                .iconTheme
-                                                .color,
-                                          ),
-                                        ),
-                                        SizedBox(width: 4),
                                         GestureDetector(
                                           onTap: () => Navigator.push(
                                             context,
@@ -534,19 +389,122 @@ class _MainScreenState extends State<MainScreen>
                                                 ),
                                                 child: Icon(
                                                   Icons.person,
-                                                  size: 26,
+                                                  size: 30,
                                                   color: Colors.grey.shade400,
                                                 ),
                                               );
                                             },
                                           ),
                                         ),
+                                        Padding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                              10, 13, 0, 0),
+                                          child: Text(
+                                            "Welcome , $firstName !",
+                                            style: TextStyle(
+                                              height: 0.96,
+                                              fontSize: screenWidth * 0.055,
+                                              fontWeight: FontWeight.bold,
+                                              fontFamily: 'Poppins',
+                                              color: isDarkMode
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(height: 10.0),
+                                      ],
+                                    ),
+                                  ),
+                                  // Icons
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.fromLTRB(0, 0, 0, 0),
+                                    child: Row(
+                                      children: [
+                                        IconButton(
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              PageRouteBuilder(
+                                                transitionDuration:
+                                                    Duration(milliseconds: 250),
+                                                pageBuilder: (context,
+                                                        animation,
+                                                        secondaryAnimation) =>
+                                                    AdventuraChatPage(
+                                                  userName: firstName,
+                                                  userId: userId,
+                                                ),
+                                                transitionsBuilder: (context,
+                                                    animation,
+                                                    secondaryAnimation,
+                                                    child) {
+                                                  return FadeTransition(
+                                                    opacity: animation,
+                                                    child: child,
+                                                  );
+                                                },
+                                              ),
+                                            );
+                                          },
+                                          icon: Image.asset(
+                                            'assets/Icons/ai.png',
+                                            width: screenWidth * 0.075,
+                                            height: screenWidth * 0.075,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              PageRouteBuilder(
+                                                transitionDuration:
+                                                    Duration(milliseconds: 250),
+                                                pageBuilder: (context,
+                                                        animation,
+                                                        secondaryAnimation) =>
+                                                    NotificationScreen(),
+                                                transitionsBuilder: (context,
+                                                    animation,
+                                                    secondaryAnimation,
+                                                    child) {
+                                                  return FadeTransition(
+                                                    opacity: animation,
+                                                    child: child,
+                                                  );
+                                                },
+                                              ),
+                                            );
+                                          },
+                                          icon: Icon(
+                                            Icons
+                                                .notifications, // or Icons.notifications
+                                            size: screenWidth * 0.07,
+                                            color: Theme.of(context)
+                                                .iconTheme
+                                                .color,
+                                          ),
+                                        ),
+                                        SizedBox(width: 4),
                                       ],
                                     ),
                                   ),
                                 ],
                               ),
                             ),
+
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: Divider(
+                                thickness: 1,
+                                color: isDarkMode
+                                    ? Colors.grey.shade700
+                                    : Colors.grey,
+                              ),
+                            ),
+
                             // Limited Time Activities Section
                             LimitedTimeActivitiesSection(
                               events: limitedEvents,

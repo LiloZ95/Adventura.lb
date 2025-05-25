@@ -68,14 +68,27 @@ class _AvailabilityModalState extends State<AvailabilityModal> {
   }
 
   Future<void> fetchHighlightedDates() async {
+    setState(() {
+      isLoading = true;
+      highlightedDates.clear();
+      _initialValidDate = null; 
+    });
     final rawDates =
         await AvailabilityService.fetchAvailableDates(widget.activityId);
 
+    final today = DateTime.now();
+
     setState(() {
-      highlightedDates = rawDates.map((d) => DateTime.parse(d)).toSet();
+      highlightedDates = rawDates
+          .map((d) => DateTime.parse(d))
+          .where((d) => !d.isBefore(today)) // Remove past dates here
+          .toSet();
+
       if (highlightedDates.isNotEmpty) {
-        _initialValidDate = highlightedDates.first;
+        _initialValidDate = highlightedDates.reduce((a, b) =>
+            a.isBefore(b) ? a : b); // Pick earliest remaining valid date
       }
+      isLoading = false;
     });
   }
 
@@ -189,7 +202,7 @@ class _AvailabilityModalState extends State<AvailabilityModal> {
                     child: _initialValidDate == null
                         ? const Center(child: CircularProgressIndicator())
                         : CalendarDatePicker(
-                            initialDate: _initialValidDate!,
+                            initialDate: _initialValidDate ?? DateTime.now(),
                             firstDate: DateTime.now(),
                             lastDate:
                                 DateTime.now().add(const Duration(days: 60)),
@@ -199,13 +212,23 @@ class _AvailabilityModalState extends State<AvailabilityModal> {
                                 fetchSlots(date);
                               }
                             },
-                            selectableDayPredicate: (day) {
-                              return highlightedDates.contains(
-                                  DateTime(day.year, day.month, day.day));
-                            },
+                            selectableDayPredicate: highlightedDates.isEmpty
+                                ? (_) => false // No days are selectable
+                                : (day) => highlightedDates.contains(
+                                    DateTime(day.year, day.month, day.day)),
                           ),
                   ),
                 ),
+                if (highlightedDates.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 16),
+                    child: Center(
+                      child: Text(
+                        "No available dates",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ),
                 if (isLoading)
                   Positioned.fill(
                     child: Container(

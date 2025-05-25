@@ -44,7 +44,7 @@ router.post(
 );
 router.put("/status/:id", limiter, bookingController.updateBookingStatus);
 router.post("/create", bookingController.createBooking);
-router.get("/user/:clientId", bookingController.getUserBookings);
+router.get("/user/:userId", bookingController.getUserBookings);
 router.get("/by-provider/:userId", bookingController.getBookingsByProviderUserId);
 router.put("/cancel/:id", bookingController.cancelBooking);
 

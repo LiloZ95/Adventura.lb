@@ -449,7 +449,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                               date: date,
                               slot: widget.selectedSlot,
                               totalPrice: totalDue,
-                              clientId: userType == "client" ? userId : null,
+                              userId: userId, // ✅ USE THIS
                               providerId: userType == "provider"
                                   ? providerId
                                   : null, // ✅ USE THIS

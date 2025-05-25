@@ -12,16 +12,24 @@ const { get } = require("../routes/availabilityRoutes");
 
 const getUserBookings = async (req, res) => {
 	try {
-		const { clientId } = req.params;
+		const { userId } = req.params;
+		if (!userId) {
+			return res.status(400).json({ message: "Missing user ID" });
+		}
+
+		const client = await Client.findOne({ where: { user_id: userId } });
+		if (!client) {
+			return res.status(404).json({ message: "Client not found for user" });
+		}
+
 		const userBookings = await Booking.findAll({
-			where: { client_id: clientId },
+			where: { client_id: client.client_id },
 			include: [
 				{
 					model: Activity,
 					as: "activity",
 					include: ["activity_images"],
 				},
-				
 			],
 			order: [["booking_date", "DESC"]],
 		});
@@ -115,14 +123,8 @@ const createBooking = async (req, res) => {
 	try {
 		console.log("📥 Booking Payload:", req.body);
 
-		let {
-			activity_id,
-			client_id,
-			booking_date,
-			slot,
-			total_price,
-			provider_id,
-		} = req.body;
+		let { activity_id, user_id, booking_date, slot, total_price, provider_id } =
+			req.body;
 
 		// ✅ 1. Validate ticket count
 		if (!total_price || total_price <= 0) {
@@ -143,9 +145,19 @@ const createBooking = async (req, res) => {
 				.status(403)
 				.json({ message: "You can't book your own activity." });
 		}
+		let client_id = null;
+		let bookedByUserId = user_id; // ← ALWAYS start with the real user_id
 
-		// ✅ 4. Determine who is making the booking
-		let bookedByUserId = client_id;
+		if (user_id) {
+			// user is a normal client
+			const client = await Client.findOne({ where: { user_id } });
+			if (!client) {
+				return res
+					.status(404)
+					.json({ message: "Client not found for user_id" });
+			}
+			client_id = client.client_id; // ← use this ONLY for the booking row
+		}
 		if (!client_id && provider_id) {
 			const Provider = require("../models/Provider");
 			const provider = await Provider.findByPk(provider_id);
@@ -165,7 +177,7 @@ const createBooking = async (req, res) => {
 		if (activity.listing_type === "oneTime") {
 			const newBooking = await Booking.create({
 				activity_id,
-				client_id: client_id ?? null,
+				client_id,
 				booking_date,
 				slot,
 				total_price,
@@ -206,7 +218,7 @@ const createBooking = async (req, res) => {
 		// ✅ 7. Proceed with booking and update seats
 		const newBooking = await Booking.create({
 			activity_id,
-			client_id: client_id ?? null,
+			client_id,
 			booking_date,
 			slot,
 			total_price,
@@ -237,7 +249,8 @@ const createBooking = async (req, res) => {
 const getBookingsByProviderUserId = async (req, res) => {
 	try {
 		const providerUserId = req.params.userId;
-		if (!providerUserId) return res.status(400).json({ message: "Missing user ID" });
+		if (!providerUserId)
+			return res.status(400).json({ message: "Missing user ID" });
 
 		console.log("📥 Provider booking fetch for userId:", providerUserId);
 
@@ -259,7 +272,6 @@ const getBookingsByProviderUserId = async (req, res) => {
 		res.status(500).json({ message: "Server error", error: error.message });
 	}
 };
-
 
 const updateBookingStatus = async (req, res) => {
 	try {
@@ -286,7 +298,10 @@ const cancelBooking = async (req, res) => {
 		const { reason } = req.body;
 
 		const booking = await Booking.findByPk(id, {
-			include: [{ model: Activity, as: "activity" }],
+			include: [
+				{ model: Activity, as: "activity" },
+				{ model: Client, as: "client" },
+			],
 		});
 
 		if (!booking) {
@@ -303,7 +318,7 @@ const cancelBooking = async (req, res) => {
 
 		// Create notification
 		await Notification.create({
-			user_id: booking.client_id,
+			user_id: booking.client?.user_id ?? booking.booked_by_provider_user_id,
 			title: "Booking Cancelled",
 			description: `Your booking for "${booking.activity.name}" on ${booking.booking_date} is cancelled.`,
 			icon_type: "cancel", // 👈 correct field name and value

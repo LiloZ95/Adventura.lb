@@ -157,7 +157,7 @@ class _PurchaseConfirmationPageState extends State<PurchaseConfirmationPage>
                     label: Text(
                       "View E-Ticket",
                       style: TextStyle(
-                        color: isDarkMode ? Colors.white : Colors.black,
+                        color: Colors.white,
                         fontSize: screenWidth * 0.045,
                         fontFamily: "Poppins",
                       ),
