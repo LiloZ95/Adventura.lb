@@ -92,6 +92,7 @@ const adminNotificationRoutes = require("./routes/adminNotificationRoutes");
 const followerRoutes = require("./routes/followerRoutes");
 const notificationPreferenceRoutes = require("./routes/notificationPreferenceRoutes");
 const reelRoutes = require("./routes/reelRoutes");
+const chatbotRoutes = require('./routes/chatbotRoutes'); // adjust path if needed
 
 // const socialAuthRoutes = require('./routes/socialAuthRoutes'); // optional
 
@@ -133,7 +134,7 @@ app.use(
   })
 );
 app.use("/reels", reelRoutes); // Reel routes
-
+app.use('/chatbot', chatbotRoutes); // all routes will be prefixed with /chatbot
 // ===========================================================
 app.use((err, req, res, next) => {
 	console.error("❌ Server Error:", err);
