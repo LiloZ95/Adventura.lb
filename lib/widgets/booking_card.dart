@@ -351,6 +351,25 @@ class BookingCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (activity['addons'] != null &&
+                        activity['addons'].isNotEmpty)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 8),
+                          const Text(
+                            "Add-ons:",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                          ...activity['addons'].map<Widget>((addon) {
+                            return Text(
+                              "• ${addon['label']} (\$${addon['price']})",
+                              style: const TextStyle(fontSize: 13),
+                            );
+                          }).toList(),
+                        ],
+                      ),
                   ],
                 ),
               ),

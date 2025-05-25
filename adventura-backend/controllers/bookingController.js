@@ -182,7 +182,7 @@ const createBooking = async (req, res) => {
 				slot,
 				total_price,
 				status: "pending",
-				booked_by_provider_user_id: provider_id ?? null,
+				booked_by_provider_user_id: bookedByUserId,
 			});
 
 			await Notification.create({
@@ -223,7 +223,7 @@ const createBooking = async (req, res) => {
 			slot,
 			total_price,
 			status: "pending",
-			booked_by_provider_user_id: provider_id ?? null,
+			booked_by_provider_user_id: bookedByUserId,
 		});
 
 		availabilitySlot.available_seats -= 1;

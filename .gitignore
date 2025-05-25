@@ -47,13 +47,3 @@ app.*.map.json
 venv/
 .env/
 __pycache__/
-adventura-backend/uploads/activities/1/recurrent/1747249749190-863660133.jpg
-adventura-backend/uploads/provider_docs/6/gov_id.jpg
-adventura-backend/uploads/provider_docs/6/selfie.jpg
-adventura-backend/uploads/provider_docs/7/certificate.jpg
-adventura-backend/uploads/provider_docs/7/gov_id.jpg
-adventura-backend/uploads/provider_docs/7/selfie.jpg
-adventura-backend/uploads/provider_docs/8/gov_id.jpg
-adventura-backend/uploads/provider_docs/8/selfie.jpg
-adventura-backend/uploads/reels/1/reel_1747250002274.mp4
-postgrest.conf

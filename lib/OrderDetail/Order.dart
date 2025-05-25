@@ -58,7 +58,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
   late String date;
   late double basePrice;
   late int maxSeats;
-  late List<Map<String, dynamic>> addons;
+  late List<Map<String, dynamic>> addons = widget.activity["addons"] ?? [];
 
   Map<String, int> selectedQuantities = {};
 
@@ -261,24 +261,45 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                             },
                             isDarkMode: isDarkMode,
                           ),
-                          ...addons.map((addon) {
-                            final label = addon["label"];
-                            return _buildTicketOptionRow(
-                              label: label,
-                              quantity: selectedQuantities[label]!,
-                              onAdd: () {
-                                setState(() => selectedQuantities[label] =
-                                    selectedQuantities[label]! + 1);
-                              },
-                              onRemove: () {
-                                if (selectedQuantities[label]! > 0) {
-                                  setState(() => selectedQuantities[label] =
-                                      selectedQuantities[label]! - 1);
-                                }
-                              },
-                              isDarkMode: isDarkMode,
-                            );
-                          }).toList(),
+                          if (addons.isNotEmpty)
+  Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const SizedBox(height: 20),
+      Text(
+        "Add-ons",
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+          color: isDarkMode ? Colors.white : Colors.black,
+        ),
+      ),
+      const SizedBox(height: 10),
+      ...addons.map((addon) {
+        final label = addon["label"];
+        selectedQuantities.putIfAbsent(label, () => 0); // Initialize if missing
+
+        return _buildTicketOptionRow(
+          label: label,
+          quantity: selectedQuantities[label]!,
+          onAdd: () {
+            setState(() {
+              selectedQuantities[label] = selectedQuantities[label]! + 1;
+            });
+          },
+          onRemove: () {
+            if (selectedQuantities[label]! > 0) {
+              setState(() {
+                selectedQuantities[label] = selectedQuantities[label]! - 1;
+              });
+            }
+          },
+          isDarkMode: isDarkMode,
+        );
+      }).toList(),
+    ],
+  ),
+
                         ],
                       ),
                     ),
