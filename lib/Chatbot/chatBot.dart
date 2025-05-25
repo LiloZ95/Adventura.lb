@@ -35,6 +35,77 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
     );
   }
 
+  void _showBookingConfirmationDialog(Map<String, dynamic> booking) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Confirm Booking"),
+        content: Text(
+          "Do you want to book:\n"
+          "${booking['activity_name']} on ${booking['date']} at ${booking['slot']} "
+          "for ${booking['attendees']} person(s)?",
+        ),
+        actions: [
+          TextButton(
+            child: const Text("Cancel"),
+            onPressed: () => Navigator.pop(context),
+          ),
+          TextButton(
+            child: const Text("Confirm"),
+            onPressed: () async {
+              Navigator.pop(context);
+              await _submitBookingToBackend(booking);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _submitBookingToBackend(Map<String, dynamic> booking) async {
+    try {
+      final res = await http.post(
+        Uri.parse("$baseUrl/chatbot/booking"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          ...booking,
+          "user_id": widget.userId, // add user ID if not already present
+        }),
+      );
+
+      if (res.statusCode == 201) {
+        // ✅ 201 = Created
+        setState(() {
+          _messages.add({
+            'text': "🎉 Booking confirmed! Enjoy your experience!",
+            'isUser': false,
+            'cards': [],
+            'timestamp': DateTime.now(),
+          });
+        });
+      } else {
+        setState(() {
+          _messages.add({
+            'text': "⚠️ Booking failed. Please try again later.",
+            'isUser': false,
+            'timestamp': DateTime.now(),
+          });
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _messages.add({
+          'text': "❌ Something went wrong while booking.",
+          'isUser': false,
+          'timestamp': DateTime.now(),
+        });
+      });
+    }
+
+    await _saveMessagesToHive();
+    _scrollToBottom();
+  }
+
   final ScrollController _scrollController = ScrollController();
   void _scrollToBottom() {
     Future.delayed(Duration(milliseconds: 300), () {
@@ -157,19 +228,42 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
       final botResponse = await sendMessageToBot(
         userMessage,
         userName: widget.userName,
+        userId: widget.userId,
       );
 
-      setState(() {
-        _messages.add({
-          'text': botResponse['reply'] ?? "⚠️ EVA didn’t return a message.",
-          'isUser': false,
-          'cards': botResponse['cards'] ?? [],
-          'timestamp': DateTime.now(),
+      if (botResponse['type'] == 'booking_intent') {
+        final booking = botResponse['booking_details'];
+
+        setState(() {
+          _messages.add({
+            'text': "📌 You're about to book:\n"
+                "• ${booking['activity_name']}\n"
+                "• On ${booking['date']} at ${booking['slot']}\n"
+                "• For ${booking['attendees']} person(s)\n\n"
+                "✅ Confirm or cancel below.",
+            'isUser': false,
+            'cards': [],
+            'isBookingIntent': true,
+            'booking': booking,
+            'timestamp': DateTime.now(),
+          });
+          _isTyping = false;
         });
 
-        _isTyping = false;
-      });
-      await _saveMessagesToHive(); // 💾 Save after bot responds
+        _showBookingConfirmationDialog(booking);
+      } else {
+        setState(() {
+          _messages.add({
+            'text': botResponse['reply'] ?? "⚠️ EVA didn’t return a message.",
+            'isUser': false,
+            'cards': botResponse['cards'] ?? [],
+            'timestamp': DateTime.now(),
+          });
+          _isTyping = false;
+        });
+      }
+
+      await _saveMessagesToHive(); // ✅ outside setState
       _scrollToBottom();
     } catch (e) {
       print("Bot API call failed: $e");
@@ -181,13 +275,13 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
         });
         _isTyping = false;
       });
-      await _saveMessagesToHive(); // 💾 Still save fallback message
+      await _saveMessagesToHive();
       _scrollToBottom();
     }
   }
 
   Future<Map<String, dynamic>> sendMessageToBot(String query,
-      {String? userName}) async {
+      {String? userName, required String userId}) async {
     const apiUrl = "$chabotUrl/chat";
 
     final response = await http.post(
@@ -196,6 +290,7 @@ class _AdventuraChatPageState extends State<AdventuraChatPage>
       body: jsonEncode({
         "query": query,
         "username": userName,
+        "user_id": userId, // ⬅️ must pass this
       }),
     );
 
