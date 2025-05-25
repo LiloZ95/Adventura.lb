@@ -167,7 +167,7 @@ class _PaymentModalState extends State<PaymentModal> {
                             print("🔵 Continue pressed");
                             bool success = await BookingService.createBooking(
                               activityId: widget.activityId,
-                              clientId: widget.clientId,
+                              userId: widget.clientId,
                               date: widget.bookingDate,
                               slot: widget.slot,
                               totalPrice: widget.totalPrice,

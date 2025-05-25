@@ -6,33 +6,33 @@ import 'package:http/http.dart' as http;
 class BookingService {
   static Future<bool> createBooking({
     required int activityId,
-    required String date,
-    required String slot,
-    required double totalPrice,
-    int? clientId,
-    int? providerId,
-  }) async {
-    final url = Uri.parse("$baseUrl/booking/create");
+  required String date,
+  required String slot,
+  required double totalPrice,
+  required int userId,         // 🔄 Now required
+  int? providerId,
+}) async {
+  final url = Uri.parse("$baseUrl/booking/create");
 
-    final body = jsonEncode({
-      "activity_id": activityId,
-      "booking_date": date,
-      "slot": slot,
-      "total_price": totalPrice,
-      if (clientId != null) "client_id": clientId,
-      if (providerId != null) "provider_id": providerId,
-    });
+  final body = jsonEncode({
+    "activity_id": activityId,
+    "booking_date": date,
+    "slot": slot,
+    "total_price": totalPrice,
+    "user_id": userId,          // ✅ send user_id instead of client_id
+    if (providerId != null) "provider_id": providerId,
+  });
 
-    print("📤 Sending booking: $body");
+  print("📤 Sending booking: $body");
 
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: body,
-    );
+  final response = await http.post(
+    url,
+    headers: {"Content-Type": "application/json"},
+    body: body,
+  );
 
-    print("📥 Status: ${response.statusCode}");
-    print("📥 Response: ${response.body}");
+  print("📥 Status: ${response.statusCode}");
+  print("📥 Response: ${response.body}");
 
     if (response.statusCode == 201) {
       return true;

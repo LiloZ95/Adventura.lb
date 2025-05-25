@@ -34,7 +34,13 @@ cron.schedule("0 * * * *", () => {
 	deactivatePastEvents();
 });
 
-// Runs every day at 2 AM
+// ✅ Run once immediately
+// (async () => {
+//   console.log("🚀 [Startup] Running deactivation of empty recurrent activities...");
+//   await deactivateEmptyRecurrentActivities();
+// })();
+
+// ✅ Schedule it at 2 AM every day
 cron.schedule("0 2 * * *", async () => {
   console.log("⏰ [Cron] Deactivating empty recurrent activities...");
   await deactivateEmptyRecurrentActivities();
