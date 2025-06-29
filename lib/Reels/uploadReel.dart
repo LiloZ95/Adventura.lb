@@ -1,6 +1,4 @@
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -50,19 +48,19 @@ class _UploadReelPageState extends State<UploadReelPage> {
     }
 
     try {
-      final fileName = DateTime.now().millisecondsSinceEpoch.toString();
-      final storageRef =
-          FirebaseStorage.instance.ref().child('reels/$fileName.mp4');
+      // final fileName = DateTime.now().millisecondsSinceEpoch.toString();
+      // final storageRef =
+      //     FirebaseStorage.instance.ref().child('reels/$fileName.mp4');
 
-      final downloadUrl = await storageRef.getDownloadURL();
+      // final downloadUrl = await storageRef.getDownloadURL();
 
-      await FirebaseFirestore.instance.collection('reels').add({
-        'videoUrl': downloadUrl,
-        'description': _descriptionController.text.trim(),
-        'organizer': _organizerNameController.text.trim(),
-        'category': _selectedCategory,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
+      // await FirebaseFirestore.instance.collection('reels').add({
+      //   'videoUrl': downloadUrl,
+      //   'description': _descriptionController.text.trim(),
+      //   'organizer': _organizerNameController.text.trim(),
+      //   'category': _selectedCategory,
+      //   'timestamp': FieldValue.serverTimestamp(),
+      // });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("✅ Reel uploaded successfully")),

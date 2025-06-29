@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:ui';
 import 'dart:typed_data';
 import 'dart:convert';
-import 'package:adventura/Reels/reels_pg.dart';
-import 'package:adventura/Reels/uploadReel.dart';
 import 'package:adventura/Reels/upload_reel_pg.dart';
 import 'package:adventura/config.dart';
 import 'package:http/http.dart' as http;
@@ -21,7 +19,6 @@ import 'package:adventura/Provider%20Only/ticketScanner.dart';
 import 'package:adventura/CreateListing/CreateList.dart';
 import 'package:adventura/Chatbot/chatBot.dart';
 import 'package:flutter/foundation.dart'; // for listEquals
-
 import 'widgets/limited_time_section.dart';
 import 'widgets/popular_categories_section.dart';
 import 'widgets/recommended_activities_section.dart';
