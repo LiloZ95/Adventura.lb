@@ -1,12 +1,10 @@
 import 'package:adventura/userinformation/widgets/theme_controller.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:adventura/main_api.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
+
 // ✅ NEW import
 
 void main() async {
@@ -22,16 +20,6 @@ void main() async {
   await Hive.initFlutter();
   await Hive.openBox('authBox');
   await Hive.openBox('chatMessages');
-
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  try {
-    await FirebaseFirestore.instance.collection('reels').get();
-  } catch (e) {
-    print('🔥 Firestore error: $e');
-  }
 
   final themeController = ThemeController(); // loads theme from Hive
 
