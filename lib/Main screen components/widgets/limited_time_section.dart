@@ -4,7 +4,7 @@ import 'package:adventura/colors.dart';
 import 'package:adventura/event_cards/Cards.dart';
 import 'package:adventura/utils.dart';
 
-class LimitedTimeActivitiesSection extends StatelessWidget {
+class LimitedTimeActivitiesSection extends StatefulWidget {
   final List<Map<String, dynamic>> events;
   final bool isDarkMode;
   final double screenWidth;
@@ -21,7 +21,30 @@ class LimitedTimeActivitiesSection extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<LimitedTimeActivitiesSection> createState() =>
+      _LimitedTimeActivitiesSectionState();
+}
+
+class _LimitedTimeActivitiesSectionState
+    extends State<LimitedTimeActivitiesSection> {
+  late PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(viewportFraction: 0.65);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final events = widget.events;
+
     return Column(
       children: [
         Padding(
@@ -34,20 +57,20 @@ class LimitedTimeActivitiesSection extends StatelessWidget {
               Text(
                 "Limited Time Activities",
                 style: TextStyle(
-                  fontSize: screenWidth * 0.06,
+                  fontSize: widget.screenWidth * 0.06,
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.bold,
-                  color: isDarkMode ? Colors.white : Colors.black,
+                  color: widget.isDarkMode ? Colors.white : Colors.black,
                 ),
               ),
               TextButton(
-                onPressed: onSeeAll,
+                onPressed: widget.onSeeAll,
                 child: Text(
                   "See All",
                   style: TextStyle(
                     color: AppColors.blue,
                     fontFamily: 'Poppins',
-                    fontSize: screenWidth * 0.035,
+                    fontSize: widget.screenWidth * 0.035,
                   ),
                 ),
               ),
@@ -55,35 +78,57 @@ class LimitedTimeActivitiesSection extends StatelessWidget {
           ),
         ),
         SizedBox(
-          height: screenHeight * 0.4,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 0, 16, 0),
-              child: Row(
-                children: events.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final event = entry.value;
-                  final uniqueKey = event['id'] != null
-                      ? ValueKey(event['id'])
-                      : ValueKey("event_$index");
+          height: widget.screenHeight * 0.3,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: events.length,
+            physics: const BouncingScrollPhysics(),
+            padEnds: true, // 🔥 important: remove auto-padding
+            itemBuilder: (context, index) {
+              return AnimatedBuilder(
+                animation: _pageController,
+                builder: (context, child) {
+                  double value = 0;
+                  if (_pageController.hasClients &&
+                      _pageController.position.haveDimensions) {
+                    value = _pageController.page! - index;
+                  }
 
-                  return LimitedEventCard(
-                    key: uniqueKey,
-                    activity: event,
-                    imageUrl: getEventImageUrl(event),
-                    name: event["name"] ?? "Unnamed Event",
-                    date: event["event_date"] != null
-                        ? DateFormat('MMM d, yyyy')
-                            .format(DateTime.parse(event["event_date"]))
-                        : "No date",
-                    location: event["location"] ?? "No location",
-                    price:
-                        event["price"] != null ? "\$${event["price"]}" : "Free",
+                  double scale = (1 - (value.abs() * 0.25)).clamp(0.92, 1.0);
+                  double translateY = 20 * value.abs();
+
+                  return Transform.translate(
+                    offset: Offset(0, translateY),
+                    child: Transform.scale(
+                      scale: scale,
+                      child: child,
+                    ),
                   );
-                }).toList(),
-              ),
-            ),
+                },
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    right: index == events.length - 1 ? 12.0 : 2.0, // ✅ right only
+                  ),
+                  child: SizedBox(
+                    height: widget.screenHeight * 0.28,
+                    child: LimitedEventCard(
+                      key: ValueKey(events[index]['id'] ?? "event_$index"),
+                      activity: events[index],
+                      imageUrl: getEventImageUrl(events[index]),
+                      name: events[index]["name"] ?? "Unnamed Event",
+                      date: events[index]["event_date"] != null
+                          ? DateFormat('MMM d, yyyy').format(
+                              DateTime.parse(events[index]["event_date"]))
+                          : "No date",
+                      location: events[index]["location"] ?? "No location",
+                      price: events[index]["price"] != null
+                          ? "\$${events[index]["price"]}"
+                          : "Free",
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ],
